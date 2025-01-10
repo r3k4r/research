@@ -269,7 +269,7 @@ export default function SignUpForm() {
     <Card className="w-full max-w-md">
       <CardHeader>
         <div className="flex items-center justify-between">
-          <div>
+          <div className="space-y-1">
             <CardTitle>Sign Up for Second Serve</CardTitle>
             <CardDescription>Create your account in 3 easy steps</CardDescription>
           </div>
