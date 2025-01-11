@@ -10,7 +10,7 @@ const prisma = new PrismaClient()
 const signUpSchema = z.object({
   name: z.string().min(2, "Full name is required"),
   email: z.string().email("Invalid email address"),
-  password: z.password().min(8, "Password must be at least 8 characters"),
+  password: z.string().min(8, "Password must be at least 8 characters"),
   city: z.string().min(1, "City is required"),
   phoneNumber: z.string().regex(/^\d{11}$/, "Phone number must be 11 digits"),
   gender: z.enum(['male', 'female']),

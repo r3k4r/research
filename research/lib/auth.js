@@ -48,21 +48,28 @@ export const authOptions = {
     })
   ],
   callbacks: {
-    session: ({ session, user }) => ({
-      ...session,
-      user: {
-        ...session.user,
-        id: user.id,
-        role: user.role,
-      },
-    }),
+    async jwt({ token, user, account }) {
+      if (user) {
+        token.role = user.role
+        token.id = user.id
+      }
+      return token
+    },
+    async session({ session, token }) {
+      if (session?.user) {
+        session.user.id = token.id
+        session.user.role = token.role
+      }
+      return session
+    }
   },
   pages: {
     signIn: '/signin',
   },
   session: {
     strategy: "jwt",
+    maxAge: 30 * 24 * 60 * 60, // 30 days
   },
-  secret: process.env.NEXTAUTH_URL,
+  secret: process.env.NEXTAUTH_SECRET, // Change this from NEXTAUTH_URL to NEXTAUTH_SECRET
 }
 

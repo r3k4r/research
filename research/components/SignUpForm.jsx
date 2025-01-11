@@ -11,8 +11,8 @@ import { Label } from "@/components/ui/label"
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card"
 import { Progress } from "@/components/ui/progress"
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select"
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Eye, EyeOff, Upload } from 'lucide-react'
+import { useToast } from '@/components/ui/toast'
 
 const cities = ['Sulaimaniyah', 'Hawler', 'Duhok', 'Kerkuk']
 
@@ -38,10 +38,10 @@ export default function SignUpForm() {
     image: undefined,
   })
   const [errors, setErrors] = useState({})
-  const [success, setSuccess] = useState('')
   const [imagePreview, setImagePreview] = useState(null)
   const [showPassword, setShowPassword] = useState(false)
   const router = useRouter()
+  const { showToast, ToastComponent } = useToast()
 
   const handleChange = (e) => {
     const { name, value } = e.target
@@ -105,8 +105,10 @@ export default function SignUpForm() {
         body: formDataToSend,
       })
 
+      const data = await response.json()
+
       if (response.ok) {
-        setSuccess('Account created successfully!')
+        showToast('Account created successfully!', 'success')
         setTimeout(() => {
           signIn('credentials', {
             email: formData.email,
@@ -115,11 +117,11 @@ export default function SignUpForm() {
           })
         }, 2000)
       } else {
-        const data = await response.json()
-        setErrors({ submit: data.error })
+        // Show the specific error message from the server
+        showToast(data.error, 'error')
       }
     } catch (error) {
-      setErrors({ submit: 'An error occurred during signup' })
+      showToast('Network error occurred. Please try again.', 'error')
     }
   }
 
@@ -144,8 +146,9 @@ export default function SignUpForm() {
                 value={formData.name}
                 onChange={handleChange}
                 required
+                className={errors.name ? "border-red-500 focus:ring-red-500" : ""}
               />
-              {errors.name && <p className="text-red-500 text-sm">{errors.name}</p>}
+              {errors.name && <p className="text-red-500 text-sm mt-1 transition-all duration-300 ease-in-out">{errors.name}</p>}
             </div>
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
@@ -156,8 +159,9 @@ export default function SignUpForm() {
                 value={formData.email}
                 onChange={handleChange}
                 required
+                className={errors.email ? "border-red-500 focus:ring-red-500" : ""}
               />
-              {errors.email && <p className="text-red-500 text-sm">{errors.email}</p>}
+              {errors.email && <p className="text-red-500 text-sm mt-1 transition-all duration-300 ease-in-out">{errors.email}</p>}
             </div>
             <div className="space-y-2">
               <Label htmlFor="password">Password</Label>
@@ -169,6 +173,7 @@ export default function SignUpForm() {
                   value={formData.password}
                   onChange={handleChange}
                   required
+                  className={errors.password ? "border-red-500 focus:ring-red-500" : ""}
                 />
                 <button
                   type="button"
@@ -178,7 +183,7 @@ export default function SignUpForm() {
                   {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
                 </button>
               </div>
-              {errors.password && <p className="text-red-500 text-sm">{errors.password}</p>}
+              {errors.password && <p className="text-red-500 text-sm mt-1 transition-all duration-300 ease-in-out">{errors.password}</p>}
             </div>
           </>
         )
@@ -188,7 +193,7 @@ export default function SignUpForm() {
             <div className="space-y-2">
               <Label htmlFor="city">City</Label>
               <Select name="city" onValueChange={(value) => handleSelectChange('city', value)}>
-                <SelectTrigger>
+                <SelectTrigger className={errors.city ? "border-red-500 focus:ring-red-500" : ""}>
                   <SelectValue placeholder="Select a city" />
                 </SelectTrigger>
                 <SelectContent>
@@ -197,7 +202,7 @@ export default function SignUpForm() {
                   ))}
                 </SelectContent>
               </Select>
-              {errors.city && <p className="text-red-500 text-sm">{errors.city}</p>}
+              {errors.city && <p className="text-red-500 text-sm mt-1 transition-all duration-300 ease-in-out">{errors.city}</p>}
             </div>
             <div className="space-y-2">
               <Label htmlFor="phoneNumber">Phone Number</Label>
@@ -210,17 +215,17 @@ export default function SignUpForm() {
                   name="phoneNumber"
                   value={formData.phoneNumber}
                   onChange={handleChange}
-                  className="rounded-l-none"
+                  className={`rounded-l-none ${errors.phoneNumber ? "border-red-500 focus:ring-red-500" : ""}`}
                   placeholder="XXXXXXXXXXX"
                   maxLength={11}
                 />
               </div>
-              {errors.phoneNumber && <p className="text-red-500 text-sm">{errors.phoneNumber}</p>}
+              {errors.phoneNumber && <p className="text-red-500 text-sm mt-1 transition-all duration-300 ease-in-out">{errors.phoneNumber}</p>}
             </div>
             <div className="space-y-2">
               <Label htmlFor="gender">Gender</Label>
               <Select name="gender" onValueChange={(value) => handleSelectChange('gender', value)}>
-                <SelectTrigger>
+                <SelectTrigger className={errors.gender ? "border-red-500 focus:ring-red-500" : ""}>
                   <SelectValue placeholder="Select gender" />
                 </SelectTrigger>
                 <SelectContent>
@@ -228,7 +233,7 @@ export default function SignUpForm() {
                   <SelectItem value="female">Female</SelectItem>
                 </SelectContent>
               </Select>
-              {errors.gender && <p className="text-red-500 text-sm">{errors.gender}</p>}
+              {errors.gender && <p className="text-red-500 text-sm mt-1 transition-all duration-300 ease-in-out">{errors.gender}</p>}
             </div>
           </>
         )
@@ -257,7 +262,7 @@ export default function SignUpForm() {
                 />
               </label>
             </div>
-            {errors.image && <p className="text-red-500 text-sm">{errors.image}</p>}
+            {errors.image && <p className="text-red-500 text-sm mt-1 transition-all duration-300 ease-in-out">{errors.image}</p>}
           </div>
         )
       default:
@@ -266,77 +271,68 @@ export default function SignUpForm() {
   }
 
   return (
-    <Card className="w-full max-w-md">
-      <CardHeader>
-        <div className="flex items-center justify-between">
-          <div className="space-y-1">
-            <CardTitle>Sign Up for Second Serve</CardTitle>
-            <CardDescription>Create your account in 3 easy steps</CardDescription>
-          </div>
-          <div className="w-16 h-16 bg-gray-200 rounded-full flex items-center justify-center">
-            Logo
-          </div>
-        </div>
-      </CardHeader>
-      <CardContent>
-        <div className="flex justify-between mb-8">
-          {[1, 2, 3].map((num) => (
-            <div key={num} className="flex flex-col items-center">
-              <div className={`w-12 h-12 rounded-full flex items-center justify-center text-lg font-semibold transition-all duration-300 ${
-                step >= num 
-                  ? 'bg-black text-white scale-110' 
-                  : 'bg-gray-200 text-gray-500'
-              }`}>
-                {step > num ? '✓' : num}
-              </div>
-              <span className="mt-2 text-sm text-gray-600">
-                {num === 1 ? 'Account' : num === 2 ? 'Details' : 'Photo'}
-              </span>
+    <>
+      {ToastComponent}
+      <Card className="w-full max-w-md">
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle>Sign Up for Second Serve</CardTitle>
+              <CardDescription>Create your account in 3 easy steps</CardDescription>
             </div>
-          ))}
+            <div className="w-16 h-16 bg-gray-200 rounded-full flex items-center justify-center">
+              Logo
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div className="flex justify-between mb-8">
+            {[1, 2, 3].map((num) => (
+              <div key={num} className="flex flex-col items-center">
+                <div className={`w-12 h-12 rounded-full flex items-center justify-center text-lg font-semibold transition-all duration-300 ${
+                  step >= num 
+                    ? 'bg-blue-500 text-white scale-110' 
+                    : 'bg-gray-200 text-gray-500'
+                }`}>
+                  {step > num ? '✓' : num}
+                </div>
+                <span className="mt-2 text-sm text-gray-600">
+                  {num === 1 ? 'Account' : num === 2 ? 'Details' : 'Photo'}
+                </span>
+              </div>
+            ))}
+          </div>
+          <Progress value={(step / 3) * 100} className="mb-8" />
+          <form onSubmit={handleSubmit} className="space-y-4">
+            {renderStep()}
+          </form>
+        </CardContent>
+        <CardFooter className="flex justify-between">
+          {step > 1 && (
+            <Button type="button" onClick={prevStep} variant="outline">
+              Previous
+            </Button>
+          )}
+          {step < 3 ? (
+            <Button type="button" onClick={nextStep}>
+              Next
+            </Button>
+          ) : (
+            <Button type="submit" onClick={handleSubmit}>
+              Submit
+            </Button>
+          )}
+        </CardFooter>
+        <div className="px-6 pb-6">
+          <Button variant="outline" onClick={() => signIn('google', { callbackUrl: '/' })} className="w-full mb-4">
+            Continue with Google
+          </Button>
+          <div className="text-center">
+            Already have an account? <Link href="/signin" className="text-blue-500 hover:underline">Sign in</Link>
+          </div>
         </div>
-        <Progress value={(step / 3) * 100} className="mb-8" />
-        <form onSubmit={handleSubmit} className="space-y-4">
-          {renderStep()}
-        </form>
-      </CardContent>
-      <CardFooter className="flex justify-between">
-        {step > 1 && (
-          <Button type="button" onClick={prevStep} variant="outline">
-            Previous
-          </Button>
-        )}
-        {step < 3 ? (
-          <Button type="button" onClick={nextStep}>
-            Next
-          </Button>
-        ) : (
-          <Button type="submit" onClick={handleSubmit}>
-            Submit
-          </Button>
-        )}
-      </CardFooter>
-      <div className="px-6 pb-6">
-        <Button variant="outline" onClick={() => signIn('google', { callbackUrl: '/' })} className="w-full mb-4">
-          Continue with Google
-        </Button>
-        <div className="text-center">
-          Already have an account? <Link href="/signin" className="text-blue-500 hover:underline">Sign in</Link>
-        </div>
-      </div>
-      {errors.submit && (
-        <Alert variant="destructive" className="mt-4">
-          <AlertTitle>Error</AlertTitle>
-          <AlertDescription>{errors.submit}</AlertDescription>
-        </Alert>
-      )}
-      {success && (
-        <Alert className="mt-4">
-          <AlertTitle>Success</AlertTitle>
-          <AlertDescription>{success}</AlertDescription>
-        </Alert>
-      )}
-    </Card>
+      </Card>
+    </>
   )
 }
 

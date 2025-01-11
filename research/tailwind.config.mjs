@@ -1,13 +1,17 @@
 /** @type {import('tailwindcss').Config} */
 export default {
     darkMode: ["class"],
-    content: [
-    "./pages/**/*.{js,ts,jsx,tsx,mdx}",
-    "./components/**/*.{js,ts,jsx,tsx,mdx}",
-    "./app/**/*.{js,ts,jsx,tsx,mdx}",
-  ],
+	content: [
+		'./pages/**/*.{js,ts,jsx,tsx,mdx}',
+		'./components/**/*.{js,ts,jsx,tsx,mdx}',
+		'./app/**/*.{js,ts,jsx,tsx,mdx}',
+	  ],
   theme: {
   	extend: {
+		transitionProperty: {
+			'height': 'height',
+			'spacing': 'margin, padding',
+		  },
 		scale: {
 			'110': '1.1',
 		  },
@@ -64,6 +68,15 @@ export default {
   			sm: 'calc(var(--radius) - 4px)'
   		}
   	}
+  },
+  variants: {
+    extend: {
+      ringColor: ['focus-visible'],
+      ringOffsetColor: ['focus-visible'],
+      ringOffsetWidth: ['focus-visible'],
+      ringOpacity: ['focus-visible'],
+      ringWidth: ['focus-visible'],
+    }
   },
   plugins: [require("tailwindcss-animate")],
 };
