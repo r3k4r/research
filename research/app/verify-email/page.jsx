@@ -53,9 +53,9 @@ export default function VerifyEmail() {
   }
 
   return (
-    <>
+    <div className="min-h-screen flex items-center justify-center p-4">
       {ToastComponent}
-      <Card className="w-full max-w-md mx-auto mt-8">
+      <Card className="w-full max-w-md">
         <CardHeader>
           <CardTitle>Verify Your Email</CardTitle>
           <CardDescription>Enter the 6-digit code sent to your email</CardDescription>
@@ -83,7 +83,7 @@ export default function VerifyEmail() {
           <Button variant="link" onClick={() => router.push('/signin')}>Back to Sign In</Button>
         </CardFooter>
       </Card>
-    </>
+    </div>
   )
 }
 

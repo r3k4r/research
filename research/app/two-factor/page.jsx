@@ -53,9 +53,9 @@ export default function TwoFactor() {
   }
 
   return (
-    <>
+    <div className="min-h-screen flex items-center justify-center p-4">
       {ToastComponent}
-      <Card className="w-full max-w-md mx-auto mt-8">
+      <Card className="w-full max-w-md">
         <CardHeader>
           <CardTitle>Two-Factor Authentication</CardTitle>
           <CardDescription>Enter the 6-digit code sent to your email</CardDescription>
@@ -80,7 +80,7 @@ export default function TwoFactor() {
           </form>
         </CardContent>
       </Card>
-    </>
+    </div>
   )
 }
 

@@ -36,9 +36,9 @@ export default function ForgotPassword() {
   }
 
   return (
-    <>
+    <div className="min-h-screen flex items-center justify-center p-4">
       {ToastComponent}
-      <Card className="w-full max-w-md mx-auto mt-8">
+      <Card className="w-full max-w-md">
         <CardHeader>
           <CardTitle>Forgot Password</CardTitle>
           <CardDescription>Enter your email to reset your password</CardDescription>
@@ -60,7 +60,7 @@ export default function ForgotPassword() {
           </form>
         </CardContent>
       </Card>
-    </>
+    </div>
   )
 }
 

@@ -45,9 +45,9 @@ export default function ResetPassword() {
   }
 
   return (
-    <>
+    <div className="min-h-screen flex items-center justify-center p-4">
       {ToastComponent}
-      <Card className="w-full max-w-md mx-auto mt-8">
+      <Card className="w-full max-w-md">
         <CardHeader>
           <CardTitle>Reset Password</CardTitle>
           <CardDescription>Enter your new password</CardDescription>
@@ -80,7 +80,7 @@ export default function ResetPassword() {
           </form>
         </CardContent>
       </Card>
-    </>
+    </div>
   )
 }
 
