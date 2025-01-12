@@ -2,7 +2,10 @@ import { PrismaAdapter } from "@next-auth/prisma-adapter"
 import { PrismaClient } from "@prisma/client"
 import CredentialsProvider from "next-auth/providers/credentials"
 import bcrypt from "bcryptjs"
+import crypto from "crypto"
 import { sendVerificationCode } from "./email"
+
+
 
 const prisma = new PrismaClient()
 
@@ -66,30 +69,37 @@ export const authOptions = {
     },
     async signIn({ user }) {
       if (!user.emailVerified) {
-        const verificationCode = Math.floor(100000 + Math.random() * 900000).toString()
+        // Generate and save email verification token
+        const token = crypto.randomBytes(32).toString('hex')
         await prisma.user.update({
           where: { id: user.id },
           data: { 
-            emailVerificationToken: verificationCode,
-            emailVerificationTokenExpires: new Date(Date.now() + 24 * 60 * 60 * 1000) // 24 hours
+            emailVerificationToken: token,
           }
         })
 
-        await sendVerificationCode(user.email, verificationCode, 'email')
+        // Send verification email
+        await sendVerificationCode(user.email, token, 'email')
 
         return `/verify-email?email=${user.email}`
       }
 
+      if(user && user.emailVerified && !user.twoFactorEnabled){
+        return true
+      }
+
       if (user.twoFactorEnabled) {
+        // Generate and save 2FA code
         const twoFactorCode = Math.floor(100000 + Math.random() * 900000).toString()
         await prisma.user.update({
           where: { id: user.id },
           data: {
-            twoFactorCode,
+            twoFactorCode: twoFactorCode,
             twoFactorCodeExpires: new Date(Date.now() + 10 * 60 * 1000) // 10 minutes
           }
         })
 
+        // Send 2FA code via email
         await sendVerificationCode(user.email, twoFactorCode, '2fa')
 
         return `/two-factor?email=${user.email}`
@@ -108,4 +118,6 @@ export const authOptions = {
   },
   secret: process.env.NEXTAUTH_SECRET,
 }
+
+
 

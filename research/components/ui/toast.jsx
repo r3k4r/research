@@ -31,7 +31,7 @@ export function Toast({ message, type, onClose }) {
           isVisible 
             ? "translate-y-0 opacity-100 translate-x-0" 
             : "translate-y-2 translate-x-2 opacity-0",
-          type === 'success' ? 'bg-green-500 text-white' : 'bg-red-500 text-white'
+          type === 'success' ? 'bg-green-500 text-white' : type === 'error' ? 'bg-red-500 text-white' : 'bg-yellow-400 text-black'
         )}
       >
         <div className="flex justify-between items-center">

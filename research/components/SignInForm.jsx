@@ -17,13 +17,19 @@ const signInSchema = z.object({
   password: z.string().min(1, "Password is required"),
 })
 
+const twoFactorSchema = z.object({
+  code: z.string().length(6, "2FA code must be 6 digits"),
+})
+
 export default function SignInForm() {
   const [formData, setFormData] = useState({
     email: '',
     password: '',
   })
+  const [twoFactorCode, setTwoFactorCode] = useState('')
   const [errors, setErrors] = useState({})
   const [showPassword, setShowPassword] = useState(false)
+  const [isTwoFactorRequired, setIsTwoFactorRequired] = useState(false)
   const router = useRouter()
   const { showToast, ToastComponent } = useToast()
 
@@ -36,20 +42,33 @@ export default function SignInForm() {
   const handleSubmit = async (e) => {
     e.preventDefault()
     try {
-      signInSchema.parse(formData)
+      if (!isTwoFactorRequired) {
+        signInSchema.parse(formData)
+      } else {
+        twoFactorSchema.parse({ code: twoFactorCode })
+      }
       setErrors({})
 
       const result = await signIn('credentials', {
         email: formData.email,
         password: formData.password,
+        twoFactorCode: twoFactorCode,
         redirect: false,
       })
 
       if (result?.error) {
-        showToast('Invalid email or password', 'error')
+        if (result.error === 'TwoFactorRequired') {
+          setIsTwoFactorRequired(true)
+          showToast('Please enter your 2FA code', 'info')
+        } else if (result.error === 'EmailNotVerified') {
+          showToast('Please verify your email. A new verification code has been sent.', 'warning')
+          router.push(`/verify-email?email=${formData.email}`)
+        } else {
+          showToast(result.error, 'error')
+        }
       } else {
         showToast('Sign in successful!', 'success')
-        setTimeout(() => router.push('/'), 2000)
+        router.push('/')
       }
     } catch (error) {
       if (error instanceof z.ZodError) {
@@ -75,49 +94,71 @@ export default function SignInForm() {
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
-              <Input
-                id="email"
-                name="email"
-                type="email"
-                placeholder="Enter your email"
-                value={formData.email}
-                onChange={handleChange}
-                required
-                className={errors.email ? "border-red-500 focus:ring-red-500" : ""}
-              />
-              {errors.email && <p className="text-red-500 text-sm mt-1 transition-all duration-300 ease-in-out">{errors.email}</p>}
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
-              <div className="relative">
+            {!isTwoFactorRequired ? (
+              <>
+                <div className="space-y-2">
+                  <Label htmlFor="email">Email</Label>
+                  <Input
+                    id="email"
+                    name="email"
+                    type="email"
+                    placeholder="Enter your email"
+                    value={formData.email}
+                    onChange={handleChange}
+                    required
+                    className={errors.email ? "border-red-500 focus:ring-red-500" : ""}
+                  />
+                  {errors.email && <p className="text-red-500 text-sm mt-1 transition-all duration-300 ease-in-out">{errors.email}</p>}
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="password">Password</Label>
+                  <div className="relative">
+                    <Input
+                      id="password"
+                      name="password"
+                      type={showPassword ? "text" : "password"}
+                      placeholder="Enter your password"
+                      value={formData.password}
+                      onChange={handleChange}
+                      required
+                      className={errors.password ? "border-red-500 focus:ring-red-500" : ""}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-2 top-1/2 transform -translate-y-1/2"
+                    >
+                      {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                    </button>
+                  </div>
+                  {errors.password && <p className="text-red-500 text-sm mt-1 transition-all duration-300 ease-in-out">{errors.password}</p>}
+                </div>
+                <div className="flex justify-between items-center">
+                  <Link href="/forgot-password" className="text-sm text-blue-500 hover:underline">
+                    Forgot password?
+                  </Link>
+                </div>
+              </>
+            ) : (
+              <div className="space-y-2">
+                <Label htmlFor="twoFactorCode">2FA Code</Label>
                 <Input
-                  id="password"
-                  name="password"
-                  type={showPassword ? "text" : "password"}
-                  placeholder="Enter your password"
-                  value={formData.password}
-                  onChange={handleChange}
+                  id="twoFactorCode"
+                  name="twoFactorCode"
+                  type="text"
+                  placeholder="Enter your 2FA code"
+                  value={twoFactorCode}
+                  onChange={(e) => setTwoFactorCode(e.target.value)}
                   required
-                  className={errors.password ? "border-red-500 focus:ring-red-500" : ""}
+                  maxLength={6}
+                  className={errors.code ? "border-red-500 focus:ring-red-500" : ""}
                 />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-2 top-1/2 transform -translate-y-1/2"
-                >
-                  {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
-                </button>
+                {errors.code && <p className="text-red-500 text-sm mt-1 transition-all duration-300 ease-in-out">{errors.code}</p>}
               </div>
-              {errors.password && <p className="text-red-500 text-sm mt-1 transition-all duration-300 ease-in-out">{errors.password}</p>}
-            </div>
-            <div className="flex justify-between items-center">
-              <Link href="/forgot-password" className="text-sm text-blue-500 hover:underline">
-                Forgot password?
-              </Link>
-            </div>
-            <Button type="submit" className="w-full">Sign In</Button>
+            )}
+            <Button type="submit" className="w-full">
+              {isTwoFactorRequired ? 'Verify' : 'Sign In'}
+            </Button>
           </form>
         </CardContent>
         <CardFooter className="flex flex-col space-y-4">
