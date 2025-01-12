@@ -17,7 +17,7 @@ const signInSchema = z.object({
   password: z.string().min(1, "Password is required"),
 })
 
-export default function SignInForm() {  
+export default function SignInForm() {
   const [formData, setFormData] = useState({
     email: '',
     password: '',
@@ -47,8 +47,6 @@ export default function SignInForm() {
 
       if (result?.error) {
         showToast('Invalid email or password', 'error')
-      } else if (result?.url) {
-        router.push(result.url)
       } else {
         showToast('Sign in successful!', 'success')
         setTimeout(() => router.push('/'), 2000)
@@ -113,6 +111,11 @@ export default function SignInForm() {
                 </button>
               </div>
               {errors.password && <p className="text-red-500 text-sm mt-1 transition-all duration-300 ease-in-out">{errors.password}</p>}
+            </div>
+            <div className="flex justify-between items-center">
+              <Link href="/forgot-password" className="text-sm text-blue-500 hover:underline">
+                Forgot password?
+              </Link>
             </div>
             <Button type="submit" className="w-full">Sign In</Button>
           </form>

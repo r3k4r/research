@@ -1,27 +1,24 @@
-import { NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
-import bcrypt from 'bcryptjs';
+import { NextResponse } from 'next/server'
+import { PrismaClient } from '@prisma/client'
+import bcrypt from 'bcryptjs'
 
-const prisma = new PrismaClient();
+const prisma = new PrismaClient()
 
 export async function POST(req) {
+  const { token, password } = await req.json()
+
   try {
-    const { token, password } = await req.json();
-    
     const user = await prisma.user.findFirst({
       where: {
         resetPasswordToken: token,
-        resetPasswordExpires: {
-          gt: new Date(),
-        },
-      }
-    });
+      },
+    })
 
     if (!user) {
-      return NextResponse.json({ error: 'Invalid or expired token' }, { status: 400 });
+      return NextResponse.json({ error: 'Invalid or expired reset token' }, { status: 400 })
     }
 
-    const hashedPassword = await bcrypt.hash(password, 10);
+    const hashedPassword = await bcrypt.hash(password, 10)
 
     await prisma.user.update({
       where: { id: user.id },
@@ -29,11 +26,13 @@ export async function POST(req) {
         password: hashedPassword,
         resetPasswordToken: null,
         resetPasswordExpires: null,
-      }
-    });
+      },
+    })
 
-    return NextResponse.json({ message: 'Password reset successfully' });
+    return NextResponse.json({ message: 'Password reset successful' })
   } catch (error) {
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    console.error('Error resetting password:', error)
+    return NextResponse.json({ error: 'An error occurred while resetting the password' }, { status: 500 })
   }
 }
+

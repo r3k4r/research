@@ -3,79 +3,80 @@ import { PrismaClient } from '@prisma/client'
 import bcrypt from 'bcryptjs'
 import { writeFile } from 'fs/promises'
 import path from 'path'
-import { z } from 'zod'
+import { sendVerificationCode } from '@/lib/email'
+import { log } from 'console'
+
 
 const prisma = new PrismaClient()
-
-const signUpSchema = z.object({
-  name: z.string().min(2, "Full name is required"),
-  email: z.string().email("Invalid email address"),
-  password: z.string().min(8, "Password must be at least 8 characters"),
-  city: z.string().min(1, "City is required"),
-  phoneNumber: z.string().regex(/^\d{11}$/, "Phone number must be 11 digits"),
-  gender: z.enum(['male', 'female']),
-  image: z.any().optional(),
-})
 
 export async function POST(req) {
   try {
     const formData = await req.formData()
-    const validatedData = signUpSchema.parse(Object.fromEntries(formData))
+    const name = formData.get('name')
+    const email = formData.get('email')
+    const password = formData.get('password')
+    const city = formData.get('city')
+    const phoneNumber = formData.get('phoneNumber')
+    const gender = formData.get('gender')
+    const image = formData.get('image')
 
     // Check if user already exists
     const existingUser = await prisma.user.findFirst({
       where: {
         OR: [
-          { email: validatedData.email },
-          { phoneNumber: validatedData.phoneNumber },
+          { email },
+          { phoneNumber },
         ],
       },
     })
 
     if (existingUser) {
-      if (existingUser.email === validatedData.email) {
+      if (existingUser.email === email) {
         return NextResponse.json({ error: 'User with this email already exists' }, { status: 400 })
       }
-      if (existingUser.phoneNumber === validatedData.phoneNumber) {
+      if (existingUser.phoneNumber === phoneNumber) {
         return NextResponse.json({ error: 'User with this phone number already exists' }, { status: 400 })
       }
     }
 
     // Hash the password
-    const hashedPassword = await bcrypt.hash(validatedData.password, 10)
+    const hashedPassword = await bcrypt.hash(password, 10)
 
     // Handle image upload
     let imagePath = null
-    if (validatedData.image) {
-      const file = validatedData.image
-      const bytes = await file.arrayBuffer()
+    if (image) {
+      const bytes = await image.arrayBuffer()
       const buffer = Buffer.from(bytes)
-      const fileName = `${Date.now()}-${file.name}`
+      const fileName = `${Date.now()}-${image.name}`
       const filePath = path.join(process.cwd(), 'public', 'images', fileName)
       await writeFile(filePath, buffer)
       imagePath = `/images/${fileName}`
     }
 
+    // Generate email verification code
+    const verificationCode = Math.floor(100000 + Math.random() * 900000).toString()
+
     // Create user in database
     const user = await prisma.user.create({
       data: {
-        name: validatedData.name,
-        email: validatedData.email,
+        name,
+        email,
         password: hashedPassword,
-        location: validatedData.city,
-        phoneNumber: validatedData.phoneNumber,
+        location: city,
+        phoneNumber,
         role: 'user',
-        gender: validatedData.gender,
+        gender,
         image: imagePath,
+        emailVerificationToken: verificationCode,
       },
     })
 
-    return NextResponse.json({ message: 'User created successfully', user })
+    // Send verification email
+    await sendVerificationCode(email, verificationCode, 'email')
+
+    return NextResponse.json({ message: 'User created successfully. Please check your email to verify your account.', user })
   } catch (error) {
-    console.error('Signup error:', error)
-    if (error instanceof z.ZodError) {
-      return NextResponse.json({ error: error.errors }, { status: 400 })
-    }
+    console.log(error)
     return NextResponse.json({ error: 'An error occurred during signup' }, { status: 500 })
   }
 }

@@ -27,7 +27,6 @@ model User {
   emailVerificationToken String?
   resetPasswordToken     String?
   resetPasswordExpires   DateTime?
-  twoFactorEnabled       Boolean                @default(false)
   twoFactorCode          String?
   twoFactorCodeExpires   DateTime?
   createdAt              DateTime               @default(now())

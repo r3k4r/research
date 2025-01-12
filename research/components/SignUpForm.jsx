@@ -105,23 +105,16 @@ export default function SignUpForm() {
         body: formDataToSend,
       })
 
-      const data = await response.json()
-
       if (response.ok) {
         showToast('Account created successfully!', 'success')
-        setTimeout(() => {
-          signIn('credentials', {
-            email: formData.email,
-            password: formData.password,
-            callbackUrl: '/',
-          })
-        }, 2000)
+        // Redirect to email verification page
+        router.push(`/verify-email?email=${formData.email}`)
       } else {
-        // Show the specific error message from the server
+        const data = await response.json()
         showToast(data.error, 'error')
       }
     } catch (error) {
-      showToast('Network error occurred. Please try again.', 'error')
+      showToast('An error occurred during signup', 'error')
     }
   }
 
