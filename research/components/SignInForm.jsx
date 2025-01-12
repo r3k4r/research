@@ -47,6 +47,8 @@ export default function SignInForm() {
 
       if (result?.error) {
         showToast('Invalid email or password', 'error')
+      } else if (result?.url) {
+        router.push(result.url)
       } else {
         showToast('Sign in successful!', 'success')
         setTimeout(() => router.push('/'), 2000)

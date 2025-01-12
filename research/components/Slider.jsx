@@ -29,13 +29,13 @@ export default function Slider() {
   const [currentSlide, setCurrentSlide] = useState(0)
   const router = useRouter()
 
-//   useEffect(() => {
-//     // Check if user has visited before
-//     const hasVisited = localStorage.getItem('hasVisited')
-//     if (hasVisited) {
-//       router.push('/signin')
-//     }
-//   }, [router])
+  useEffect(() => {
+    // Check if user has visited before
+    const hasVisited = localStorage.getItem('hasVisited')
+    if (hasVisited) {
+      router.push('/signin')
+    }
+  }, [router])
 
   const nextSlide = () => {
     if (currentSlide < slides.length - 1) {

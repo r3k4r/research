@@ -32,7 +32,7 @@ export const authOptions = {
         })
 
         if (!user || !user.password) {
-          return null
+          throw new Error('Invalid email or password')
         }
 
         const isPasswordValid = await bcrypt.compare(
@@ -41,8 +41,9 @@ export const authOptions = {
         )
 
         if (!isPasswordValid) {
-          return null
+          throw new Error('Invalid email or password')
         }
+        
 
         return user
       }
@@ -57,11 +58,11 @@ export const authOptions = {
 
       const dbUser = await prisma.user.findUnique({
         where: { email: user.email }
-      });
+      });      
 
-      // Check email verification
+      // Check email verification and redirect if needed
       if (!dbUser?.emailVerified) {
-        return NextResponse.redirect('/verify-email');
+        return `/verify-email?email=${user.email}`;
       }
 
       // Handle 2FA
