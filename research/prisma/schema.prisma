@@ -14,21 +14,27 @@ datasource db {
 }
 
 model User {
-  id                    String                 @id @default(uuid())
-  name                  String?
-  email                 String?                @unique
-  password              String?
-  location              String?
-  phoneNumber           String?
-  role                  String?
-  gender                String?
-  image                 String?
-  emailVerified         DateTime?
-  createdAt             DateTime               @default(now())
-  updatedAt             DateTime               @updatedAt
-  isTwoFactorEnabled    Boolean                @default(false)
-  twoFactorConfirmation twoFactorConfirmation?
-  accounts              Account[]
+  id                     String                 @id @default(uuid())
+  name                   String?
+  email                  String?                @unique
+  password               String?
+  location               String?
+  phoneNumber            String?
+  role                   String?
+  gender                 String?
+  image                  String?
+  emailVerified          DateTime?
+  emailVerificationToken String?
+  resetPasswordToken     String?
+  resetPasswordExpires   DateTime?
+  twoFactorEnabled       Boolean                @default(false)
+  twoFactorCode          String?
+  twoFactorCodeExpires   DateTime?
+  createdAt              DateTime               @default(now())
+  updatedAt              DateTime               @updatedAt
+  isTwoFactorEnabled     Boolean                @default(false)
+  twoFactorConfirmation  twoFactorConfirmation?
+  accounts               Account[]
 }
 
 model Account {

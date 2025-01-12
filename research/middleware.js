@@ -15,7 +15,7 @@ export default withAuth(
     // });
     
     // Public routes when logged out, private when logged in
-    const authRoutes = ['/welcome', '/signin', '/signup']
+    const authRoutes = ['/welcome', '/signin', '/signup', '/forgot-password', '/reset-password', '/verify-email', '/two-factor']
     
     if (isAuth && authRoutes.includes(pathname)) {
       return NextResponse.redirect(new URL('/', req.url))

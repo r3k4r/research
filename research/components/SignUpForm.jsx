@@ -291,7 +291,7 @@ export default function SignUpForm() {
               <div key={num} className="flex flex-col items-center">
                 <div className={`w-12 h-12 rounded-full flex items-center justify-center text-lg font-semibold transition-all duration-300 ${
                   step >= num 
-                    ? 'bg-blue-500 text-white scale-110' 
+                    ? 'bg-black text-white scale-110' 
                     : 'bg-gray-200 text-gray-500'
                 }`}>
                   {step > num ? '✓' : num}

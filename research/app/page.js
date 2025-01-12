@@ -1,5 +1,7 @@
-// 'use client'
+'use client'
 // import { useSession } from 'next-auth/react'
+
+import { signOut } from "next-auth/react";
 
 
 export default function Home() {
@@ -7,6 +9,10 @@ export default function Home() {
   // console.log('session', session);
   return (
    <>
+
+   <button onClick={signOut}>
+      logout
+   </button>
    home
    </>
   );
