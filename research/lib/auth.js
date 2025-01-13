@@ -1,36 +1,37 @@
 import { PrismaAdapter } from "@next-auth/prisma-adapter"
 import { PrismaClient } from "@prisma/client"
 import CredentialsProvider from "next-auth/providers/credentials"
+import GoogleProvider from "next-auth/providers/google"
 import bcrypt from "bcryptjs"
-import crypto from "crypto"
 import { sendVerificationCode } from "./email"
-
-
 
 const prisma = new PrismaClient()
 
 export const authOptions = {
   adapter: PrismaAdapter(prisma),
   providers: [
+    GoogleProvider({
+      clientId: process.env.GOOGLE_CLIENT_ID,
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+    }),
     CredentialsProvider({
       name: "credentials",
       credentials: {
         email: { label: "Email", type: "text" },
-        password: { label: "Password", type: "password" }
+        password: { label: "Password", type: "password" },
+        twoFactorCode: { label: "2FA Code", type: "text" },
       },
       async authorize(credentials) {
         if (!credentials?.email || !credentials?.password) {
-          return null
+          throw new Error("Invalid credentials")
         }
 
         const user = await prisma.user.findUnique({
-          where: {
-            email: credentials.email
-          }
+          where: { email: credentials.email }
         })
 
         if (!user || !user.password) {
-          return null
+          throw new Error("Invalid credentials")
         }
 
         const isPasswordValid = await bcrypt.compare(
@@ -39,7 +40,49 @@ export const authOptions = {
         )
 
         if (!isPasswordValid) {
-          return null
+          throw new Error("Invalid credentials")
+        }
+
+        if (!user.emailVerified) {
+          const verificationCode = Math.floor(100000 + Math.random() * 900000).toString()
+          await prisma.user.update({
+            where: { id: user.id },
+            data: { 
+              emailVerificationToken: verificationCode,
+              emailVerificationTokenExpires: new Date(Date.now() + 24 * 60 * 60 * 1000) // 24 hours
+            }
+          })
+
+          await sendVerificationCode(user.email, verificationCode, 'email')
+          throw new Error("EmailNotVerified")
+        }
+
+        if (user.twoFactorEnabled) {
+          if (!credentials.twoFactorCode) {
+            const twoFactorCode = Math.floor(100000 + Math.random() * 900000).toString()
+            await prisma.user.update({
+              where: { id: user.id },
+              data: {
+                twoFactorCode,
+                twoFactorCodeExpires: new Date(Date.now() + 10 * 60 * 1000) // 10 minutes
+              }
+            })
+
+            await sendVerificationCode(user.email, twoFactorCode, '2fa')
+            throw new Error("TwoFactorRequired")
+          }
+
+          if (user.twoFactorCode !== credentials.twoFactorCode || user.twoFactorCodeExpires < new Date()) {
+            throw new Error("Invalid 2FA code")
+          }
+
+          await prisma.user.update({
+            where: { id: user.id },
+            data: {
+              twoFactorCode: null,
+              twoFactorCodeExpires: null,
+            }
+          })
         }
 
         return user
@@ -47,7 +90,7 @@ export const authOptions = {
     })
   ],
   callbacks: {
-    async jwt({ token, user }) {
+    async jwt({ token, user, account }) {
       if (user) {
         token.id = user.id
         token.email = user.email
@@ -55,6 +98,15 @@ export const authOptions = {
         token.role = user.role
         token.emailVerified = user.emailVerified
         token.twoFactorEnabled = user.twoFactorEnabled
+      }
+      // If the sign-in is with Google, mark the email as verified
+      if (account && account.provider === 'google') {
+        token.emailVerified = new Date()
+        // Update the user in the database
+        await prisma.user.update({
+          where: { email: token.email },
+          data: { emailVerified: new Date() }
+        })
       }
       return token
     },
@@ -67,44 +119,13 @@ export const authOptions = {
       }
       return session
     },
-    async signIn({ user }) {
-      if (!user.emailVerified) {
-        // Generate and save email verification token
-        const token = crypto.randomBytes(32).toString('hex')
-        await prisma.user.update({
-          where: { id: user.id },
-          data: { 
-            emailVerificationToken: token,
-          }
-        })
-
-        // Send verification email
-        await sendVerificationCode(user.email, token, 'email')
-
-        return `/verify-email?email=${user.email}`
-      }
-
-      if(user && user.emailVerified && !user.twoFactorEnabled){
+    async signIn({ user, account }) {
+      if (account.provider === 'google') {
+        // For Google sign-in, we consider the email as verified
         return true
       }
 
-      if (user.twoFactorEnabled) {
-        // Generate and save 2FA code
-        const twoFactorCode = Math.floor(100000 + Math.random() * 900000).toString()
-        await prisma.user.update({
-          where: { id: user.id },
-          data: {
-            twoFactorCode: twoFactorCode,
-            twoFactorCodeExpires: new Date(Date.now() + 10 * 60 * 1000) // 10 minutes
-          }
-        })
-
-        // Send 2FA code via email
-        await sendVerificationCode(user.email, twoFactorCode, '2fa')
-
-        return `/two-factor?email=${user.email}`
-      }
-
+      // For credentials provider, the checks are done in the authorize function
       return true
     }
   },
@@ -118,6 +139,4 @@ export const authOptions = {
   },
   secret: process.env.NEXTAUTH_SECRET,
 }
-
-
 
