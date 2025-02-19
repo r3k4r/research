@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
 
@@ -29,19 +29,10 @@ export default function Slider() {
   const [currentSlide, setCurrentSlide] = useState(0)
   const router = useRouter()
 
-  useEffect(() => {
-    // Check if user has visited before
-    const hasVisited = localStorage.getItem('hasVisited')
-    if (hasVisited) {
-      router.push('/signin')
-    }
-  }, [router])
-
   const nextSlide = () => {
     if (currentSlide < slides.length - 1) {
       setCurrentSlide(currentSlide + 1)
     } else {
-      localStorage.setItem('hasVisited', 'true')
       router.push('/signin')
     }
   }

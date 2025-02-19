@@ -163,7 +163,7 @@ export default function SignInForm() {
         </CardContent>
         <CardFooter className="flex flex-col space-y-4">
           <Button variant="outline" onClick={() => signIn('google', { callbackUrl: '/' })} className="w-full">
-            Sign in with Google
+          Continue with Google
           </Button>
           <div className="text-center">
             Don't have an account? <Link href="/signup" className="text-blue-500 hover:underline">Sign up</Link>

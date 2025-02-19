@@ -5,23 +5,35 @@ export default withAuth(
   function middleware(req) {
     const { pathname } = req.nextUrl
     const isAuth = !!req.nextauth.token
-    const session = req.nextauth.token;
     
-
-
-    // console.log({
-    //   isAuth,
-    //   session,
-    // });
+    // Get hasVisited cookie
+    const hasVisited = req.cookies.get('hasVisited')
     
     // Public routes when logged out, private when logged in
-    const authRoutes = ['/welcome', '/signin', '/signup', '/forgot-password', '/reset-password', '/verify-email', '/two-factor']
+    const authRoutes = ['/signin', '/signup', '/forgot-password', '/reset-password', '/verify-email', '/two-factor']
+    
+    // Handle welcome page logic
+    if (pathname === '/welcome') {
+      if (isAuth) {
+        return NextResponse.redirect(new URL('/', req.url))
+      }
+      if (hasVisited) {
+        return NextResponse.redirect(new URL('/signin', req.url))
+      }
+      // First time visitor, set cookie and show welcome page
+      const response = NextResponse.next()
+      response.cookies.set('hasVisited', 'true', {
+        maxAge: 60 * 60 * 24 * 365, // 1 year
+        path: '/',
+      })
+      return response
+    }
     
     if (isAuth && authRoutes.includes(pathname)) {
       return NextResponse.redirect(new URL('/', req.url))
     }
     
-    if (!isAuth && !authRoutes.includes(pathname)) {
+    if (!isAuth && !authRoutes.includes(pathname) && pathname !== '/welcome') {
       return NextResponse.redirect(new URL('/welcome', req.url))
     }
 
@@ -29,7 +41,7 @@ export default withAuth(
   },
   {
     callbacks: {
-      authorized: () => true // We'll handle authorization in the middleware function
+      authorized: () => true
     },
     secret: process.env.NEXTAUTH_SECRET, 
   }
