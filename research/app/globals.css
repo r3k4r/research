@@ -110,3 +110,16 @@
     @apply max-w-md p-4 rounded-md shadow-lg transition-all duration-300 transform;
   }
 }
+
+
+
+
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}

@@ -1,15 +1,14 @@
 'use client'
-// import { useSession } from 'next-auth/react'
+import Navbar from "@/components/Navbar";
 
 import { signOut } from "next-auth/react";
 
 
 export default function Home() {
-  // const { data: session } = useSession()
-  // console.log('session', session);
+ 
   return (
    <>
-
+    <Navbar />
    <button onClick={signOut}>
       logout
    </button>
