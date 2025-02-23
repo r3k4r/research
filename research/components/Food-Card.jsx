@@ -11,6 +11,7 @@ export function FoodCard({
   originalPrice,
   discountedPrice,
   provider,
+  providerLogo,
   category,
   expiresIn,
 }) {
@@ -25,18 +26,31 @@ export function FoodCard({
           fill
           className="object-cover"
         />
+        {/* Provider overlay */}
+        <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black to-transparent p-2">
+          <div className="flex items-center gap-2">
+            <div className="relative w-10 h-10 rounded-full overflow-hidden">
+              <Image
+                src={providerLogo}
+                alt={provider}
+                fill
+                className="object-cover"
+              />
+            </div>
+            <span className="text-white text-md font-medium">{provider}</span>
+          </div>
+        </div>
       </div>
       <CardHeader className="space-y-1">
         <div className="flex items-center justify-between">
           <h3 className="font-semibold">{name}</h3>
           <Badge variant="secondary">{category}</Badge>
         </div>
-        <p className="text-sm text-muted-foreground">{provider}</p>
       </CardHeader>
       <CardContent>
         <p className="text-sm text-muted-foreground mb-4 line-clamp-2">{description}</p>
         <div className="flex items-end justify-between">
-          <div className="space-y-1 flex items-center justify-center gap-5">
+          <div className="space-y-1 flex items-center justify-center gap-4">
             <p className="text-sm line-through text-muted-foreground">${originalPrice.toFixed(2)}</p>
             <p className="text-lg font-semibold text-primary">${discountedPrice.toFixed(2)}</p>
           </div>

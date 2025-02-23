@@ -6,8 +6,6 @@ import Navbar from '@/components/Navbar';
 import { Filters } from '@/components/Filters';
 import { FoodCard } from '@/components/Food-Card';
 
-
-
 const foods = [
   {
     name: "Artisan Bread Bundle",
@@ -16,6 +14,7 @@ const foods = [
     originalPrice: 15.99,
     discountedPrice: 7.99,
     provider: "Fresh Bakery",
+    providerLogo: "https://images.unsplash.com/photo-1581873372796-635b67ca2008?w=100&q=80", 
     category: "Bakery",
     expiresIn: "3h"
   },
@@ -26,6 +25,7 @@ const foods = [
     originalPrice: 25.99,
     discountedPrice: 12.99,
     provider: "Green Market",
+    providerLogo: "https://images.unsplash.com/photo-1615484477778-ca3b77940c25?w=100&q=80", 
     category: "Grocery",
     expiresIn: "5h"
   },
@@ -36,6 +36,7 @@ const foods = [
     originalPrice: 18.99,
     discountedPrice: 9.49,
     provider: "Pasta House",
+    providerLogo: "https://images.unsplash.com/photo-1581873372796-635b67ca2008?w=100&q=80", 
     category: "Restaurant",
     expiresIn: "2h"
   },
