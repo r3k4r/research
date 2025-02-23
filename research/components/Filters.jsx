@@ -1,16 +1,6 @@
 'use client';
 
 import { useState } from 'react';
-import { ChevronDown } from 'lucide-react';
-import {
-  DropdownMenu,
-  DropdownMenuCheckboxItem,
-  DropdownMenuContent,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
 
 export function Filters() {
@@ -38,9 +28,10 @@ export function Filters() {
   };
 
   return (
-    <div className="flex flex-col space-y-4 p-4 bg-white rounded-lg shadow-sm">
+    <div className="flex flex-col space-y-6 p-4 bg-white rounded-lg shadow-sm">
+      {/* Price Range Section */}
       <div>
-        <h3 className="font-medium mb-2">Price Range</h3>
+        <h3 className="font-medium mb-4">Price Range</h3>
         <div className="px-2">
           <Slider
             value={priceRange}
@@ -55,52 +46,44 @@ export function Filters() {
         </div>
       </div>
 
+      {/* Categories Section */}
       <div>
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="outline" className="w-full justify-between">
-              Categories
-              <ChevronDown className="h-4 w-4 opacity-50" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent className="w-56">
-            <DropdownMenuLabel>Select Categories</DropdownMenuLabel>
-            <DropdownMenuSeparator />
-            {categories.map((category) => (
-              <DropdownMenuCheckboxItem
-                key={category}
-                checked={selectedCategories.includes(category)}
-                onCheckedChange={() => toggleCategory(category)}
-              >
-                {category}
-              </DropdownMenuCheckboxItem>
-            ))}
-          </DropdownMenuContent>
-        </DropdownMenu>
+        <h3 className="font-medium mb-4">Categories</h3>
+        <div className="flex flex-wrap gap-2">
+          {categories.map((category) => (
+            <button
+              key={category}
+              onClick={() => toggleCategory(category)}
+              className={`px-4 py-2 rounded-full text-sm border transition-all
+                ${selectedCategories.includes(category)
+                  ? 'bg-primary text-white border-primary'
+                  : 'bg-white text-gray-600 border-gray-200 hover:border-primary'
+                }`}
+            >
+              {category}
+            </button>
+          ))}
+        </div>
       </div>
 
+      {/* Types Section */}
       <div>
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="outline" className="w-full justify-between">
-              Types
-              <ChevronDown className="h-4 w-4 opacity-50" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent className="w-56">
-            <DropdownMenuLabel>Select Types</DropdownMenuLabel>
-            <DropdownMenuSeparator />
-            {types.map((type) => (
-              <DropdownMenuCheckboxItem
-                key={type}
-                checked={selectedTypes.includes(type)}
-                onCheckedChange={() => toggleType(type)}
-              >
-                {type}
-              </DropdownMenuCheckboxItem>
-            ))}
-          </DropdownMenuContent>
-        </DropdownMenu>
+        <h3 className="font-medium mb-4">Types</h3>
+        <div className="flex flex-wrap gap-2">
+          {types.map((type) => (
+            <button
+              key={type}
+              onClick={() => toggleType(type)}
+              className={`px-4 py-2 rounded-full text-sm border transition-all
+                ${selectedTypes.includes(type)
+                  ? 'bg-primary text-white border-primary'
+                  : 'bg-white text-gray-600 border-gray-200 hover:border-primary'
+                }`}
+            >
+              {type}
+            </button>
+          ))}
+        </div>
       </div>
     </div>
   );
