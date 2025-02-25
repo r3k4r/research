@@ -1,7 +1,5 @@
 "use client"
 
-import React from "react"
-
 import { useState } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
@@ -24,7 +22,16 @@ export default function Navbar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const router = useRouter()
   const { data: session, status } = useSession()
-  console.log('session', session?.user.image);
+
+  if (status === "loading" || (status === "authenticated" && !session)) {
+    return <nav className="animate-pulse bg-gray-400 shadow-md">
+      <div className="max-w-8xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="flex items-center justify-between h-16">
+        </div>
+      </div>
+    </nav>
+  }
+  
   
 
   const handleSearch = async (e) => {
@@ -44,8 +51,7 @@ export default function Navbar() {
   }
 
   const handleLogout = async () => {
-    // Implement your logout logic here
-    // For example, if using next-auth:
+
     await signOut()
   }
 

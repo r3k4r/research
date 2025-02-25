@@ -112,12 +112,15 @@ export const authOptions = {
       return token
     },
     async session({ session, token }) {
-      if (session?.user) {
-        session.user.id = token.id
-        session.user.role = token.role
-        session.user.emailVerified = token.emailVerified
-        session.user.twoFactorEnabled = token.twoFactorEnabled
-        session.user.image  = token.image
+      if (token) {
+        session.user = {
+          ...session.user,
+          id: token.id,
+          role: token.role,
+          emailVerified: token.emailVerified,
+          twoFactorEnabled: token.twoFactorEnabled,
+          image: token.picture
+        }
       }
       return session
     },
