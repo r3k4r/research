@@ -80,13 +80,15 @@ export default function SignUpForm() {
     e.preventDefault()
     if (!validateStep()) return
 
+    const formDataToSend = new FormData()
+    Object.entries(formData).forEach(([key, value]) => {
+      if (value !== undefined) formDataToSend.append(key, value)
+    })
+
     try {
       const response = await fetch('/api/signup', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(formData),
+        body: formDataToSend,
       })
 
       if (response.ok) {

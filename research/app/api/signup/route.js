@@ -38,7 +38,6 @@ export async function POST(req) {
     // Hash the password
     const hashedPassword = await bcrypt.hash(password, 10)
 
-   
 
     // Generate email verification code
     const verificationCode = Math.floor(100000 + Math.random() * 900000).toString()
