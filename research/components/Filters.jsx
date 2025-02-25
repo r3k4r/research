@@ -54,7 +54,7 @@ export function Filters() {
             <button
               key={category}
               onClick={() => toggleCategory(category)}
-              className={`px-4 py-2 rounded-full text-sm border transition-all
+              className={`px-4 py-2 rounded-md text-sm border transition-all
                 ${selectedCategories.includes(category)
                   ? 'bg-primary text-white border-primary'
                   : 'bg-white text-gray-600 border-gray-200 hover:border-primary'
@@ -74,7 +74,7 @@ export function Filters() {
             <button
               key={type}
               onClick={() => toggleType(type)}
-              className={`px-4 py-2 rounded-full text-sm border transition-all
+              className={`px-4 py-2 rounded-md text-sm border transition-all
                 ${selectedTypes.includes(type)
                   ? 'bg-primary text-white border-primary'
                   : 'bg-white text-gray-600 border-gray-200 hover:border-primary'

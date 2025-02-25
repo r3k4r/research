@@ -59,7 +59,7 @@ export default function SignInForm() {
       if (result?.error) {
         if (result.error === 'TwoFactorRequired') {
           setIsTwoFactorRequired(true)
-          showToast('Please enter your 2FA code', 'info')
+          showToast('Please enter your 2FA code, Send to your Email', 'info')
         } else if (result.error === 'EmailNotVerified') {
           showToast('Please verify your email. A new verification code has been sent.', 'warning')
           router.push(`/verify-email?email=${formData.email}`)

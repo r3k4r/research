@@ -1,24 +1,14 @@
 import { NextResponse } from 'next/server'
 import { PrismaClient } from '@prisma/client'
 import bcrypt from 'bcryptjs'
-import { writeFile } from 'fs/promises'
-import path from 'path'
 import { sendVerificationCode } from '@/lib/email'
-import { log } from 'console'
-
 
 const prisma = new PrismaClient()
 
 export async function POST(req) {
   try {
-    const formData = await req.formData()
-    const name = formData.get('name')
-    const email = formData.get('email')
-    const password = formData.get('password')
-    const city = formData.get('city')
-    const phoneNumber = formData.get('phoneNumber')
-    const gender = formData.get('gender')
-    const image = formData.get('image')
+    const body = await req.json() // Changed from formData to json
+    const { name, email, password, city, phoneNumber, gender } = body
 
     // Check if user already exists
     const existingUser = await prisma.user.findFirst({
@@ -39,24 +29,9 @@ export async function POST(req) {
       }
     }
 
-    // Hash the password
     const hashedPassword = await bcrypt.hash(password, 10)
-
-    // Handle image upload
-    let imagePath = null
-    if (image) {
-      const bytes = await image.arrayBuffer()
-      const buffer = Buffer.from(bytes)
-      const fileName = `${Date.now()}-${image.name}`
-      const filePath = path.join(process.cwd(), 'public', 'images', fileName)
-      await writeFile(filePath, buffer)
-      imagePath = `/images/${fileName}`
-    }
-
-    // Generate email verification code
     const verificationCode = Math.floor(100000 + Math.random() * 900000).toString()
 
-    // Create user in database
     const user = await prisma.user.create({
       data: {
         name,
@@ -66,12 +41,10 @@ export async function POST(req) {
         phoneNumber,
         role: 'user',
         gender,
-        image: imagePath,
         emailVerificationToken: verificationCode,
       },
     })
 
-    // Send verification email
     await sendVerificationCode(email, verificationCode, 'email')
 
     return NextResponse.json({ message: 'User created successfully. Please check your email to verify your account.', user })

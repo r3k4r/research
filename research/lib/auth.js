@@ -98,6 +98,7 @@ export const authOptions = {
         token.role = user.role
         token.emailVerified = user.emailVerified
         token.twoFactorEnabled = user.twoFactorEnabled
+        token.image = user.image
       }
       // If the sign-in is with Google, mark the email as verified
       if (account && account.provider === 'google') {
@@ -116,6 +117,7 @@ export const authOptions = {
         session.user.role = token.role
         session.user.emailVerified = token.emailVerified
         session.user.twoFactorEnabled = token.twoFactorEnabled
+        session.user.image  = token.image
       }
       return session
     },

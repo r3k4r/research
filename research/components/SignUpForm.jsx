@@ -11,7 +11,7 @@ import { Label } from "@/components/ui/label"
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card"
 import { Progress } from "@/components/ui/progress"
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select"
-import { Eye, EyeOff, Upload } from 'lucide-react'
+import { Eye, EyeOff } from 'lucide-react'
 import { useToast } from '@/components/ui/toast'
 
 const cities = ['Sulaimaniyah', 'Hawler', 'Duhok', 'Kerkuk']
@@ -23,7 +23,6 @@ const signUpSchema = z.object({
   city: z.enum(cities, { required_error: "Please select a city" }),
   phoneNumber: z.string().regex(/^\d{11}$/, "Phone number must be 11 digits"),
   gender: z.enum(['male', 'female'], { required_error: "Please select a gender" }),
-  image: z.instanceof(File).optional(),
 })
 
 export default function SignUpForm() {
@@ -35,10 +34,8 @@ export default function SignUpForm() {
     city: '',
     phoneNumber: '',
     gender: '',
-    image: undefined,
   })
   const [errors, setErrors] = useState({})
-  const [imagePreview, setImagePreview] = useState(null)
   const [showPassword, setShowPassword] = useState(false)
   const router = useRouter()
   const { showToast, ToastComponent } = useToast()
@@ -54,14 +51,6 @@ export default function SignUpForm() {
     setErrors(prev => ({ ...prev, [name]: '' }))
   }
 
-  const handleImageChange = (e) => {
-    const file = e.target.files?.[0]
-    if (file) {
-      setFormData(prev => ({ ...prev, image: file }))
-      setImagePreview(URL.createObjectURL(file))
-    }
-  }
-
   const validateStep = () => {
     let schemaToValidate
     switch(step) {
@@ -70,9 +59,6 @@ export default function SignUpForm() {
         break
       case 2:
         schemaToValidate = signUpSchema.pick({ city: true, phoneNumber: true, gender: true })
-        break
-      case 3:
-        schemaToValidate = signUpSchema.pick({ image: true })
         break
       default:
         return true
@@ -94,15 +80,13 @@ export default function SignUpForm() {
     e.preventDefault()
     if (!validateStep()) return
 
-    const formDataToSend = new FormData()
-    Object.entries(formData).forEach(([key, value]) => {
-      if (value !== undefined) formDataToSend.append(key, value)
-    })
-
     try {
       const response = await fetch('/api/signup', {
         method: 'POST',
-        body: formDataToSend,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(formData),
       })
 
       if (response.ok) {
@@ -230,34 +214,6 @@ export default function SignUpForm() {
             </div>
           </>
         )
-      case 3:
-        return (
-          <div className="space-y-4">
-            <Label htmlFor="image">Profile Image</Label>
-            <div className="flex items-center justify-center w-full">
-              <label htmlFor="image" className="flex flex-col items-center justify-center w-full h-44 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100">
-                {imagePreview ? (
-                  <img src={imagePreview} alt="Profile preview" className="w-full h-full object-cover rounded-lg" />
-                ) : (
-                  <div className="flex flex-col items-center justify-center pt-5 pb-6">
-                    <Upload className="w-8 h-8 mb-4 text-gray-500" />
-                    <p className="mb-2 text-sm text-gray-500"><span className="font-semibold">Click to upload</span> or drag and drop</p>
-                    <p className="text-xs text-gray-500">PNG, JPG or GIF (MAX. 800x400px)</p>
-                  </div>
-                )}
-                <Input
-                  id="image"
-                  name="image"
-                  type="file"
-                  onChange={handleImageChange}
-                  accept="image/*"
-                  className="hidden"
-                />
-              </label>
-            </div>
-            {errors.image && <p className="text-red-500 text-sm mt-1 transition-all duration-300 ease-in-out">{errors.image}</p>}
-          </div>
-        )
       default:
         return null
     }
@@ -269,9 +225,9 @@ export default function SignUpForm() {
       <Card className="w-full max-w-md">
         <CardHeader>
           <div className="flex items-center justify-between">
-            <div>
+            <div className='flex flex-col items-start gap-2 justify-start'>
               <CardTitle>Sign Up for Second Serve</CardTitle>
-              <CardDescription>Create your account in 3 easy steps</CardDescription>
+              <CardDescription>Lets create your account in 2 easy steps</CardDescription>
             </div>
             <div className="w-16 h-16 bg-gray-200 rounded-full flex items-center justify-center">
               Logo
@@ -280,7 +236,7 @@ export default function SignUpForm() {
         </CardHeader>
         <CardContent>
           <div className="flex justify-between mb-8">
-            {[1, 2, 3].map((num) => (
+            {[1, 2].map((num) => (
               <div key={num} className="flex flex-col items-center">
                 <div className={`w-12 h-12 rounded-full flex items-center justify-center text-lg font-semibold transition-all duration-300 ${
                   step >= num 
@@ -290,12 +246,12 @@ export default function SignUpForm() {
                   {step > num ? '✓' : num}
                 </div>
                 <span className="mt-2 text-sm text-gray-600">
-                  {num === 1 ? 'Account' : num === 2 ? 'Details' : 'Photo'}
+                  {num === 1 ? 'Account' : 'Details'}
                 </span>
               </div>
             ))}
           </div>
-          <Progress value={(step / 3) * 100} className="mb-8" />
+          <Progress value={(step / 2) * 100} className="mb-8" />
           <form onSubmit={handleSubmit} className="space-y-4">
             {renderStep()}
           </form>
@@ -306,7 +262,7 @@ export default function SignUpForm() {
               Previous
             </Button>
           )}
-          {step < 3 ? (
+          {step < 2 ? (
             <Button type="button" onClick={nextStep}>
               Next
             </Button>

@@ -17,12 +17,14 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Input } from "@/components/ui/input"
+import Image from "next/image"
 
 export default function Navbar() {
   const [searchQuery, setSearchQuery] = useState("")
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const router = useRouter()
   const { data: session, status } = useSession()
+  console.log('session', session?.user.image);
   
 
   const handleSearch = async (e) => {
@@ -108,10 +110,20 @@ export default function Navbar() {
                   <DropdownMenuTrigger asChild>
                     <Button
                       variant="ghost"
-                      className="relative rounded-full bg-primary text-primary-foreground h-8 w-8"
+                      className="relative rounded-full bg-primary text-primary-foreground h-8 w-8 p-0 overflow-hidden"
                     >
                       <span className="sr-only">Open user menu</span>
-                      {session?.user.name ? session?.user.name[0].toUpperCase() : "U"}
+                      {session?.user?.image ? (
+                        <Image 
+                          src={session?.user?.image} 
+                          alt="Profile" 
+                          width={32}
+                          height={32}
+                          className="h-full w-full object-cover"
+                        />
+                      ) : (
+                        <span>{session?.user?.name ? session?.user?.name[0].toUpperCase() : "U"}</span>
+                      )}
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end" className="w-56">
@@ -175,8 +187,16 @@ export default function Navbar() {
             <div className="pt-4 pb-3 border-t border-gray-200">
               <div className="flex items-center px-5">
                 <div className="flex-shrink-0">
-                  <div className="h-10 w-10 rounded-full bg-primary text-primary-foreground flex items-center justify-center">
-                    {session?.user.name ? session?.user.name[0].toUpperCase() : "U"}
+                  <div className={`h-10 w-10 rounded-full flex items-center justify-center overflow-hidden ${!session.user.image ? 'bg-primary text-primary-foreground' : ''}`}>
+                    {session.user.image ? (
+                      <img 
+                        src={session.user.image} 
+                        alt="Profile" 
+                        className="h-full w-full object-cover"
+                      />
+                    ) : (
+                      <span>{session.user.name ? session.user.name[0].toUpperCase() : "U"}</span>
+                    )}
                   </div>
                 </div>
                 <div className="ml-3">
