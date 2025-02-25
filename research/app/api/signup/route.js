@@ -15,6 +15,7 @@ export async function POST(req) {
     const city = formData.get('city')
     const phoneNumber = formData.get('phoneNumber')
     const gender = formData.get('gender')
+   
 
     // Check if user already exists
     const existingUser = await prisma.user.findFirst({
