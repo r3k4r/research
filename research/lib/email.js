@@ -24,7 +24,7 @@ export async function sendVerificationCode(email, code, type) {
     html = `
       <h1>Verify your email address</h1>
       <p>Your email verification code is: <strong>${code}</strong></p>
-      <p>This code will expire in 24 hours.</p>
+      <p>This code will expire in 10 minutes.</p>
     `;
   }
 

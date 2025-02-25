@@ -93,7 +93,6 @@ export default function SignUpForm() {
 
       if (response.ok) {
         showToast('Account created successfully!', 'success')
-        // Redirect to email verification page
         router.push(`/verify-email?email=${formData.email}`)
       } else {
         const data = await response.json()
