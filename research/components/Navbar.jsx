@@ -18,12 +18,12 @@ import { Input } from "@/components/ui/input"
 import Image from "next/image"
 
 const Links = [
-  { href: "/", label: "Home", visible: "ADMIN, PROVIDER, USER"},
-  { href: "/providers", label: "Providers", visible: "ADMIN, PROVIDER, USER" },
-  { href: "/aboutus", label: "About Us", visible: "ADMIN, PROVIDER, USER" },
-  { href: "/how-it-works", label: "How it works", visible: "ADMIN, PROVIDER, USER" },
-  { href: "/Admin Dashboard", label: "Admin-Dashboard", visible: "ADMIN" },
-  { href: "/Provider-Dashboard", label: "Provider Dashboard", visible: "PROVIDER" },
+  { href: "/", label: "Home", visible: ["ADMIN", "PROVIDER", "USER"] },
+  { href: "/providers", label: "Providers", visible: ["ADMIN", "PROVIDER", "USER"] },
+  { href: "/aboutus", label: "About Us", visible: ["ADMIN", "PROVIDER", "USER"] },
+  { href: "/how-it-works", label: "How it works", visible: ["ADMIN", "PROVIDER", "USER"] },
+  { href: "/admin-dashboard", label: "Admin Dashboard", visible: ["ADMIN"] },
+  { href: "/provider-dashboard", label: "Provider Dashboard", visible: ["PROVIDER"] },
 ]
 
 export default function Navbar() {
@@ -78,18 +78,15 @@ export default function Navbar() {
             </Link>
             <div className="hidden md:block ml-10">
               <div className="flex items-baseline space-x-4">
-                 {Links.map((link)=>{
-                  return (
+                 {Links.filter(link => link.visible.includes(session?.user?.role)).map((link, index) => (
                     <Link
+                      key={index}
                       href={link.href}
                       className="text-gray-700 hover:text-primary px-3 py-2 rounded-md text-sm font-medium"
                     >
                       {link.label}
                     </Link>
-                  )
-                 }
-
-                 )}
+                 ))}
               </div>
             </div>
           </div>
