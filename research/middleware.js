@@ -5,13 +5,24 @@ export default withAuth(
   function middleware(req) {
     const { pathname } = req.nextUrl
     const isAuth = !!req.nextauth.token
-    
+    const userRole = req.nextauth.token?.user?.role || null
+
     // Get hasVisited cookie
     const hasVisited = req.cookies.get('hasVisited')
     
     // Public routes when logged out, private when logged in
     const authRoutes = ['/signin', '/signup', '/forgot-password', '/reset-password', '/verify-email', '/two-factor']
-    
+
+    // Define route permissions
+    const routePermissions = {
+      '/': ['ADMIN', 'PROVIDER', 'USER'],
+      '/providers': ['ADMIN', 'PROVIDER', 'USER'],
+      '/aboutus': ['ADMIN', 'PROVIDER', 'USER'],
+      '/how-it-works': ['ADMIN', 'PROVIDER', 'USER'],
+      '/admin-dashboard': ['ADMIN'],
+      '/provider-dashboard': ['PROVIDER', 'ADMIN']
+    }
+
     // Handle welcome page logic
     if (pathname === '/welcome') {
       if (isAuth) {
@@ -35,6 +46,20 @@ export default withAuth(
     
     if (!isAuth && !authRoutes.includes(pathname) && pathname !== '/welcome') {
       return NextResponse.redirect(new URL('/welcome', req.url))
+    }
+
+    // Check route permissions for authenticated users
+    if (isAuth && userRole) {
+      // Admin can access all routes
+      if (userRole === 'ADMIN') {
+        return NextResponse.next()
+      }
+
+      // Check if the current path is restricted
+      const allowedRoles = routePermissions[pathname]
+      if (allowedRoles && !allowedRoles.includes(userRole)) {
+        return NextResponse.redirect(new URL('/', req.url))
+      }
     }
 
     return NextResponse.next()
