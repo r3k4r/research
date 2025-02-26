@@ -36,16 +36,23 @@ export default function VerifyEmail() {
       const response = await fetch('/api/auth/verify-email', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, code }),
+        body: JSON.stringify({ 
+          email: email,
+          code: code 
+        }),
       })
+
+      const data = await response.json()
 
       if (response.ok) {
         showToast('Email verified successfully!', 'success')
         // Sign in the user after successful verification
-        await signIn('credentials', { email, callbackUrl: '/' })
+        await signIn('credentials', { 
+          email: email,
+          callbackUrl: '/' 
+        })
       } else {
-        const data = await response.json()
-        showToast(data.error, 'error')
+        showToast(data.error || 'Verification failed', 'error')
       }
     } catch (error) {
       showToast('An error occurred during verification', 'error')
