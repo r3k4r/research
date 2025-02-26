@@ -5,7 +5,9 @@ export default withAuth(
   function middleware(req) {
     const { pathname } = req.nextUrl
     const isAuth = !!req.nextauth.token
-    const userRole = req.nextauth.token?.user?.role || null
+    const userRole = req.nextauth.token?.role || null
+    
+  
 
     // Get hasVisited cookie
     const hasVisited = req.cookies.get('hasVisited')
