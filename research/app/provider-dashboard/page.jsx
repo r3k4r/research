@@ -1,7 +1,9 @@
-const Page = () => {
+
+
+
+export const ProviderDashboard = () => {
   return (
     <div className=''>Page</div>
   )
 }
 
-export default Page
