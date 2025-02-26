@@ -17,6 +17,15 @@ import {
 import { Input } from "@/components/ui/input"
 import Image from "next/image"
 
+const Links = [
+  { href: "/", label: "Home", visible: "ADMIN, PROVIDER, USER"},
+  { href: "/providers", label: "Providers", visible: "ADMIN, PROVIDER, USER" },
+  { href: "/aboutus", label: "About Us", visible: "ADMIN, PROVIDER, USER" },
+  { href: "/how-it-works", label: "How it works", visible: "ADMIN, PROVIDER, USER" },
+  { href: "/Admin Dashboard", label: "Admin-Dashboard", visible: "ADMIN" },
+  { href: "/Provider-Dashboard", label: "Provider Dashboard", visible: "PROVIDER" },
+]
+
 export default function Navbar() {
   const [searchQuery, setSearchQuery] = useState("")
   const [isMenuOpen, setIsMenuOpen] = useState(false)
@@ -69,27 +78,18 @@ export default function Navbar() {
             </Link>
             <div className="hidden md:block ml-10">
               <div className="flex items-baseline space-x-4">
-                <Link href="/" className="text-gray-700 hover:text-primary px-3 py-2 rounded-md text-sm font-medium">
-                  Home
-                </Link>
-                <Link
-                  href="/providers"
-                  className="text-gray-700 hover:text-primary px-3 py-2 rounded-md text-sm font-medium"
-                >
-                  Providers
-                </Link>
-                <Link
-                  href="/about"
-                  className="text-gray-700 hover:text-primary px-3 py-2 rounded-md text-sm font-medium"
-                >
-                  About us
-                </Link>
-                <Link
-                  href="/how-it-works"
-                  className="text-gray-700 hover:text-primary px-3 py-2 rounded-md text-sm font-medium"
-                >
-                  How it works
-                </Link>
+                 {Links.map((link)=>{
+                  return (
+                    <Link
+                      href={link.href}
+                      className="text-gray-700 hover:text-primary px-3 py-2 rounded-md text-sm font-medium"
+                    >
+                      {link.label}
+                    </Link>
+                  )
+                 }
+
+                 )}
               </div>
             </div>
           </div>
