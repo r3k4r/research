@@ -1,9 +1,6 @@
 // This is your Prisma schema file,
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -13,32 +10,62 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+// Base user model for authentication
 model User {
-  id                            String                   @id @default(uuid())
-  name                          String?
-  email                         String?                  @unique
+  id                            String    @id @default(uuid())
+  email                         String    @unique
   password                      String?
-  location                      String?
-  phoneNumber                   String?
-  role                          Role                     @default(USER)
-  gender                        String?
-  image                         String?
+  role                          Role      @default(USER)
   emailVerified                 DateTime?
   emailVerificationToken        String?
   emailVerificationTokenExpires DateTime?
   resetPasswordToken            String?
   resetPasswordExpires          DateTime?
-  twoFactorEnabled              Boolean                  @default(false)
+  twoFactorEnabled              Boolean   @default(false)
   twoFactorCode                 String?
   twoFactorCodeExpires          DateTime?
-  createdAt                     DateTime                 @default(now())
-  updatedAt                     DateTime                 @updatedAt
-  accounts                      Account[]
-  reviews                       Review[]
-  foodItems                     FoodItem[] // For providers
-  monthlySummaries              ProviderMonthlySummary[] // New relationship
+  createdAt                     DateTime  @default(now())
+  updatedAt                     DateTime  @updatedAt
+
+  // Relations
+  accounts        Account[]
+  profile         UserProfile?
+  providerProfile ProviderProfile?
 }
 
+// Separate profile for user details
+model UserProfile {
+  id          String  @id @default(uuid())
+  userId      String  @unique
+  name        String
+  location    String?
+  phoneNumber String?
+  gender      String?
+  image       String?
+
+  // Relations
+  user    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  reviews Review[]
+}
+
+// Separate profile for provider details
+model ProviderProfile {
+  id            String  @id @default(uuid())
+  userId        String  @unique
+  businessName  String
+  description   String?
+  address       String
+  phoneNumber   String
+  businessHours String?
+  logo          String?
+
+  // Relations
+  user             User                     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  foodItems        FoodItem[]
+  monthlySummaries ProviderMonthlySummary[]
+}
+
+// OAuth accounts - keep as is for Google auth compatibility
 model Account {
   id                 String  @id @default(uuid())
   userId             String
@@ -61,22 +88,24 @@ model Account {
 }
 
 model FoodItem {
-  id              String       @id @default(uuid())
+  id              String   @id @default(uuid())
   name            String
   description     String
   price           Float
   discountedPrice Float
   quantity        Int
   image           String?
-  category        Category     @relation(fields: [categoryId], references: [id])
   categoryId      String
-  provider        User         @relation(fields: [providerId], references: [id])
   providerId      String
   expiresAt       DateTime
-  createdAt       DateTime     @default(now())
-  updatedAt       DateTime     @updatedAt
-  reviews         Review[]
-  dailySales      DailySales[]
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  // Relations
+  category   Category        @relation(fields: [categoryId], references: [id])
+  provider   ProviderProfile @relation(fields: [providerId], references: [id])
+  reviews    Review[]
+  dailySales DailySales[]
 }
 
 model Category {
@@ -86,20 +115,21 @@ model Category {
 }
 
 model Review {
-  id         String   @id @default(uuid())
-  user       User     @relation(fields: [userId], references: [id])
-  userId     String
-  foodItem   FoodItem @relation(fields: [foodItemId], references: [id])
-  foodItemId String
-  rating     Int
-  comment    String?
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  id            String   @id @default(uuid())
+  userProfileId String
+  foodItemId    String
+  rating        Int
+  comment       String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  // Relations
+  userProfile UserProfile @relation(fields: [userProfileId], references: [id])
+  foodItem    FoodItem    @relation(fields: [foodItemId], references: [id])
 }
 
 model DailySales {
   id         String   @id @default(uuid())
-  foodItem   FoodItem @relation(fields: [foodItemId], references: [id])
   foodItemId String
   date       DateTime
   quantity   Int
@@ -107,22 +137,27 @@ model DailySales {
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
 
+  // Relations
+  foodItem FoodItem @relation(fields: [foodItemId], references: [id])
+
   @@unique([foodItemId, date])
 }
 
 model ProviderMonthlySummary {
   id              String   @id @default(uuid())
-  provider        User     @relation(fields: [providerId], references: [id])
   providerId      String
   month           DateTime
   totalSales      Int
   totalRevenue    Float
   averageRating   Float
-  topSellingItems Json // Store as JSON array of item IDs and quantities
-  wasteReduction  Float // Amount of food waste reduced (in kg or lbs)
-  carbonFootprint Float // Estimated carbon footprint reduction
+  topSellingItems Json
+  wasteReduction  Float
+  carbonFootprint Float
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
+
+  // Relations
+  provider ProviderProfile @relation(fields: [providerId], references: [id])
 
   @@unique([providerId, month])
 }
