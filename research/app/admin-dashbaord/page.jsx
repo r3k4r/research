@@ -1,7 +1,6 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { motion } from "framer-motion"
 import { Users, ShoppingBag, DollarSign, TrendingUp } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Line, Bar, Doughnut } from "react-chartjs-2"
@@ -29,27 +28,34 @@ export default function AdminDashboard() {
   })
 
   const [topRestaurants, setTopRestaurants] = useState([])
-  const [genderDistribution, setGenderDistribution] = useState({ male: 0, female: 0 })
+  const [chartHeight, setChartHeight] = useState(220)
 
   useEffect(() => {
-    // Fetch data from API
-    // For now, we'll use mock data
+    const updateHeight = () => {
+      const mobile = window.innerWidth < 768
+      setChartHeight(mobile ? 180 : 220)
+    }
+    
+    updateHeight()
+    window.addEventListener("resize", updateHeight)
+    
+    // Mock data
     setStats({
-      totalUsers: 1000,
-      totalFoodItems: 500,
-      totalRevenue: 50000,
-      growthRate: 15,
+      totalUsers: 1248,
+      totalFoodItems: 583,
+      totalRevenue: 52750,
+      growthRate: 15.8,
     })
 
     setTopRestaurants([
-      { name: "Pizza Palace", customers: 500, revenue: 15000 },
-      { name: "Burger Bliss", customers: 450, revenue: 12000 },
-      { name: "Sushi Supreme", customers: 400, revenue: 18000 },
-      { name: "Taco Town", customers: 350, revenue: 9000 },
-      { name: "Pasta Paradise", customers: 300, revenue: 11000 },
+      { name: "Pizza Palace", customers: 578, revenue: 15840 },
+      { name: "Burger Bliss", customers: 452, revenue: 12340 },
+      { name: "Sushi Supreme", customers: 412, revenue: 18650 },
+      { name: "Taco Town", customers: 368, revenue: 9240 },
+      { name: "Pasta Paradise", customers: 316, revenue: 11280 },
     ])
-
-    setGenderDistribution({ male: 60, female: 40 })
+    
+    return () => window.removeEventListener("resize", updateHeight)
   }, [])
 
   const salesData = {
@@ -57,10 +63,11 @@ export default function AdminDashboard() {
     datasets: [
       {
         label: "Sales",
-        data: [12000, 19000, 15000, 25000, 22000, 30000],
-        borderColor: "rgb(75, 192, 192)",
-        tension: 0.1,
-        fill: false,
+        data: [12800, 19400, 15200, 25600, 22300, 30100],
+        borderColor: "rgb(99, 102, 241)",
+        backgroundColor: "rgba(99, 102, 241, 0.1)",
+        tension: 0.3,
+        fill: true,
       },
     ],
   }
@@ -70,106 +77,153 @@ export default function AdminDashboard() {
     datasets: [
       {
         label: "New Users",
-        data: [50, 80, 120, 160, 200, 250],
-        backgroundColor: "rgba(54, 162, 235, 0.5)",
+        data: [56, 85, 124, 168, 214, 264],
+        backgroundColor: "rgba(16, 185, 129, 0.7)",
+        hoverBackgroundColor: "rgba(16, 185, 129, 0.9)",
+        borderRadius: 4,
       },
     ],
   }
 
   const genderData = {
-    labels: ["Male", "Female"],
+    labels: ["Male", "Female", "Other"],
     datasets: [
       {
-        data: [genderDistribution.male, genderDistribution.female],
-        backgroundColor: ["rgba(54, 162, 235, 0.5)", "rgba(255, 99, 132, 0.5)"],
+        data: [58, 37, 5],
+        backgroundColor: [
+          "rgba(37, 99, 235, 0.7)", 
+          "rgba(236, 72, 153, 0.7)",
+          "rgba(107, 114, 128, 0.7)"
+        ],
+        borderWidth: 0,
       },
     ],
   }
 
   return (
-    <div>
-      <h1 className="text-3xl font-semibold mb-6">Dashboard Overview</h1>
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
+    <div className="space-y-4">
+      <h1 className="text-xl font-semibold md:text-2xl">Dashboard Overview</h1>
+
+      <div className="grid grid-cols-2 gap-2 sm:gap-3 md:grid-cols-4">
         {[
-          { icon: Users, label: "Total Users", value: stats.totalUsers },
-          { icon: ShoppingBag, label: "Food Items", value: stats.totalFoodItems },
-          { icon: DollarSign, label: "Total Revenue", value: `$${stats.totalRevenue}` },
-          { icon: TrendingUp, label: "Growth Rate", value: `${stats.growthRate}%` },
+          { icon: Users, label: "Users", value: stats.totalUsers.toLocaleString(), color: "text-blue-500" },
+          { icon: ShoppingBag, label: "Food Items", value: stats.totalFoodItems.toLocaleString(), color: "text-emerald-500" },
+          { icon: DollarSign, label: "Revenue", value: `$${stats.totalRevenue.toLocaleString()}`, color: "text-amber-500" },
+          { icon: TrendingUp, label: "Growth", value: `${stats.growthRate.toFixed(1)}%`, color: "text-violet-500" },
         ].map((item, index) => (
-          <motion.div
-            key={index}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: index * 0.1 }}
-          >
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">{item.label}</CardTitle>
-                <item.icon className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{item.value}</div>
-              </CardContent>
-            </Card>
-          </motion.div>
+          <Card key={index} className="overflow-hidden border shadow-sm">
+            <CardContent className="p-3 md:p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-xs text-muted-foreground mb-0.5">{item.label}</p>
+                  <p className="text-lg font-semibold md:text-xl">{item.value}</p>
+                </div>
+                <div className={`rounded-full p-1.5 bg-opacity-10 ${item.color.replace('text', 'bg')}`}>
+                  <item.icon className={`h-4 w-4 md:h-5 md:w-5 ${item.color}`} />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
         ))}
       </div>
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-        <Card>
-          <CardHeader>
-            <CardTitle>Sales Overview</CardTitle>
+
+      <div className="grid gap-3 md:grid-cols-2">
+        <Card className="shadow-sm">
+          <CardHeader className="p-3 pb-1">
+            <CardTitle className="text-sm md:text-base">Sales Overview</CardTitle>
           </CardHeader>
-          <CardContent>
-            <Line data={salesData} options={{ responsive: true }} />
+          <CardContent className="p-3 pt-0">
+            <div style={{ height: chartHeight }}>
+              <Line 
+                data={salesData} 
+                options={{ 
+                  responsive: true,
+                  maintainAspectRatio: false,
+                  plugins: {
+                    legend: { display: false }
+                  },
+                  scales: {
+                    y: { beginAtZero: true },
+                    x: { grid: { display: false } }
+                  }
+                }} 
+              />
+            </div>
           </CardContent>
         </Card>
-        <Card>
-          <CardHeader>
-            <CardTitle>User Growth</CardTitle>
+
+        <Card className="shadow-sm">
+          <CardHeader className="p-3 pb-1">
+            <CardTitle className="text-sm md:text-base">User Growth</CardTitle>
           </CardHeader>
-          <CardContent>
-            <Bar data={userGrowthData} options={{ responsive: true }} />
+          <CardContent className="p-3 pt-0">
+            <div style={{ height: chartHeight }}>
+              <Bar 
+                data={userGrowthData} 
+                options={{ 
+                  responsive: true,
+                  maintainAspectRatio: false,
+                  plugins: {
+                    legend: { display: false }
+                  },
+                  scales: {
+                    y: { beginAtZero: true },
+                    x: { grid: { display: false } }
+                  }
+                }} 
+              />
+            </div>
           </CardContent>
         </Card>
       </div>
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-        <Card>
-          <CardHeader>
-            <CardTitle>Gender Distribution</CardTitle>
+
+      <div className="grid gap-3 md:grid-cols-2">
+        <Card className="shadow-sm">
+          <CardHeader className="p-3 pb-1">
+            <CardTitle className="text-sm md:text-base">User Demographics</CardTitle>
           </CardHeader>
-          <CardContent>
-            <Doughnut data={genderData} options={{ responsive: true }} />
+          <CardContent className="p-3 pt-0 flex justify-center">
+            <div style={{ height: chartHeight, maxWidth: "220px" }}>
+              <Doughnut 
+                data={genderData} 
+                options={{ 
+                  responsive: true,
+                  maintainAspectRatio: false,
+                  cutout: '65%',
+                  plugins: {
+                    legend: { position: 'bottom', labels: { boxWidth: 12, padding: 15 } }
+                  }
+                }} 
+              />
+            </div>
           </CardContent>
         </Card>
-        <Card>
-          <CardHeader>
-            <CardTitle>Top Performing Restaurants</CardTitle>
+
+        <Card className="shadow-sm">
+          <CardHeader className="p-3 pb-1">
+            <CardTitle className="text-sm md:text-base">Top Restaurants</CardTitle>
           </CardHeader>
-          <CardContent>
-            <table className="min-w-full divide-y divide-border">
-              <thead>
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                    Restaurant Name
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                    Total Customers
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                    Total Revenue
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-border">
-                {topRestaurants.map((restaurant, index) => (
-                  <tr key={index}>
-                    <td className="px-6 py-4 whitespace-nowrap">{restaurant.name}</td>
-                    <td className="px-6 py-4 whitespace-nowrap">{restaurant.customers}</td>
-                    <td className="px-6 py-4 whitespace-nowrap">${restaurant.revenue}</td>
+          <CardContent className="p-0">
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead className="bg-muted/40 text-xs">
+                  <tr>
+                    <th className="text-left p-2 pl-3">Restaurant</th>
+                    <th className="text-right p-2">Customers</th>
+                    <th className="text-right p-2 pr-3">Revenue</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {topRestaurants.map((restaurant, index) => (
+                    <tr key={index} className="border-t">
+                      <td className="p-2 pl-3 text-sm">{restaurant.name}</td>
+                      <td className="p-2 text-right text-sm">{restaurant.customers}</td>
+                      <td className="p-2 pr-3 text-right text-sm font-medium">${restaurant.revenue.toLocaleString()}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </CardContent>
         </Card>
       </div>
