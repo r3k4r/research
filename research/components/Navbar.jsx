@@ -31,6 +31,7 @@ export default function Navbar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const router = useRouter()
   const { data: session, status } = useSession()
+  console.log(session)
 
   if (status === "loading" || (status === "authenticated" && !session)) {
     return <nav className="animate-pulse bg-gray-400 shadow-md">

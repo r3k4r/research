@@ -94,12 +94,40 @@ export const authOptions = {
       if (user) {
         token.id = user.id
         token.email = user.email
-        token.name = user.name
         token.role = user.role
         token.emailVerified = user.emailVerified
         token.twoFactorEnabled = user.twoFactorEnabled
-        token.image = user.image
+        
+        // Fetch the appropriate profile based on user role
+        if (user.role === 'PROVIDER') {
+          const providerProfile = await prisma.providerProfile.findUnique({
+            where: { userId: user.id },
+            select: {
+              businessName: true,
+              logo: true
+            }
+          });
+          
+          if (providerProfile) {
+            token.name = providerProfile.businessName;
+            token.image = providerProfile.logo;
+          }
+        } else {
+          const userProfile = await prisma.userProfile.findUnique({
+            where: { userId: user.id },
+            select: {
+              name: true,
+              image: true
+            }
+          });
+          
+          if (userProfile) {
+            token.name = userProfile.name;
+            token.image = userProfile.image;
+          }
+        }
       }
+      
       // If the sign-in is with Google, mark the email as verified
       if (account && account.provider === 'google') {
         token.emailVerified = new Date()
@@ -119,15 +147,44 @@ export const authOptions = {
           role: token.role,
           emailVerified: token.emailVerified,
           twoFactorEnabled: token.twoFactorEnabled,
-          image: token.picture
+          name: token.name,
+          image: token.image || token.picture
+        }
+        
+        // Add profile type to session for client-side role-based UI
+        if (token.role === 'PROVIDER') {
+          session.user.profileType = 'provider';
+        } else {
+          session.user.profileType = 'user';
         }
       }
       return session
     },
     async signIn({ user, account }) {
-      if (account.provider === 'google') {
-        // For Google sign-in, we consider the email as verified
-        return true
+      // For Google sign-in, ensure profile records exist
+      if (account && account.provider === 'google') {
+        // Check if user profiles exist, create if needed
+        const existingUser = await prisma.user.findUnique({
+          where: { id: user.id },
+          include: {
+            profile: true,
+            providerProfile: true
+          }
+        });
+        
+        // If this is a new Google user, create appropriate profile based on role
+        // Default to USER role for Google sign-ins unless specified otherwise
+        if (existingUser && !existingUser.profile && existingUser.role === 'USER') {
+          await prisma.userProfile.create({
+            data: {
+              userId: user.id,
+              name: user.name || 'User',
+              image: user.image
+            }
+          });
+        }
+        
+        return true;
       }
 
       // For credentials provider, the checks are done in the authorize function
