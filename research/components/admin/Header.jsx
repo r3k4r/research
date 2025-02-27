@@ -12,6 +12,7 @@ import {
 import { signOut, useSession } from "next-auth/react"
 import Image from "next/image"
 import { Input } from "@/components/ui/input"
+import Link from "next/link"
 
 export default function Header() {
   const { data: session, status } = useSession()
@@ -36,6 +37,10 @@ export default function Header() {
         </div>
         
         <div className="flex items-center gap-1">
+          <Button>
+              <Link href="/">Back to Main Page</Link>
+          </Button>
+
           {status === "authenticated" && session?.user && (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
