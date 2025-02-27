@@ -173,18 +173,15 @@ export default function Navbar() {
       {isMenuOpen && (
         <div className="md:hidden">
           <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3">
-            <Link
-              href="/"
-              className="text-gray-700 hover:text-primary block px-3 py-2 rounded-md text-base font-medium"
-            >
-              Home
-            </Link>
-            <Link
-              href="/providers"
-              className="text-gray-700 hover:text-primary block px-3 py-2 rounded-md text-base font-medium"
-            >
-              Providers
-            </Link>
+          {Links.filter(link => link.visible.includes(session?.user?.role)).map((link, index) => (
+                    <Link
+                      key={index}
+                      href={link.href}
+                      className="text-gray-700 hover:text-primary block px-3 py-2 rounded-md text-base font-medium"
+                    >
+                      {link.label}
+                    </Link>
+                 ))}
           </div>
           {session && (
             <div className="pt-4 pb-3 border-t border-gray-200">
