@@ -4,6 +4,7 @@ import { useState, useEffect } from "react"
 import { Users, ShoppingBag, DollarSign, TrendingUp } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Line, Bar, Doughnut } from "react-chartjs-2"
+import CountUp from "react-countup"
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -26,7 +27,7 @@ export default function AdminDashboard() {
     totalRevenue: 0,
     growthRate: 0,
   })
-
+  const [animationsStarted, setAnimationsStarted] = useState(false)
   const [topRestaurants, setTopRestaurants] = useState([])
   const [chartHeight, setChartHeight] = useState(220)
 
@@ -40,20 +41,23 @@ export default function AdminDashboard() {
     window.addEventListener("resize", updateHeight)
     
     // Mock data
-    setStats({
-      totalUsers: 1248,
-      totalFoodItems: 583,
-      totalRevenue: 52750,
-      growthRate: 15.8,
-    })
-
-    setTopRestaurants([
-      { name: "Pizza Palace", customers: 578, revenue: 15840 },
-      { name: "Burger Bliss", customers: 452, revenue: 12340 },
-      { name: "Sushi Supreme", customers: 412, revenue: 18650 },
-      { name: "Taco Town", customers: 368, revenue: 9240 },
-      { name: "Pasta Paradise", customers: 316, revenue: 11280 },
-    ])
+    setTimeout(() => {
+      setStats({
+        totalUsers: 1248,
+        totalFoodItems: 583,
+        totalRevenue: 52750,
+        growthRate: 15.8,
+      })
+      setAnimationsStarted(true)
+      
+      setTopRestaurants([
+        { name: "Pizza Palace", customers: 578, revenue: 15840 },
+        { name: "Burger Bliss", customers: 452, revenue: 12340 },
+        { name: "Sushi Supreme", customers: 412, revenue: 18650 },
+        { name: "Taco Town", customers: 368, revenue: 9240 },
+        { name: "Pasta Paradise", customers: 316, revenue: 11280 },
+      ])
+    }, 300) 
     
     return () => window.removeEventListener("resize", updateHeight)
   }, [])
@@ -106,17 +110,62 @@ export default function AdminDashboard() {
 
       <div className="grid grid-cols-2 gap-2 sm:gap-3 md:grid-cols-4">
         {[
-          { icon: Users, label: "Users", value: stats.totalUsers.toLocaleString(), color: "text-blue-500" },
-          { icon: ShoppingBag, label: "Food Items", value: stats.totalFoodItems.toLocaleString(), color: "text-emerald-500" },
-          { icon: DollarSign, label: "Revenue", value: `$${stats.totalRevenue.toLocaleString()}`, color: "text-amber-500" },
-          { icon: TrendingUp, label: "Growth", value: `${stats.growthRate.toFixed(1)}%`, color: "text-violet-500" },
+          { 
+            icon: Users, 
+            label: "Users", 
+            value: stats.totalUsers,
+            prefix: "",
+            suffix: "",
+            color: "text-blue-500" 
+          },
+          { 
+            icon: ShoppingBag, 
+            label: "Food Items", 
+            value: stats.totalFoodItems,
+            prefix: "",
+            suffix: "",
+            color: "text-emerald-500" 
+          },
+          { 
+            icon: DollarSign, 
+            label: "Revenue", 
+            value: stats.totalRevenue,
+            prefix: "$",
+            suffix: "",
+            color: "text-amber-500" 
+          },
+          { 
+            icon: TrendingUp, 
+            label: "Growth", 
+            value: stats.growthRate,
+            prefix: "",
+            suffix: "%",
+            decimals: 1,
+            color: "text-violet-500" 
+          },
         ].map((item, index) => (
           <Card key={index} className="overflow-hidden border shadow-sm">
             <CardContent className="p-3 md:p-4">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-xs text-muted-foreground mb-0.5">{item.label}</p>
-                  <p className="text-lg font-semibold md:text-xl">{item.value}</p>
+                  <p className="text-lg font-semibold md:text-xl">
+                    {item.prefix}
+                    {animationsStarted ? (
+                      <CountUp
+                        start={0}
+                        end={item.value}
+                        duration={2}
+                        separator=","
+                        decimals={item.decimals || 0}
+                        decimal="."
+                        useEasing={true}
+                      />
+                    ) : (
+                      "0"
+                    )}
+                    {item.suffix}
+                  </p>
                 </div>
                 <div className={`rounded-full p-1.5 bg-opacity-10 ${item.color.replace('text', 'bg')}`}>
                   <item.icon className={`h-4 w-4 md:h-5 md:w-5 ${item.color}`} />
