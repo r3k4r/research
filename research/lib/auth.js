@@ -28,8 +28,13 @@ export const authOptions = {
           throw new Error("Invalid credentials")
         }
 
+        // Find user with their profile
         const user = await prisma.user.findUnique({
-          where: { email: credentials.email }
+          where: { email: credentials.email },
+          include: { 
+            profile: true,
+            providerProfile: true 
+          }
         })
 
         if (!user || !user.password) {
@@ -87,14 +92,25 @@ export const authOptions = {
           })
         }
 
-        return user
+       
+        let userWithProfile = { ...user };
+        
+        if (user.profile) {
+          userWithProfile.name = user.profile.name;
+          userWithProfile.image = user.profile.image;
+        } else if (user.providerProfile) {
+          userWithProfile.name = user.providerProfile.businessName;
+          userWithProfile.image = user.providerProfile.logo;
+        }
+
+        return userWithProfile;
       }
     })
   ],
   
   callbacks: {
     async jwt({ token, user, account, profile }) {
-      console.log("JWT callback",token, user, account, profile);
+      // If we have user data (first authentication)
       if (user) {
         token.id = user.id;
         token.email = user.email;
@@ -102,12 +118,36 @@ export const authOptions = {
         token.emailVerified = user.emailVerified;
         token.twoFactorEnabled = user.twoFactorEnabled;
         
-        // Use the user object's synthetic properties added by our custom adapter
-        token.name = user.name;
-        token.image = user.image;
+        // Try to get profile data directly from user object if available
+        if (user.name) token.name = user.name;
+        if (user.image) token.image = user.image;
       }
       
-      // If the sign-in is with Google, mark the email as verified
+      // Always fetch fresh profile data on every token refresh
+      try {
+        const userData = await prisma.user.findUnique({
+          where: { id: token.id || user?.id },
+          include: { 
+            profile: true,
+            providerProfile: true 
+          }
+        });
+        
+        if (userData) {
+          // Use profile data based on user role
+          if (userData.role === 'PROVIDER' && userData.providerProfile) {
+            token.name = userData.providerProfile.businessName;
+            token.image = userData.providerProfile.logo;
+          } else if (userData.profile) {
+            token.name = userData.profile.name;
+            token.image = userData.profile.image;
+          }
+        }
+      } catch (error) {
+        console.error("Error fetching profile data:", error);
+      }
+      
+      // Google sign-in email verification
       if (account && account.provider === 'google') {
         token.emailVerified = new Date();
         await prisma.user.update({
@@ -121,64 +161,53 @@ export const authOptions = {
     
     async session({ session, token }) {
       if (token) {
-
         session.user = {
           ...session.user,
           id: token.id,
           role: token.role,
           emailVerified: token.emailVerified,
           twoFactorEnabled: token.twoFactorEnabled,
+          // Explicitly include name and image from token
           name: token.name,
-          image: token.image || token.picture
+          image: token.image
         }
         
-        // Add profile type to session for client-side role-based UI
+        // Add profile type
         if (token.role === 'PROVIDER') {
           session.user.profileType = 'provider';
         } else {
           session.user.profileType = 'user';
         }
       }
-      return session
+      return session;
     },
     
     async signIn({ user, account, profile }) {
       // Only for Google sign-in
-      if (account?.provider === 'google' && profile) {
+      if (account?.provider === 'google') {
         try {
-          // First check if user exists
+          // Check if user exists
           const existingUser = await prisma.user.findUnique({
-            where: { email: user.email },
+            where: { id: user.id },
             include: { profile: true }
           });
           
-          if (existingUser) {
-            // If no profile exists yet, create one with Google data
-            if (!existingUser.profile) {
-              console.log("Creating new profile for Google user", user.email);
-              
-              // Extract name and image from Google profile
-              const profileName = profile.name || user.name;
-              const profileImage = profile.picture || user.image;
-              
-              // Create user profile with Google data
-              await prisma.userProfile.create({
-                data: {
-                  userId: existingUser.id,
-                  name: profileName,
-                  image: profileImage
-                }
-              });
-              
-              console.log("Created profile for", user.email, "with name", profileName);
-            }
+          if (existingUser && !existingUser.profile) {
+            // Create profile for Google user if none exists
+            await prisma.userProfile.create({
+              data: {
+                userId: existingUser.id,
+                name: profile.name || (profile.given_name && profile.family_name 
+                  ? `${profile.given_name} ${profile.family_name}` 
+                  : existingUser.email.split('@')[0]),
+                image: profile.picture
+              }
+            });
           }
         } catch (error) {
-          console.error("Error handling Google sign in:", error);
-          // Continue authentication even if profile creation fails
+          console.error("Error in Google sign-in:", error);
         }
       }
-      
       return true;
     }
   },
