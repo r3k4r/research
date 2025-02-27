@@ -7,6 +7,7 @@ const prisma = new PrismaClient()
 
 export async function POST(req) {
   try {
+    // Get form data from request
     const formData = await req.formData()
     const name = formData.get('name')
     const email = formData.get('email')
@@ -15,64 +16,70 @@ export async function POST(req) {
     const phoneNumber = formData.get('phoneNumber')
     const gender = formData.get('gender')
    
-
-    // Check if user already exists
-    const existingUser = await prisma.user.findFirst({
-      where: {
-        OR: [
-          { email },
-          { phoneNumber },
-        ],
-      },
+    // Check if user already exists by email
+    const existingUser = await prisma.user.findUnique({
+      where: { email }
     })
 
     if (existingUser) {
-      if (existingUser.email === email) {
-        return NextResponse.json({ error: 'User with this email already exists' }, { status: 400 })
-      }
-      if (existingUser.phoneNumber === phoneNumber) {
-        return NextResponse.json({ error: 'User with this phone number already exists' }, { status: 400 })
-      }
+      return NextResponse.json({ error: 'User with this email already exists' }, { status: 400 })
+    }
+    
+    // Check if phone number is already used
+    const existingPhone = await prisma.userProfile.findFirst({
+      where: { phoneNumber }
+    })
+    
+    if (existingPhone) {
+      return NextResponse.json({ error: 'User with this phone number already exists' }, { status: 400 })
     }
 
     // Hash the password
     const hashedPassword = await bcrypt.hash(password, 10)
 
+    // Generate verification token
+    const verificationToken = Math.floor(100000 + Math.random() * 900000).toString()
+    const tokenExpiry = new Date(Date.now() + 24 * 60 * 60 * 1000) // 24 hours
 
-    // Generate verification token and expiry
-    const verificationToken =  Math.floor(100000 + Math.random() * 900000).toString()
-    const tokenExpiry = new Date(Date.now() + 10 * 60 * 1000) // 10 minutes from now
-
-    // Create user in database
+    // Create user with nested profile in one operation
     const user = await prisma.user.create({
       data: {
-        name,
         email,
         password: hashedPassword,
-        location: city,
-        phoneNumber,
         role: 'USER',
-        gender,
         emailVerificationToken: verificationToken,
-        emailVerificationTokenExpires: tokenExpiry
+        emailVerificationTokenExpires: tokenExpiry,
+        // Create profile in the same operation
+        profile: {
+          create: {
+            name,
+            location: city,
+            phoneNumber,
+            gender
+          }
+        }
       },
+      // Include profile in results
+      include: {
+        profile: true
+      }
     })
 
-    // Send verification email - fix the parameters to match the function signature
+    // Send verification email
     await sendVerificationCode(email, verificationToken, 'email')
 
     return NextResponse.json({ 
       message: 'User created successfully. Please check your email to verify your account.',
       user: {
         id: user.id,
-        email: user.email,
-        name: user.name
+        name: user.profile.name,
+        email: user.email
       }
     })
   } catch (error) {
     console.error('Signup error:', error)
     return NextResponse.json({ 
-      error: 'An error occurred during signup from server',
+      error: 'An error occurred during signup',
       details: error.message 
     }, { status: 500 })
   }

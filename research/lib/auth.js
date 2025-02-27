@@ -1,14 +1,16 @@
-import { PrismaAdapter } from "@next-auth/prisma-adapter"
 import { PrismaClient } from "@prisma/client"
 import CredentialsProvider from "next-auth/providers/credentials"
 import GoogleProvider from "next-auth/providers/google"
 import bcrypt from "bcryptjs"
 import { sendVerificationCode } from "./email"
+import { CustomPrismaAdapter } from "./customPrismaAdapter"
 
 const prisma = new PrismaClient()
 
 export const authOptions = {
-  adapter: PrismaAdapter(prisma),
+  // Replace PrismaAdapter with our custom adapter
+  adapter: CustomPrismaAdapter(prisma),
+  
   providers: [
     GoogleProvider({
       clientId: process.env.GOOGLE_CLIENT_ID,
@@ -89,58 +91,37 @@ export const authOptions = {
       }
     })
   ],
+  
   callbacks: {
-    async jwt({ token, user, account }) {
+    async jwt({ token, user, account, profile }) {
+      console.log("JWT callback",token, user, account, profile);
       if (user) {
-        token.id = user.id
-        token.email = user.email
-        token.role = user.role
-        token.emailVerified = user.emailVerified
-        token.twoFactorEnabled = user.twoFactorEnabled
+        token.id = user.id;
+        token.email = user.email;
+        token.role = user.role;
+        token.emailVerified = user.emailVerified;
+        token.twoFactorEnabled = user.twoFactorEnabled;
         
-        // Fetch the appropriate profile based on user role
-        if (user.role === 'PROVIDER') {
-          const providerProfile = await prisma.providerProfile.findUnique({
-            where: { userId: user.id },
-            select: {
-              businessName: true,
-              logo: true
-            }
-          });
-          
-          if (providerProfile) {
-            token.name = providerProfile.businessName;
-            token.image = providerProfile.logo;
-          }
-        } else {
-          const userProfile = await prisma.userProfile.findUnique({
-            where: { userId: user.id },
-            select: {
-              name: true,
-              image: true
-            }
-          });
-          
-          if (userProfile) {
-            token.name = userProfile.name;
-            token.image = userProfile.image;
-          }
-        }
+        // Use the user object's synthetic properties added by our custom adapter
+        token.name = user.name;
+        token.image = user.image;
       }
       
       // If the sign-in is with Google, mark the email as verified
       if (account && account.provider === 'google') {
-        token.emailVerified = new Date()
-        // Update the user in the database
+        token.emailVerified = new Date();
         await prisma.user.update({
           where: { email: token.email },
           data: { emailVerified: new Date() }
-        })
+        });
       }
-      return token
+      
+      return token;
     },
+    
     async session({ session, token }) {
       if (token) {
+
         session.user = {
           ...session.user,
           id: token.id,
@@ -160,45 +141,58 @@ export const authOptions = {
       }
       return session
     },
-    async signIn({ user, account }) {
-      // For Google sign-in, ensure profile records exist
-      if (account && account.provider === 'google') {
-        // Check if user profiles exist, create if needed
-        const existingUser = await prisma.user.findUnique({
-          where: { id: user.id },
-          include: {
-            profile: true,
-            providerProfile: true
-          }
-        });
-        
-        // If this is a new Google user, create appropriate profile based on role
-        // Default to USER role for Google sign-ins unless specified otherwise
-        if (existingUser && !existingUser.profile && existingUser.role === 'USER') {
-          await prisma.userProfile.create({
-            data: {
-              userId: user.id,
-              name: user.name || 'User',
-              image: user.image
-            }
+    
+    async signIn({ user, account, profile }) {
+      // Only for Google sign-in
+      if (account?.provider === 'google' && profile) {
+        try {
+          // First check if user exists
+          const existingUser = await prisma.user.findUnique({
+            where: { email: user.email },
+            include: { profile: true }
           });
+          
+          if (existingUser) {
+            // If no profile exists yet, create one with Google data
+            if (!existingUser.profile) {
+              console.log("Creating new profile for Google user", user.email);
+              
+              // Extract name and image from Google profile
+              const profileName = profile.name || user.name;
+              const profileImage = profile.picture || user.image;
+              
+              // Create user profile with Google data
+              await prisma.userProfile.create({
+                data: {
+                  userId: existingUser.id,
+                  name: profileName,
+                  image: profileImage
+                }
+              });
+              
+              console.log("Created profile for", user.email, "with name", profileName);
+            }
+          }
+        } catch (error) {
+          console.error("Error handling Google sign in:", error);
+          // Continue authentication even if profile creation fails
         }
-        
-        return true;
       }
-
-      // For credentials provider, the checks are done in the authorize function
-      return true
+      
+      return true;
     }
   },
+  
   pages: {
     signIn: '/signin',
     verifyRequest: '/verify-email',
     error: '/auth/error',
   },
+  
   session: {
     strategy: "jwt",
   },
+  
   secret: process.env.NEXTAUTH_SECRET,
 }
 
