@@ -8,17 +8,23 @@ export async function POST(req) {
   try {
     const { email, code } = await req.json()
 
-    const user = await prisma.user.findFirst({
+    // Find the email verification record
+    const verification = await prisma.emailVerification.findFirst({
       where: {
-        email: email,
-        emailVerificationToken: code,
-        emailVerificationTokenExpires: {
+        token: code,
+        expires: {
           gt: new Date()
+        },
+        user: {
+          email: email
         }
       },
+      include: {
+        user: true
+      }
     })
 
-    if (!user) {
+    if (!verification) {
       return NextResponse.json({ 
         error: 'Invalid or expired verification code' 
       }, { status: 400 })
@@ -26,17 +32,25 @@ export async function POST(req) {
 
     // Update user verification status
     const updatedUser = await prisma.user.update({
-      where: { id: user.id },
+      where: { id: verification.userId },
       data: {
         emailVerified: new Date(),
-        emailVerificationToken: null,
-        emailVerificationTokenExpires: null,
       },
     })
 
+    // Delete the verification record
+    await prisma.emailVerification.delete({
+      where: { id: verification.id }
+    })
+
     if (updatedUser.emailVerified) {
+      // Get the user's name from profile
+      const userProfile = await prisma.userProfile.findUnique({
+        where: { userId: updatedUser.id }
+      })
+      
       // Send welcome email
-      await sendWelcomeEmail(user.email, user.name)
+      await sendWelcomeEmail(email, userProfile?.name || email.split('@')[0])
     }
 
     return NextResponse.json({ 

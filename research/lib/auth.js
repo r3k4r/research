@@ -14,13 +14,11 @@ import { CustomPrismaAdapter } from "./customPrismaAdapter"
 const prisma = new PrismaClient()
 
 export const authOptions = {
-  // Use our custom adapter that knows how to handle the normalized schema
   adapter: CustomPrismaAdapter(prisma),
   
   // ===============================================
   // AUTH PROVIDERS
   // ===============================================
-  // Different ways users can authenticate with the app
   providers: [
     // 1. Google OAuth - "Sign in with Google"
     GoogleProvider({
@@ -31,7 +29,6 @@ export const authOptions = {
     // 2. Email/Password - Traditional login
     CredentialsProvider({
       name: "credentials",
-      // Define what fields are needed for login
       credentials: {
         email: { label: "Email", type: "text" },
         password: { label: "Password", type: "password" },
@@ -41,19 +38,20 @@ export const authOptions = {
       // ===============================================
       // LOGIN AUTHORIZATION FUNCTION
       // ===============================================
-      // This is where the actual login verification happens
       async authorize(credentials) {
         // Basic validation
         if (!credentials?.email || !credentials?.password) {
           throw new Error("Invalid credentials")
         }
 
-        // Find the user with their profile data
+        // Find the user with their profile data and verification data
         const user = await prisma.user.findUnique({
           where: { email: credentials.email },
           include: { 
             profile: true,
-            providerProfile: true 
+            providerProfile: true,
+            emailVerification: true,
+            twoFactorAuth: true
           }
         })
 
@@ -75,35 +73,63 @@ export const authOptions = {
         // ===============================================
         // EMAIL VERIFICATION CHECK
         // ===============================================
-        // If email not verified, send verification code
         if (!user.emailVerified) {
+          // Generate verification code if needed
           const verificationCode = Math.floor(100000 + Math.random() * 900000).toString()
-          await prisma.user.update({
-            where: { id: user.id },
-            data: { 
-              emailVerificationToken: verificationCode,
-              emailVerificationTokenExpires: new Date(Date.now() + 24 * 60 * 60 * 1000)
+          const tokenExpiry = new Date(Date.now() + 24 * 60 * 60 * 1000) // 24 hours
+          
+          if (user.emailVerification) {
+            // Update existing verification record if expired
+            if (user.emailVerification.expires < new Date()) {
+              await prisma.emailVerification.update({
+                where: { id: user.emailVerification.id },
+                data: {
+                  token: verificationCode,
+                  expires: tokenExpiry
+                }
+              })
+              await sendVerificationCode(user.email, verificationCode, 'email')
+            } else {
+              // Use existing code if still valid
+              await sendVerificationCode(user.email, user.emailVerification.token, 'email')
             }
-          })
-
-          // Send email with code
-          await sendVerificationCode(user.email, verificationCode, 'email')
+          } else {
+            // Create new verification record if none exists
+            await prisma.emailVerification.create({
+              data: {
+                userId: user.id,
+                token: verificationCode,
+                expires: tokenExpiry
+              }
+            })
+            await sendVerificationCode(user.email, verificationCode, 'email')
+          }
+          
           throw new Error("EmailNotVerified")
         }
 
         // ===============================================
         // TWO-FACTOR AUTHENTICATION (2FA)
         // ===============================================
-        // If 2FA is enabled for this user
         if (user.twoFactorEnabled) {
           // If no 2FA code provided yet, send one
           if (!credentials.twoFactorCode) {
             const twoFactorCode = Math.floor(100000 + Math.random() * 900000).toString()
-            await prisma.user.update({
-              where: { id: user.id },
+            const codeExpiry = new Date(Date.now() + 10 * 60 * 1000) // 10 minutes
+            
+            // Delete any existing codes
+            if (user.twoFactorAuth) {
+              await prisma.twoFactorAuth.delete({
+                where: { id: user.twoFactorAuth.id }
+              })
+            }
+            
+            // Create new code
+            await prisma.twoFactorAuth.create({
               data: {
-                twoFactorCode,
-                twoFactorCodeExpires: new Date(Date.now() + 10 * 60 * 1000) // 10 minutes
+                userId: user.id,
+                code: twoFactorCode,
+                expires: codeExpiry
               }
             })
 
@@ -113,25 +139,32 @@ export const authOptions = {
           }
 
           // Verify the provided 2FA code
-          if (user.twoFactorCode !== credentials.twoFactorCode || user.twoFactorCodeExpires < new Date()) {
+          const validCode = user.twoFactorAuth && 
+                          user.twoFactorAuth.code === credentials.twoFactorCode && 
+                          user.twoFactorAuth.expires > new Date();
+          
+          if (!validCode) {
             throw new Error("Invalid 2FA code")
           }
 
-          // Clear the used 2FA code
-          await prisma.user.update({
-            where: { id: user.id },
-            data: {
-              twoFactorCode: null,
-              twoFactorCodeExpires: null,
-            }
-          })
+          // Delete the used 2FA code
+          if (user.twoFactorAuth) {
+            await prisma.twoFactorAuth.delete({
+              where: { id: user.twoFactorAuth.id }
+            })
+          }
         }
 
         // ===============================================
         // ADD PROFILE DATA TO USER OBJECT
         // ===============================================
-        // Create user object with profile info for NextAuth
-        let userWithProfile = { ...user };
+        let userWithProfile = { 
+          id: user.id,
+          email: user.email,
+          role: user.role,
+          emailVerified: user.emailVerified,
+          twoFactorEnabled: user.twoFactorEnabled
+        };
         
         // Add name and image from appropriate profile
         if (user.profile) {
@@ -150,12 +183,7 @@ export const authOptions = {
   // ===============================================
   // CALLBACKS
   // ===============================================
-  // These functions customize the authentication flow
   callbacks: {
-    // ===============================================
-    // JWT CALLBACK
-    // ===============================================
-    // Called whenever a JWT (JSON Web Token) is created or updated
     async jwt({ token, user, account, profile }) {
       // If we have user data (on first login), add it to the token
       if (user) {
@@ -173,7 +201,6 @@ export const authOptions = {
       // ===============================================
       // FETCH FRESH PROFILE DATA
       // ===============================================
-      // Always get the latest user data on every token refresh
       try {
         const userData = await prisma.user.findUnique({
           where: { id: token.id || user?.id },
@@ -200,7 +227,6 @@ export const authOptions = {
       // ===============================================
       // GOOGLE SIGN-IN EMAIL VERIFICATION
       // ===============================================
-      // If user signed in with Google, their email is already verified
       if (account && account.provider === 'google') {
         token.emailVerified = new Date();
         await prisma.user.update({
@@ -215,7 +241,6 @@ export const authOptions = {
     // ===============================================
     // SESSION CALLBACK
     // ===============================================
-    // Called whenever a session is checked (on every request with getServerSession)
     async session({ session, token }) {
       if (token) {
         // Add user data from token to the session
@@ -242,7 +267,6 @@ export const authOptions = {
     // ===============================================
     // SIGN IN CALLBACK
     // ===============================================
-    // Called when a user signs in
     async signIn({ user, account, profile }) {
       // Special handling for Google sign-in
       if (account?.provider === 'google') {
@@ -277,7 +301,6 @@ export const authOptions = {
   // ===============================================
   // CUSTOM PAGES
   // ===============================================
-  // Custom URLs for authentication pages
   pages: {
     signIn: '/signin',
     verifyRequest: '/verify-email',

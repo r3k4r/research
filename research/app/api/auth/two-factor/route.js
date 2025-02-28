@@ -7,24 +7,33 @@ export async function POST(req) {
   const { email, code } = await req.json()
 
   try {
+    // Find user to get their ID
     const user = await prisma.user.findUnique({
-      where: { email },
+      where: { email }
     })
 
     if (!user) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 })
     }
 
-    if (user.twoFactorCode !== code || user.twoFactorCodeExpires < new Date()) {
+    // Find the 2FA code
+    const twoFactorAuth = await prisma.twoFactorAuth.findFirst({
+      where: { 
+        userId: user.id,
+        code: code,
+        expires: {
+          gt: new Date()
+        }
+      }
+    })
+
+    if (!twoFactorAuth) {
       return NextResponse.json({ error: 'Invalid or expired two-factor code' }, { status: 400 })
     }
 
-    await prisma.user.update({
-      where: { id: user.id },
-      data: {
-        twoFactorCode: null,
-        twoFactorCodeExpires: null,
-      },
+    // Delete the two-factor auth record
+    await prisma.twoFactorAuth.delete({
+      where: { id: twoFactorAuth.id }
     })
 
     return NextResponse.json({ message: 'Two-factor authentication successful' })

@@ -41,14 +41,12 @@ export async function POST(req) {
     const verificationToken = Math.floor(100000 + Math.random() * 900000).toString()
     const tokenExpiry = new Date(Date.now() + 24 * 60 * 60 * 1000) // 24 hours
 
-    // Create user with nested profile in one operation
+    // Create user with nested profile in one operation (without token fields)
     const user = await prisma.user.create({
       data: {
         email,
         password: hashedPassword,
         role: 'USER',
-        emailVerificationToken: verificationToken,
-        emailVerificationTokenExpires: tokenExpiry,
         // Create profile in the same operation
         profile: {
           create: {
@@ -62,6 +60,15 @@ export async function POST(req) {
       // Include profile in results
       include: {
         profile: true
+      }
+    })
+
+    // After user is created, create the email verification record
+    await prisma.emailVerification.create({
+      data: {
+        userId: user.id,
+        token: verificationToken,
+        expires: tokenExpiry
       }
     })
 

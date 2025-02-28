@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { PrismaClient } from '@prisma/client'
 import crypto from 'crypto'
-import { sendEmail, sendPasswordResetEmail } from '@/lib/email'
+import { sendPasswordResetEmail } from '@/lib/email'
 
 const prisma = new PrismaClient()
 
@@ -20,16 +20,21 @@ export async function POST(req) {
     const resetToken = crypto.randomBytes(32).toString('hex')
     const resetTokenExpires = new Date(Date.now() + 3600000) // 1 hour from now
 
-    await prisma.user.update({
-      where: { id: user.id },
-      data: {
-        resetPasswordToken: resetToken,
-        resetPasswordExpires: resetTokenExpires,
-      },
+    // Delete any existing reset tokens for this user
+    await prisma.passwordReset.deleteMany({
+      where: { userId: user.id }
     })
 
-    const resetLink = `${resetToken}`
-    await sendPasswordResetEmail(email, resetLink)
+    // Create new password reset token
+    await prisma.passwordReset.create({
+      data: {
+        userId: user.id,
+        token: resetToken,
+        expires: resetTokenExpires
+      }
+    })
+
+    await sendPasswordResetEmail(email, resetToken)
 
     return NextResponse.json({ message: 'Password reset email sent' })
   } catch (error) {
