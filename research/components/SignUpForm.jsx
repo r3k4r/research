@@ -80,6 +80,9 @@ export default function SignUpForm() {
     e.preventDefault()
     if (!validateStep()) return
 
+    // Show loading toast
+    showToast('Creating your account...', 'info')
+
     const formDataToSend = new FormData()
     Object.entries(formData).forEach(([key, value]) => {
       if (value !== undefined) formDataToSend.append(key, value)
@@ -91,15 +94,28 @@ export default function SignUpForm() {
         body: formDataToSend,
       })
 
+      const data = await response.json()
+
       if (response.ok) {
-        showToast('Account created successfully!', 'success')
-        router.push(`/verify-email?email=${formData.email}`)
+        // Clear previous toast and show success message
+        setTimeout(() => {
+          showToast('Account created successfully! Please verify your email.', 'success')
+          
+          // Small delay before redirecting to verification page
+          setTimeout(() => {
+            router.push(`/verify-email?email=${formData.email}`)
+          }, 1500)
+        }, 100)
       } else {
-        const data = await response.json()
-        showToast(data.error, 'error')
+        // Clear previous toast and show error
+        setTimeout(() => {
+          showToast(data.error || 'An error occurred during signup', 'error')
+        }, 100)
       }
     } catch (error) {
-      showToast('An error occurred during signup', 'error')
+      setTimeout(() => {
+        showToast('An error occurred during signup', 'error')
+      }, 100)
     }
   }
 

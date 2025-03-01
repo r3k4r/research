@@ -6,17 +6,20 @@ export function Toast({ message, type, onClose }) {
   const [isVisible, setIsVisible] = useState(false)
 
   useEffect(() => {
-    const showTimer = setTimeout(() => setIsVisible(true), 100)
+    // Show toast immediately - reduced delay from 100ms to 10ms
+    const showTimer = setTimeout(() => setIsVisible(true), 10)
+    
+    // Increase display time from 5000ms to 6000ms for better visibility
     const hideTimer = setTimeout(() => {
       setIsVisible(false)
       setTimeout(onClose, 300)
-    }, 5000)
+    }, 6000)
 
     return () => {
       clearTimeout(showTimer)
       clearTimeout(hideTimer)
     }
-  }, [onClose])
+  }, [onClose, message]) // Added message dependency to reset timer when message changes
 
   return (
     <div
@@ -49,7 +52,13 @@ export function useToast() {
   const [toast, setToast] = useState(null)
 
   const showToast = (message, type) => {
-    setToast({ message, type })
+    // First clear any existing toast to avoid conflicts
+    setToast(null) 
+    
+    // Small delay to ensure clean slate before showing new toast
+    setTimeout(() => {
+      setToast({ message, type })
+    }, 10)
   }
 
   const hideToast = () => {
@@ -60,6 +69,6 @@ export function useToast() {
     <Toast message={toast.message} type={toast.type} onClose={hideToast} />
   ) : null
 
-  return { showToast, ToastComponent }
+  return { showToast, hideToast, ToastComponent }
 }
 

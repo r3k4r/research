@@ -49,6 +49,9 @@ export default function SignInForm() {
       }
       setErrors({})
 
+      // Show loading toast
+      showToast('Signing in...', 'info')
+      
       const result = await signIn('credentials', {
         email: formData.email,
         password: formData.password,
@@ -57,22 +60,30 @@ export default function SignInForm() {
       })
 
       if (result?.error) {
-        if (result.error === 'TwoFactorRequired') {
-          setIsTwoFactorRequired(true)
-          showToast('Please enter your 2FA code, Send to your Email', 'info')
-        } else if (result.error === 'EmailNotVerified') {
-          showToast('Please verify your email. A new verification code has been sent.', 'warning')
-          router.push(`/verify-email?email=${formData.email}`)
-        } else {
-          showToast(result.error, 'error')
-        }
+        // Clear the info toast before showing error
+        setTimeout(() => {
+          if (result.error === 'TwoFactorRequired') {
+            setIsTwoFactorRequired(true)
+            showToast('Please enter your 2FA code, sent to your email', 'info')
+          } else if (result.error === 'EmailNotVerified') {
+            showToast('Please verify your email. A verification code has been sent.', 'warning')
+            router.push(`/verify-email?email=${formData.email}`)
+          } else {
+            showToast(result.error, 'error')
+          }
+        }, 100)
       } else {
-        showToast('Sign in successful!', 'success')
-        router.push('/')
+        showToast('Sign in successful! Redirecting...', 'success')
+        
+        // Small delay before redirect to ensure toast is seen
+        setTimeout(() => {
+          router.push('/')
+        }, 1500)
       }
     } catch (error) {
       if (error instanceof z.ZodError) {
         setErrors(error.flatten().fieldErrors)
+        showToast('Please check your inputs', 'error')
       }
     }
   }
