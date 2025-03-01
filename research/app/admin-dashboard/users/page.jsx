@@ -18,10 +18,12 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger 
 } from "@/components/ui/dropdown-menu"
+import { useRouter } from "next/navigation" 
 import { useToast } from "@/components/ui/toast"
-import { redirect } from "next/navigation"
+
 export default function UsersPage() {
   const { toast } = useToast()
+  const router = useRouter() // Use router for client-side navigation
   const [users, setUsers] = useState([])
   const [searchTerm, setSearchTerm] = useState("")
   const [selectedRole, setSelectedRole] = useState("all")
@@ -164,14 +166,16 @@ export default function UsersPage() {
         body: JSON.stringify(payload)
       });
       
+      const data = await res.json(); // Always parse the response
+      
       if (!res.ok) {
-        const error = await res.json();
-        throw new Error(error.error || "Failed to create user");
+        throw new Error(data.error || "Failed to create user");
       }
       
       toast({
         title: "Success",
         description: "User created successfully",
+        variant: "default", // Specify the variant
       });
       
       // Refresh user list
@@ -190,9 +194,8 @@ export default function UsersPage() {
     }
   }
 
-  const handleViewUser = async (userId) => {
-
-      redirect(`/admin-dashboard/users/${userId}`);
+  const handleViewUser = (userId) => {
+    router.push(`/admin-dashboard/users/${userId}`);
   }
 
   const handleEditUser = async (userId) => {
@@ -265,8 +268,12 @@ export default function UsersPage() {
 
  const handleUpdateUser = async () => {
     try {
-
+      setLoading(true);
       const userId = formData.id;
+      
+      if (!userId) {
+        throw new Error("User ID is missing");
+      }
       
       // Create update payload (similar to add but without password unless provided)
       const payload = {
@@ -286,9 +293,10 @@ export default function UsersPage() {
         body: JSON.stringify(payload)
       });
       
+      const data = await res.json();
+      
       if (!res.ok) {
-        const error = await res.json();
-        throw new Error(error.error || "Failed to update user");
+        throw new Error(data.error || "Failed to update user");
       }
       
       // Update profile based on role
@@ -301,6 +309,7 @@ export default function UsersPage() {
       toast({
         title: "Success",
         description: "User updated successfully",
+        variant: "default", // Specify the variant
       });
       
       fetchUsers();
@@ -319,8 +328,8 @@ export default function UsersPage() {
   }
 
   const updateUserProfile = async (userId) => {
-    // This function would call an API to update user profile
-    // I'm creating a new API endpoint for this below
+    if (!userId) throw new Error("User ID is missing");
+    
     const profileData = {
       name: formData.profileData.name,
       location: formData.profileData.location || null,
@@ -334,15 +343,18 @@ export default function UsersPage() {
       body: JSON.stringify(profileData)
     });
     
+    const data = await res.json();
+    
     if (!res.ok) {
-      const error = await res.json();
-      throw new Error(error.error || "Failed to update user profile");
+      throw new Error(data.error || "Failed to update user profile");
     }
+    
+    return data;
   }
 
   const updateProviderProfile = async (userId) => {
-    // This function would call an API to update provider profile
-    // I'm creating a new API endpoint for this below
+    if (!userId) throw new Error("User ID is missing");
+    
     const profileData = {
       name: formData.profileData.name,
       businessName: formData.profileData.businessName,
@@ -359,28 +371,37 @@ export default function UsersPage() {
       body: JSON.stringify(profileData)
     });
     
+    const data = await res.json();
+    
     if (!res.ok) {
-      const error = await res.json();
-      throw new Error(error.error || "Failed to update provider profile");
+      throw new Error(data.error || "Failed to update provider profile");
     }
+    
+    return data;
   }
 
   const handleDeleteUser = async (userId) => {
     try {
       setLoading(true);
       
+      if (!userId) {
+        throw new Error("User ID is missing");
+      }
+      
       const res = await fetch(`/api/admin-dashboard/users/${userId}`, {
         method: 'DELETE'
       });
       
+      const data = await res.json();
+      
       if (!res.ok) {
-        const error = await res.json();
-        throw new Error(error.error || "Failed to delete user");
+        throw new Error(data.error || "Failed to delete user");
       }
       
       toast({
         title: "Success",
         description: "User deleted successfully",
+        variant: "default", // Specify the variant
       });
       
       fetchUsers();
