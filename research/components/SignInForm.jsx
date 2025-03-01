@@ -26,26 +26,50 @@ export default function SignInForm() {
     email: '',
     password: '',
   })
-  const [twoFactorCode, setTwoFactorCode] = useState('')
+  // Change twoFactorCode from string to array of 6 digits
+  const [twoFactorCode, setTwoFactorCode] = useState(['', '', '', '', '', ''])
   const [errors, setErrors] = useState({})
   const [showPassword, setShowPassword] = useState(false)
   const [isTwoFactorRequired, setIsTwoFactorRequired] = useState(false)
+  const [isLoading, setIsLoading] = useState(false)
   const router = useRouter()
   const { showToast, ToastComponent } = useToast()
 
+  // Handle input change for regular fields
   const handleChange = (e) => {
     const { name, value } = e.target
     setFormData(prev => ({ ...prev, [name]: value }))
     setErrors(prev => ({ ...prev, [name]: '' }))
   }
 
+  // Handle input for each 2FA code digit
+  const handleTwoFactorChange = (index, value) => {
+    // Only allow numeric input
+    if (value && !/^\d+$/.test(value)) return
+    
+    const newCode = [...twoFactorCode]
+    newCode[index] = value
+    setTwoFactorCode(newCode)
+
+    // Auto-focus next input when this one is filled
+    if (value && index < 5) {
+      document.getElementById(`2fa-${index + 1}`).focus()
+    }
+    
+    setErrors(prev => ({ ...prev, code: '' }))
+  }
+
   const handleSubmit = async (e) => {
     e.preventDefault()
+    setIsLoading(true)
+    
     try {
       if (!isTwoFactorRequired) {
         signInSchema.parse(formData)
       } else {
-        twoFactorSchema.parse({ code: twoFactorCode })
+        // Join the array to form the complete code string
+        const codeString = twoFactorCode.join('')
+        twoFactorSchema.parse({ code: codeString })
       }
       setErrors({})
 
@@ -55,7 +79,8 @@ export default function SignInForm() {
       const result = await signIn('credentials', {
         email: formData.email,
         password: formData.password,
-        twoFactorCode: twoFactorCode,
+        // Join the array for the complete code
+        twoFactorCode: isTwoFactorRequired ? twoFactorCode.join('') : '',
         redirect: false,
       })
 
@@ -85,6 +110,8 @@ export default function SignInForm() {
         setErrors(error.flatten().fieldErrors)
         showToast('Please check your inputs', 'error')
       }
+    } finally {
+      setIsLoading(false)
     }
   }
 
@@ -117,6 +144,7 @@ export default function SignInForm() {
                     value={formData.email}
                     onChange={handleChange}
                     required
+                    disabled={isLoading}
                     className={errors.email ? "border-red-500 focus:ring-red-500" : ""}
                   />
                   {errors.email && <p className="text-red-500 text-sm mt-1 transition-all duration-300 ease-in-out">{errors.email}</p>}
@@ -132,12 +160,14 @@ export default function SignInForm() {
                       value={formData.password}
                       onChange={handleChange}
                       required
+                      disabled={isLoading}
                       className={errors.password ? "border-red-500 focus:ring-red-500" : ""}
                     />
                     <button
                       type="button"
                       onClick={() => setShowPassword(!showPassword)}
                       className="absolute right-2 top-1/2 transform -translate-y-1/2"
+                      disabled={isLoading}
                     >
                       {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
                     </button>
@@ -152,29 +182,49 @@ export default function SignInForm() {
               </>
             ) : (
               <div className="space-y-2">
-                <Label htmlFor="twoFactorCode">2FA Code</Label>
-                <Input
-                  id="twoFactorCode"
-                  name="twoFactorCode"
-                  type="text"
-                  placeholder="Enter your 2FA code"
-                  value={twoFactorCode}
-                  onChange={(e) => setTwoFactorCode(e.target.value)}
-                  required
-                  maxLength={6}
-                  className={errors.code ? "border-red-500 focus:ring-red-500" : ""}
-                />
+                <Label htmlFor="2fa-0">Authentication Code</Label>
+                
+                {/* New 6-box design for 2FA code */}
+                <div className="flex justify-between mb-4 gap-2">
+                  {twoFactorCode.map((digit, index) => (
+                    <Input
+                      key={index}
+                      id={`2fa-${index}`}
+                      type="text"
+                      inputMode="numeric"
+                      maxLength={1}
+                      value={digit}
+                      onChange={(e) => handleTwoFactorChange(index, e.target.value)}
+                      className="w-12 h-12 text-center text-2xl"
+                      disabled={isLoading}
+                    />
+                  ))}
+                </div>
                 {errors.code && <p className="text-red-500 text-sm mt-1 transition-all duration-300 ease-in-out">{errors.code}</p>}
+                
+                {/* Add a "No code received?" prompt */}
+                <p className="text-sm text-gray-500 mt-2">
+                  Didn't receive a code? Check your spam folder or try signing in again.
+                </p>
               </div>
             )}
-            <Button type="submit" className="w-full">
-              {isTwoFactorRequired ? 'Verify' : 'Sign In'}
+            <Button 
+              type="submit" 
+              className="w-full"
+              disabled={isLoading}
+            >
+              {isLoading ? 'Processing...' : isTwoFactorRequired ? 'Verify' : 'Sign In'}
             </Button>
           </form>
         </CardContent>
         <CardFooter className="flex flex-col space-y-4">
-          <Button variant="outline" onClick={() => signIn('google', { callbackUrl: '/' })} className="w-full">
-          Continue with Google
+          <Button 
+            variant="outline" 
+            onClick={() => signIn('google', { callbackUrl: '/' })} 
+            className="w-full"
+            disabled={isLoading}
+          >
+            Continue with Google
           </Button>
           <div className="text-center">
             Don't have an account? <Link href="/signup" className="text-blue-500 hover:underline">Sign up</Link>
