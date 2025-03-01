@@ -12,7 +12,8 @@ export default function VerifyEmailPage() {
   const searchParams = useSearchParams()
   const router = useRouter()
   const email = searchParams.get('email')
-  const [verificationCode, setVerificationCode] = useState('')
+  // Replace single input with array of 6 digits
+  const [verificationCode, setVerificationCode] = useState(['', '', '', '', '', ''])
   const [isLoading, setIsLoading] = useState(false)
   const { showToast, ToastComponent } = useToast()
   
@@ -30,9 +31,24 @@ export default function VerifyEmailPage() {
     }
   }, [countdown, router])
 
+  // Handle input for each digit box
+  const handleChange = (index, value) => {
+    const newCode = [...verificationCode]
+    newCode[index] = value
+    setVerificationCode(newCode)
+
+    // Auto-focus next input when this one is filled
+    if (value && index < 5) {
+      document.getElementById(`verification-${index + 1}`).focus()
+    }
+  }
+
   const handleSubmit = async (e) => {
     e.preventDefault()
-    if (!email || !verificationCode) return
+    // Join the digits to form the complete code
+    const code = verificationCode.join('')
+    
+    if (!email || !code || code.length !== 6) return
     
     setIsLoading(true)
     
@@ -42,7 +58,7 @@ export default function VerifyEmailPage() {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ email, code: verificationCode }),
+        body: JSON.stringify({ email, code }),
       })
       
       const data = await response.json()
@@ -121,23 +137,30 @@ export default function VerifyEmailPage() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={handleSubmit}>
             <div className="space-y-2">
-              <Label htmlFor="verificationCode">Verification Code</Label>
-              <Input
-                id="verificationCode"
-                type="text"
-                placeholder="Enter verification code"
-                value={verificationCode}
-                onChange={(e) => setVerificationCode(e.target.value)}
-                maxLength={6}
-                required
-                disabled={isLoading || countdown !== null}
-              />
+              <Label htmlFor="verification-0">Verification Code</Label>
+              
+              {/* New 6-box design for verification code */}
+              <div className="flex justify-between mb-4 gap-2">
+                {verificationCode.map((digit, index) => (
+                  <Input
+                    key={index}
+                    id={`verification-${index}`}
+                    type="text"
+                    inputMode="numeric"
+                    maxLength={1}
+                    value={digit}
+                    onChange={(e) => handleChange(index, e.target.value)}
+                    className="w-12 h-12 text-center text-2xl"
+                    disabled={isLoading || countdown !== null}
+                  />
+                ))}
+              </div>
             </div>
             <Button 
               type="submit" 
-              className="w-full"
+              className="w-full mt-4"
               disabled={isLoading || countdown !== null}
             >
               {isLoading ? 'Verifying...' : 'Verify Email'}
