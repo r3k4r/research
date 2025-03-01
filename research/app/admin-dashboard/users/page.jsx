@@ -1,70 +1,400 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Search, UserPlus, Trash2, PenSquare, MoreVertical, Filter, Shield } from "lucide-react"
+import { Label } from "@/components/ui/label"
+import { Textarea } from "@/components/ui/textarea"
+import { Search, UserPlus, Trash2, PenSquare, MoreVertical, Eye, ChevronRight } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { 
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger 
 } from "@/components/ui/dropdown-menu"
-
+import { useToast } from "@/components/ui/toast"
+import { redirect } from "next/navigation"
 export default function UsersPage() {
+  const { toast } = useToast()
   const [users, setUsers] = useState([])
   const [searchTerm, setSearchTerm] = useState("")
-  const [newUser, setNewUser] = useState({ name: "", email: "", role: "USER" })
+  const [selectedRole, setSelectedRole] = useState("all")
   const [isAddingUser, setIsAddingUser] = useState(false)
+  const [isEditingUser, setIsEditingUser] = useState(false)
+  const [currentPage, setCurrentPage] = useState(1)
+  const [totalPages, setTotalPages] = useState(1)
+  const [loading, setLoading] = useState(false)
   
-  useEffect(() => {
-    async function fetchUsers(){
-      try{
-        const res = await fetch('/api/admin-dashboard/users');
-        const data = await res.json();
-        console.log('data', data.users);
-        
-        if (data.users) {
-          const mappedUsers = data.users.map(user => ({
-            id: user.id,
-            email: user.email,
-            role: user.role,
-            name: user.role === "PROVIDER" 
-            ? user.providerProfile?.name || 'No Name'
-            : user.profile?.name || 'No Name',
-            phoneNumber: user.role === "PROVIDER" 
-              ? user.providerProfile?.phoneNumber || 'N/A'
-              : user.profile?.phoneNumber || 'N/A'
-          }));
-          setUsers(mappedUsers);
-        }
-      } catch(err) {
-        console.log(err);
-      }
+  const [formData, setFormData] = useState({
+    email: "",
+    password: "",
+    role: "USER",
+    profileData: {
+      // User profile fields
+      name: "",
+      location: "",
+      phoneNumber: "",
+      gender: "",
+      image: "",
+      // Provider profile fields
+      name: "",
+      businessName: "",
+      description: "",
+      address: "",
+      businessHours: ""
     }
+  })
+  
+  // Fetch users with pagination and filters
+  const fetchUsers = async () => {
+    try {
+      setLoading(true)
+      let url = `/api/admin-dashboard/users?page=${currentPage}&limit=10`
+      
+      if (selectedRole !== "all") {
+        url += `&role=${selectedRole}`
+      }
+      
+      if (searchTerm) {
+        url += `&search=${searchTerm}`
+      }
+      
+      const res = await fetch(url);
+      const data = await res.json();
+      
+      if (data.users) {
+        setUsers(data.users);
+        setTotalPages(data.pagination.pages);
+      }
+    } catch (err) {
+      console.log(err);
+      toast({
+        title: "Error",
+        description: "Failed to fetch users",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  }
 
+  useEffect(() => {
     fetchUsers();
-  }, [])
+  }, [currentPage, selectedRole, searchTerm])
 
-  const handleAddUser = () => {
-    setUsers([...users, { id: Date.now().toString(), ...newUser, phoneNumber: "N/A" }])
-    setNewUser({ name: "", email: "", role: "USER" })
-    setIsAddingUser(false)
+  const handleInputChange = (e, section = null) => {
+    const { name, value } = e.target;
+    
+    if (section) {
+      setFormData({
+        ...formData,
+        [section]: {
+          ...formData[section],
+          [name]: value
+        }
+      });
+    } else {
+      setFormData({
+        ...formData,
+        [name]: value
+      });
+    }
   }
 
-  const handleDeleteUser = (id) => {
-    setUsers(users.filter((user) => user.id !== id))
+  const resetForm = () => {
+    setFormData({
+      email: "",
+      password: "",
+      role: "USER",
+      profileData: {
+        name: "",
+        location: "",
+        phoneNumber: "",
+        gender: "",
+        image: "",
+        businessName: "",
+        description: "",
+        address: "",
+        businessHours: ""
+      }
+    });
   }
 
-  const filteredUsers = users.filter(user => 
-    user.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
-    user.email.toLowerCase().includes(searchTerm.toLowerCase())
-  )
+  const handleAddUser = async () => {
+    try {
+      setLoading(true);
+      
+      // Create a payload based on the role
+      const payload = {
+        email: formData.email,
+        password: formData.password,
+        role: formData.role,
+        profileData: {}
+      };
+      
+      // Add appropriate profile data based on role
+      if (formData.role === "USER") {
+        payload.profileData = {
+          name: formData.profileData.name,
+          location: formData.profileData.location || null,
+          phoneNumber: formData.profileData.phoneNumber || null,
+          gender: formData.profileData.gender || null,
+        };
+      } else if (formData.role === "PROVIDER") {
+        payload.profileData = {
+          name: formData.profileData.name,
+          businessName: formData.profileData.businessName,
+          description: formData.profileData.description || null,
+          address: formData.profileData.address,
+          phoneNumber: formData.profileData.phoneNumber,
+          businessHours: formData.profileData.businessHours || null,
+          logo: formData.profileData.image || null
+        };
+      }
+      
+      const res = await fetch('/api/admin-dashboard/users', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.error || "Failed to create user");
+      }
+      
+      toast({
+        title: "Success",
+        description: "User created successfully",
+      });
+      
+      // Refresh user list
+      fetchUsers();
+      resetForm();
+      setIsAddingUser(false);
+    } catch (err) {
+      console.error(err);
+      toast({
+        title: "Error",
+        description: err.message || "Failed to create user",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  const handleViewUser = async (userId) => {
+
+      redirect(`/admin-dashboard/users/${userId}`);
+  }
+
+  const handleEditUser = async (userId) => {
+    try {
+      setLoading(true);
+      const res = await fetch(`/api/admin-dashboard/users/${userId}`);
+      
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.error || "Failed to fetch user details");
+      }
+      
+      const { user } = await res.json();
+      
+      // Populate form with user data
+      const newFormData = {
+        id: user.id,
+        email: user.email,
+        password: "",  // Don't populate password for security
+        role: user.role,
+        profileData: {
+          name: "",
+          location: "",
+          phoneNumber: "",
+          gender: "",
+          image: "",
+          businessName: "",
+          description: "",
+          address: "",
+          businessHours: ""
+        }
+      };
+      
+      // Add USER or PROVIDER specific data
+      if (user.role === "USER" && user.profile) {
+        newFormData.profileData = {
+          ...newFormData.profileData,
+          name: user.profile.name || "",
+          location: user.profile.location || "",
+          phoneNumber: user.profile.phoneNumber || "",
+          gender: user.profile.gender || "",
+          image: user.profile.image || ""
+        };
+      } else if (user.role === "PROVIDER" && user.providerProfile) {
+        newFormData.profileData = {
+          ...newFormData.profileData,
+          name: user.providerProfile.name || "",
+          businessName: user.providerProfile.businessName || "",
+          description: user.providerProfile.description || "",
+          address: user.providerProfile.address || "",
+          phoneNumber: user.providerProfile.phoneNumber || "",
+          businessHours: user.providerProfile.businessHours || "",
+          image: user.providerProfile.logo || ""
+        };
+      }
+      
+      setFormData(newFormData);
+      setIsEditingUser(true);
+    } catch (err) {
+      console.error(err);
+      toast({
+        title: "Error",
+        description: err.message || "Failed to load user for editing",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  }
+
+ const handleUpdateUser = async () => {
+    try {
+
+      const userId = formData.id;
+      
+      // Create update payload (similar to add but without password unless provided)
+      const payload = {
+        email: formData.email,
+        role: formData.role
+      };
+      
+      // Only include password if it's provided (for changing password)
+      if (formData.password) {
+        payload.password = formData.password;
+      }
+      
+      // Call API to update user
+      const res = await fetch(`/api/admin-dashboard/users/${userId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.error || "Failed to update user");
+      }
+      
+      // Update profile based on role
+      if (formData.role === "USER") {
+        await updateUserProfile(userId);
+      } else if (formData.role === "PROVIDER") {
+        await updateProviderProfile(userId);
+      }
+      
+      toast({
+        title: "Success",
+        description: "User updated successfully",
+      });
+      
+      fetchUsers();
+      resetForm();
+      setIsEditingUser(false);
+    } catch (err) {
+      console.error(err);
+      toast({
+        title: "Error",
+        description: err.message || "Failed to update user",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  const updateUserProfile = async (userId) => {
+    // This function would call an API to update user profile
+    // I'm creating a new API endpoint for this below
+    const profileData = {
+      name: formData.profileData.name,
+      location: formData.profileData.location || null,
+      phoneNumber: formData.profileData.phoneNumber || null,
+      gender: formData.profileData.gender || null,
+    };
+    
+    const res = await fetch(`/api/admin-dashboard/users/${userId}/profile`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(profileData)
+    });
+    
+    if (!res.ok) {
+      const error = await res.json();
+      throw new Error(error.error || "Failed to update user profile");
+    }
+  }
+
+  const updateProviderProfile = async (userId) => {
+    // This function would call an API to update provider profile
+    // I'm creating a new API endpoint for this below
+    const profileData = {
+      name: formData.profileData.name,
+      businessName: formData.profileData.businessName,
+      description: formData.profileData.description || null,
+      address: formData.profileData.address,
+      phoneNumber: formData.profileData.phoneNumber,
+      businessHours: formData.profileData.businessHours || null,
+      logo: formData.profileData.image || null
+    };
+    
+    const res = await fetch(`/api/admin-dashboard/users/${userId}/provider-profile`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(profileData)
+    });
+    
+    if (!res.ok) {
+      const error = await res.json();
+      throw new Error(error.error || "Failed to update provider profile");
+    }
+  }
+
+  const handleDeleteUser = async (userId) => {
+    try {
+      setLoading(true);
+      
+      const res = await fetch(`/api/admin-dashboard/users/${userId}`, {
+        method: 'DELETE'
+      });
+      
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.error || "Failed to delete user");
+      }
+      
+      toast({
+        title: "Success",
+        description: "User deleted successfully",
+      });
+      
+      fetchUsers();
+    } catch (err) {
+      console.error(err);
+      toast({
+        title: "Error",
+        description: err.message || "Failed to delete user",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  }
 
   const getRoleBadgeColor = (role) => {
     switch (role) {
@@ -96,18 +426,15 @@ export default function UsersPage() {
               />
             </div>
             <div className="flex gap-1 items-center">
-              <Button variant="outline" size="sm" className="h-9">
-                <Filter className="h-3.5 w-3.5 mr-1" /> Filter
-              </Button>
-              <Select defaultValue="all">
+              <Select value={selectedRole} onValueChange={setSelectedRole}>
                 <SelectTrigger className="h-9 w-[120px]">
                   <SelectValue placeholder="Role" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Roles</SelectItem>
-                  <SelectItem value="user">Users</SelectItem>
-                  <SelectItem value="provider">Providers</SelectItem>
-                  <SelectItem value="admin">Admins</SelectItem>
+                  <SelectItem value="USER">Users</SelectItem>
+                  <SelectItem value="PROVIDER">Providers</SelectItem>
+                  <SelectItem value="ADMIN">Admins</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -122,28 +449,48 @@ export default function UsersPage() {
                   <TableHead className="hidden sm:table-cell">Email</TableHead>
                   <TableHead className="hidden md:table-cell">Phone Number</TableHead>
                   <TableHead className="text-center">Role</TableHead>
+                  <TableHead className="text-center">See More</TableHead>
                   <TableHead className="w-[80px] text-right pr-4">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredUsers.length === 0 ? (
+                {loading ? (
+                  <TableRow>
+                    <TableCell colSpan={5} className="text-center py-6 text-muted-foreground">
+                      Loading...
+                    </TableCell>
+                  </TableRow>
+                ) : users.length === 0 ? (
                   <TableRow>
                     <TableCell colSpan={5} className="text-center py-6 text-muted-foreground">
                       No users found matching your search
                     </TableCell>
                   </TableRow>
                 ) : (
-                  filteredUsers.map((user) => (
+                  users.map((user) => (
                     <TableRow key={user.id}>
                       <TableCell>
-                        <div className="font-medium">{user.name}</div>
+                        <div className="font-medium">
+                          {user.role === "PROVIDER" 
+                            ? user.providerProfile?.name || 'No Name'
+                            : user.profile?.name || 'No Name'}
+                        </div>
                         <div className="text-xs text-muted-foreground sm:hidden">{user.email}</div>
                       </TableCell>
                       <TableCell className="hidden sm:table-cell">{user.email}</TableCell>
-                      <TableCell className="hidden md:table-cell">{user.phoneNumber}</TableCell>
+                      <TableCell className="hidden md:table-cell">
+                        {user.role === "PROVIDER" 
+                          ? user.providerProfile?.phoneNumber || 'N/A'
+                          : user.profile?.phoneNumber || 'N/A'}
+                      </TableCell>
                       <TableCell className="text-center">
                         <Badge variant="outline" className={`text-xs py-0.5 ${getRoleBadgeColor(user.role)}`}>
                           {user.role}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-center">
+                        <Badge variant="outline" onClick={() => handleViewUser(user.id)} className={`text-xs py-0.5 cursor-pointer`}>
+                          <ChevronRight />
                         </Badge>
                       </TableCell>
                       <TableCell className="text-right">
@@ -154,7 +501,7 @@ export default function UsersPage() {
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
-                            <DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => handleEditUser(user.id)}>
                               <PenSquare className="mr-2 h-4 w-4" /> Edit
                             </DropdownMenuItem>
                             <DropdownMenuItem 
@@ -162,12 +509,6 @@ export default function UsersPage() {
                               className="text-red-600 focus:text-red-600"
                             >
                               <Trash2 className="mr-2 h-4 w-4" /> Delete
-                            </DropdownMenuItem>
-                            <DropdownMenuItem 
-                              onClick={() => handleDeleteUser(user.id)}
-                              className="text-green-600 focus:text-green-600"
-                            >
-                              <Shield className="mr-2 h-4 w-4" /> Promot to admin
                             </DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenu>
@@ -180,66 +521,481 @@ export default function UsersPage() {
           </div>
           <div className="flex items-center justify-between px-4 py-2 border-t">
             <p className="text-sm text-muted-foreground">
-              Showing {filteredUsers.length} of {users.length} users
+              {loading ? 'Loading...' : `Showing ${users.length} ${selectedRole !== "all" ? selectedRole.toLowerCase() + "s" : "users"}`}
             </p>
             <div className="flex gap-1">
-              <Button variant="outline" size="sm" disabled>Previous</Button>
-              <Button variant="outline" size="sm" disabled>Next</Button>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                disabled={currentPage === 1 || loading}
+              >
+                Previous
+              </Button>
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => setCurrentPage(prev => prev + 1)}
+                disabled={currentPage >= totalPages || loading}
+              >
+                Next
+              </Button>
             </div>
           </div>
         </CardContent>
       </Card>
 
+      {/* Add User Dialog */}
       <Dialog open={isAddingUser} onOpenChange={setIsAddingUser}>
-        <DialogContent>
+        <DialogContent className="max-w-md sm:max-w-2xl">
           <DialogHeader>
             <DialogTitle>Add New User</DialogTitle>
           </DialogHeader>
-          <div className="space-y-3 py-2">
-            <div className="space-y-1">
-              <label htmlFor="name" className="text-sm font-medium">Full Name</label>
-              <Input
-                id="name"
-                placeholder="John Doe"
-                value={newUser?.name}
-                onChange={(e) => setNewUser({ ...newUser, name: e.target.value })}
-              />
-            </div>
-            <div className="space-y-1">
-              <label htmlFor="email" className="text-sm font-medium">Email Address</label>
-              <Input
-                id="email"
-                type="email"
-                placeholder="john@example.com"
-                value={newUser?.email}
-                onChange={(e) => setNewUser({ ...newUser, email: e.target.value })}
-              />
-            </div>
-            <div className="space-y-1">
-              <label htmlFor="role" className="text-sm font-medium">Role</label>
-              <Select
-                id="role"
-                value={newUser?.role}
-                onChange={(e) => setNewUser({ ...newUser, role: e.target.value })}
-              >
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Select role" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="USER">User</SelectItem>
-                  <SelectItem value="PROVIDER">Provider</SelectItem>
-                  <SelectItem value="ADMIN">Admin</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
+          
+          <Tabs defaultValue="basic" className="w-full">
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="basic">Basic Information</TabsTrigger>
+              <TabsTrigger value="profile">Profile Details</TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value="basic" className="space-y-4 pt-4">
+              <div className="space-y-1">
+                <Label htmlFor="email">Email Address <span className="text-red-500">*</span></Label>
+                <Input
+                  id="email"
+                  name="email"
+                  type="email"
+                  required
+                  placeholder="user@example.com"
+                  value={formData.email}
+                  onChange={(e) => handleInputChange(e)}
+                />
+              </div>
+              
+              <div className="space-y-1">
+                <Label htmlFor="password">Password <span className="text-red-500">*</span></Label>
+                <Input
+                  id="password"
+                  name="password"
+                  type="password"
+                  required
+                  placeholder="••••••••"
+                  value={formData.password}
+                  onChange={(e) => handleInputChange(e)}
+                />
+              </div>
+              
+              <div className="space-y-1">
+                <Label htmlFor="role">User Role <span className="text-red-500">*</span></Label>
+                <Select 
+                  name="role"
+                  value={formData.role} 
+                  onValueChange={(value) => setFormData({...formData, role: value})}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select role" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="USER">Regular User</SelectItem>
+                    <SelectItem value="PROVIDER">Provider</SelectItem>
+                    <SelectItem value="ADMIN">Administrator</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </TabsContent>
+            
+            <TabsContent value="profile" className="space-y-4 pt-4">
+              {/* Fields common to all roles */}
+              <div className="space-y-1">
+                <Label htmlFor="name">Name <span className="text-red-500">*</span></Label>
+                <Input
+                  id="name"
+                  name="name"
+                  required
+                  placeholder="Full name"
+                  value={formData.profileData.name}
+                  onChange={(e) => handleInputChange(e, 'profileData')}
+                />
+              </div>
+
+              {formData.role === "USER" && (
+                <>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="space-y-1">
+                      <Label htmlFor="phoneNumber">Phone Number</Label>
+                      <Input
+                        id="phoneNumber"
+                        name="phoneNumber"
+                        placeholder="+1 234 567 8900"
+                        value={formData.profileData.phoneNumber}
+                        onChange={(e) => handleInputChange(e, 'profileData')}
+                      />
+                    </div>
+                    
+                    <div className="space-y-1">
+                      <Label htmlFor="gender">Gender</Label>
+                      <Select 
+                        name="gender"
+                        value={formData.profileData.gender || ""}
+                        onValueChange={(value) => setFormData({
+                          ...formData, 
+                          profileData: {...formData.profileData, gender: value}
+                        })}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select gender" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="male">Male</SelectItem>
+                          <SelectItem value="female">Female</SelectItem>
+                          <SelectItem value="other">Other</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                  
+                  <div className="space-y-1">
+                    <Label htmlFor="location">Location</Label>
+                    <Input
+                      id="location"
+                      name="location"
+                      placeholder="City, Country"
+                      value={formData.profileData.location}
+                      onChange={(e) => handleInputChange(e, 'profileData')}
+                    />
+                  </div>
+                  
+                  <div className="space-y-1">
+                    <Label htmlFor="image">Profile Image URL</Label>
+                    <Input
+                      id="image"
+                      name="image"
+                      placeholder="https://example.com/image.jpg"
+                      value={formData.profileData.image}
+                      onChange={(e) => handleInputChange(e, 'profileData')}
+                    />
+                  </div>
+                </>
+              )}
+              
+              {formData.role === "PROVIDER" && (
+                <>
+                  <div className="space-y-1">
+                    <Label htmlFor="businessName">Business Name <span className="text-red-500">*</span></Label>
+                    <Input
+                      id="businessName"
+                      name="businessName"
+                      required
+                      placeholder="Business name"
+                      value={formData.profileData.businessName}
+                      onChange={(e) => handleInputChange(e, 'profileData')}
+                    />
+                  </div>
+                  
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="space-y-1">
+                      <Label htmlFor="phoneNumber">Phone Number <span className="text-red-500">*</span></Label>
+                      <Input
+                        id="phoneNumber"
+                        name="phoneNumber"
+                        required
+                        placeholder="+1 234 567 8900"
+                        value={formData.profileData.phoneNumber}
+                        onChange={(e) => handleInputChange(e, 'profileData')}
+                      />
+                    </div>
+                    
+                    <div className="space-y-1">
+                      <Label htmlFor="address">Address <span className="text-red-500">*</span></Label>
+                      <Input
+                        id="address"
+                        name="address"
+                        required
+                        placeholder="123 Business St"
+                        value={formData.profileData.address}
+                        onChange={(e) => handleInputChange(e, 'profileData')}
+                      />
+                    </div>
+                  </div>
+                  
+                  <div className="space-y-1">
+                    <Label htmlFor="businessHours">Business Hours</Label>
+                    <Input
+                      id="businessHours"
+                      name="businessHours"
+                      placeholder="Mon-Fri: 9am-5pm"
+                      value={formData.profileData.businessHours}
+                      onChange={(e) => handleInputChange(e, 'profileData')}
+                    />
+                  </div>
+                  
+                  <div className="space-y-1">
+                    <Label htmlFor="description">Business Description</Label>
+                    <Textarea
+                      id="description"
+                      name="description"
+                      placeholder="Describe your business..."
+                      value={formData.profileData.description}
+                      onChange={(e) => handleInputChange(e, 'profileData')}
+                      rows={3}
+                    />
+                  </div>
+                  
+                  <div className="space-y-1">
+                    <Label htmlFor="image">Business Logo URL</Label>
+                    <Input
+                      id="image"
+                      name="image"
+                      placeholder="https://example.com/logo.jpg"
+                      value={formData.profileData.image}
+                      onChange={(e) => handleInputChange(e, 'profileData')}
+                    />
+                  </div>
+                </>
+              )}
+            </TabsContent>
+          </Tabs>
+          
           <DialogFooter>
-            <Button variant="outline" onClick={() => setIsAddingUser(false)}>Cancel</Button>
-            <Button onClick={handleAddUser}>Add User</Button>
+            <Button variant="outline" onClick={() => {
+              resetForm();
+              setIsAddingUser(false);
+            }}>
+              Cancel
+            </Button>
+            <Button onClick={handleAddUser} disabled={loading}>
+              {loading ? "Creating..." : "Create User"}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </div>
-  )
-}
+      
+      {/* Edit User Dialog */}
+      <Dialog open={isEditingUser} onOpenChange={setIsEditingUser}>
+        <DialogContent className="max-w-md sm:max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Edit User</DialogTitle>
+          </DialogHeader>
+          
+          <Tabs defaultValue="basic" className="w-full">
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="basic">Basic Information</TabsTrigger>
+              <TabsTrigger value="profile">Profile Details</TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value="basic" className="space-y-4 pt-4">
+              <div className="space-y-1">
+                <Label htmlFor="email">Email Address <span className="text-red-500">*</span></Label>
+                <Input
+                  id="email"
+                  name="email"
+                  type="email"
+                  required
+                  placeholder="user@example.com"
+                  value={formData.email}
+                  onChange={(e) => handleInputChange(e)}
+                />
+              </div>
+              
+              <div className="space-y-1">
+                <Label htmlFor="password">Password</Label>
+                <Input
+                  id="password"
+                  name="password"
+                  type="password"
+                  placeholder="Leave blank to keep unchanged"
+                  value={formData.password}
+                  onChange={(e) => handleInputChange(e)}
+                />
+                <p className="text-xs text-muted-foreground mt-1">
+                  Leave blank if you don't want to change the password.
+                </p>
+              </div>
+              
+              <div className="space-y-1">
+                <Label htmlFor="role">User Role <span className="text-red-500">*</span></Label>
+                <Select 
+                  name="role"
+                  value={formData.role} 
+                  onValueChange={(value) => setFormData({...formData, role: value})}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select role" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="USER">Regular User</SelectItem>
+                    <SelectItem value="PROVIDER">Provider</SelectItem>
+                    <SelectItem value="ADMIN">Administrator</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </TabsContent>
+            
+            <TabsContent value="profile" className="space-y-4 pt-4">
+              {/* Fields common to all roles */}
+              <div className="space-y-1">
+                <Label htmlFor="name">Name <span className="text-red-500">*</span></Label>
+                <Input
+                  id="name"
+                  name="name"
+                  required
+                  placeholder="Full name"
+                  value={formData.profileData.name}
+                  onChange={(e) => handleInputChange(e, 'profileData')}
+                />
+              </div>
 
+              {formData.role === "USER" && (
+                <>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="space-y-1">
+                      <Label htmlFor="phoneNumber">Phone Number</Label>
+                      <Input
+                        id="phoneNumber"
+                        name="phoneNumber"
+                        placeholder="+1 234 567 8900"
+                        value={formData.profileData.phoneNumber}
+                        onChange={(e) => handleInputChange(e, 'profileData')}
+                      />
+                    </div>
+                    
+                    <div className="space-y-1">
+                      <Label htmlFor="gender">Gender</Label>
+                      <Select 
+                        name="gender"
+                        value={formData.profileData.gender || ""}
+                        onValueChange={(value) => setFormData({
+                          ...formData, 
+                          profileData: {...formData.profileData, gender: value}
+                        })}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select gender" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="male">Male</SelectItem>
+                          <SelectItem value="female">Female</SelectItem>
+                          <SelectItem value="other">Other</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                  
+                  <div className="space-y-1">
+                    <Label htmlFor="location">Location</Label>
+                    <Input
+                      id="location"
+                      name="location"
+                      placeholder="City, Country"
+                      value={formData.profileData.location}
+                      onChange={(e) => handleInputChange(e, 'profileData')}
+                    />
+                  </div>
+                  
+                  <div className="space-y-1">
+                    <Label htmlFor="image">Profile Image URL</Label>
+                    <Input
+                      id="image"
+                      name="image"
+                      placeholder="https://example.com/image.jpg"
+                      value={formData.profileData.image}
+                      onChange={(e) => handleInputChange(e, 'profileData')}
+                    />
+                  </div>
+                </>
+              )}
+              
+              {formData.role === "PROVIDER" && (
+                <>
+                  <div className="space-y-1">
+                    <Label htmlFor="businessName">Business Name <span className="text-red-500">*</span></Label>
+                    <Input
+                      id="businessName"
+                      name="businessName"
+                      required
+                      placeholder="Business name"
+                      value={formData.profileData.businessName}
+                      onChange={(e) => handleInputChange(e, 'profileData')}
+                    />
+                  </div>
+                  
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="space-y-1">
+                      <Label htmlFor="phoneNumber">Phone Number <span className="text-red-500">*</span></Label>
+                      <Input
+                        id="phoneNumber"
+                        name="phoneNumber"
+                        required
+                        placeholder="+1 234 567 8900"
+                        value={formData.profileData.phoneNumber}
+                        onChange={(e) => handleInputChange(e, 'profileData')}
+                      />
+                    </div>
+                    
+                    <div className="space-y-1">
+                      <Label htmlFor="address">Address <span className="text-red-500">*</span></Label>
+                      <Input
+                        id="address"
+                        name="address"
+                        required
+                        placeholder="123 Business St"
+                        value={formData.profileData.address}
+                        onChange={(e) => handleInputChange(e, 'profileData')}
+                      />
+                    </div>
+                  </div>
+                  
+                  <div className="space-y-1">
+                    <Label htmlFor="businessHours">Business Hours</Label>
+                    <Input
+                      id="businessHours"
+                      name="businessHours"
+                      placeholder="Mon-Fri: 9am-5pm"
+                      value={formData.profileData.businessHours}
+                      onChange={(e) => handleInputChange(e, 'profileData')}
+                    />
+                  </div>
+                  
+                  <div className="space-y-1">
+                    <Label htmlFor="description">Business Description</Label>
+                    <Textarea
+                      id="description"
+                      name="description"
+                      placeholder="Describe your business..."
+                      value={formData.profileData.description}
+                      onChange={(e) => handleInputChange(e, 'profileData')}
+                      rows={3}
+                    />
+                  </div>
+                  
+                  <div className="space-y-1">
+                    <Label htmlFor="image">Business Logo URL</Label>
+                    <Input
+                      id="image"
+                      name="image"
+                      placeholder="https://example.com/logo.jpg"
+                      value={formData.profileData.image}
+                      onChange={(e) => handleInputChange(e, 'profileData')}
+                    />
+                  </div>
+                </>
+              )}
+                </TabsContent>
+              </Tabs>
+              
+              <DialogFooter>
+                <Button variant="outline" onClick={() => {
+                  resetForm();
+                  setIsEditingUser(false);
+                }}>
+                  Cancel
+                </Button>
+                <Button onClick={handleUpdateUser} disabled={loading}>
+                  {loading ? "Updating..." : "Update User"}
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+        </div>
+      );
+    }
