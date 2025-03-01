@@ -54,6 +54,13 @@ export default function UsersPage() {
     }
   })
   
+  // Add this function to handle opening the Add User dialog properly
+  const handleOpenAddUserDialog = () => {
+    // Reset the form first before opening dialog
+    resetForm();
+    setIsAddingUser(true);
+  }
+
   // Fetch users with pagination and filters
   const fetchUsers = async () => {
     try {
@@ -427,7 +434,7 @@ export default function UsersPage() {
             <RefreshCcw className="h-4 w-4 mr-1" /> Refresh
           </Button>
 
-          <Button size="sm" onClick={() => setIsAddingUser(true)}>
+          <Button size="sm" onClick={handleOpenAddUserDialog}>
             <UserPlus className="h-4 w-4 mr-1" /> Add User
           </Button>
         
@@ -567,7 +574,15 @@ export default function UsersPage() {
       </Card>
 
       {/* Add User Dialog */}
-      <Dialog open={isAddingUser} onOpenChange={setIsAddingUser}>
+      <Dialog 
+        open={isAddingUser} 
+        onOpenChange={(open) => {
+          if (!open) {
+            resetForm();
+          }
+          setIsAddingUser(open);
+        }}
+      >
         <DialogContent className="max-w-md sm:max-w-2xl">
           <DialogHeader>
             <DialogTitle>Add New User</DialogTitle>
@@ -669,7 +684,6 @@ export default function UsersPage() {
                         <SelectContent>
                           <SelectItem value="male">Male</SelectItem>
                           <SelectItem value="female">Female</SelectItem>
-                          <SelectItem value="other">Other</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
@@ -792,7 +806,15 @@ export default function UsersPage() {
       </Dialog>
       
       {/* Edit User Dialog */}
-      <Dialog open={isEditingUser} onOpenChange={setIsEditingUser}>
+      <Dialog 
+        open={isEditingUser} 
+        onOpenChange={(open) => {
+          if (!open) {
+            resetForm();
+          }
+          setIsEditingUser(open);
+        }}
+      >
         <DialogContent className="max-w-md sm:max-w-2xl">
           <DialogHeader>
             <DialogTitle>Edit User</DialogTitle>

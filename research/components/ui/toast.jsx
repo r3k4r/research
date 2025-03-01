@@ -6,14 +6,12 @@ export function Toast({ message, type, onClose }) {
   const [isVisible, setIsVisible] = useState(false)
 
   useEffect(() => {
-    // Show toast immediately - reduced delay from 100ms to 10ms
     const showTimer = setTimeout(() => setIsVisible(true), 10)
     
-    // Increase display time from 5000ms to 6000ms for better visibility
     const hideTimer = setTimeout(() => {
       setIsVisible(false)
       setTimeout(onClose, 300)
-    }, 6000)
+    }, 3000)
 
     return () => {
       clearTimeout(showTimer)
