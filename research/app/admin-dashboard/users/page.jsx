@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Search, UserPlus, Trash2, PenSquare, MoreVertical, Filter } from "lucide-react"
+import { Search, UserPlus, Trash2, PenSquare, MoreVertical, Filter, Shield } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { 
   DropdownMenu,
@@ -21,20 +21,38 @@ export default function UsersPage() {
   const [searchTerm, setSearchTerm] = useState("")
   const [newUser, setNewUser] = useState({ name: "", email: "", role: "USER" })
   const [isAddingUser, setIsAddingUser] = useState(false)
-
+  
   useEffect(() => {
-    // Fetch users from API - using mock data for now
-    setUsers([
-      { id: 1, name: "John Doe", email: "john@example.com", role: "USER", status: "Active", lastLogin: "2 hours ago" },
-      { id: 2, name: "Jane Smith", email: "jane@example.com", role: "PROVIDER", status: "Active", lastLogin: "1 day ago" },
-      { id: 3, name: "Robert Johnson", email: "robert@example.com", role: "USER", status: "Inactive", lastLogin: "1 week ago" },
-      { id: 4, name: "Emily Williams", email: "emily@example.com", role: "PROVIDER", status: "Active", lastLogin: "3 days ago" },
-      { id: 5, name: "Michael Brown", email: "michael@example.com", role: "ADMIN", status: "Active", lastLogin: "5 hours ago" },
-    ])
+    async function fetchUsers(){
+      try{
+        const res = await fetch('/api/admin-dashboard/users');
+        const data = await res.json();
+        console.log('data', data.users);
+        
+        if (data.users) {
+          const mappedUsers = data.users.map(user => ({
+            id: user.id,
+            email: user.email,
+            role: user.role,
+            name: user.role === "PROVIDER" 
+            ? user.providerProfile?.name || 'No Name'
+            : user.profile?.name || 'No Name',
+            phoneNumber: user.role === "PROVIDER" 
+              ? user.providerProfile?.phoneNumber || 'N/A'
+              : user.profile?.phoneNumber || 'N/A'
+          }));
+          setUsers(mappedUsers);
+        }
+      } catch(err) {
+        console.log(err);
+      }
+    }
+
+    fetchUsers();
   }, [])
 
   const handleAddUser = () => {
-    setUsers([...users, { id: Date.now(), ...newUser, status: "Active", lastLogin: "Just now" }])
+    setUsers([...users, { id: Date.now().toString(), ...newUser, phoneNumber: "N/A" }])
     setNewUser({ name: "", email: "", role: "USER" })
     setIsAddingUser(false)
   }
@@ -102,7 +120,7 @@ export default function UsersPage() {
                 <TableRow>
                   <TableHead>Name</TableHead>
                   <TableHead className="hidden sm:table-cell">Email</TableHead>
-                  <TableHead className="hidden md:table-cell">Last Login</TableHead>
+                  <TableHead className="hidden md:table-cell">Phone Number</TableHead>
                   <TableHead className="text-center">Role</TableHead>
                   <TableHead className="w-[80px] text-right pr-4">Actions</TableHead>
                 </TableRow>
@@ -122,7 +140,7 @@ export default function UsersPage() {
                         <div className="text-xs text-muted-foreground sm:hidden">{user.email}</div>
                       </TableCell>
                       <TableCell className="hidden sm:table-cell">{user.email}</TableCell>
-                      <TableCell className="hidden md:table-cell">{user.lastLogin}</TableCell>
+                      <TableCell className="hidden md:table-cell">{user.phoneNumber}</TableCell>
                       <TableCell className="text-center">
                         <Badge variant="outline" className={`text-xs py-0.5 ${getRoleBadgeColor(user.role)}`}>
                           {user.role}
@@ -144,6 +162,12 @@ export default function UsersPage() {
                               className="text-red-600 focus:text-red-600"
                             >
                               <Trash2 className="mr-2 h-4 w-4" /> Delete
+                            </DropdownMenuItem>
+                            <DropdownMenuItem 
+                              onClick={() => handleDeleteUser(user.id)}
+                              className="text-green-600 focus:text-green-600"
+                            >
+                              <Shield className="mr-2 h-4 w-4" /> Promot to admin
                             </DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenu>
@@ -177,7 +201,7 @@ export default function UsersPage() {
               <Input
                 id="name"
                 placeholder="John Doe"
-                value={newUser.name}
+                value={newUser?.name}
                 onChange={(e) => setNewUser({ ...newUser, name: e.target.value })}
               />
             </div>
@@ -187,7 +211,7 @@ export default function UsersPage() {
                 id="email"
                 type="email"
                 placeholder="john@example.com"
-                value={newUser.email}
+                value={newUser?.email}
                 onChange={(e) => setNewUser({ ...newUser, email: e.target.value })}
               />
             </div>
@@ -195,7 +219,7 @@ export default function UsersPage() {
               <label htmlFor="role" className="text-sm font-medium">Role</label>
               <Select
                 id="role"
-                value={newUser.role}
+                value={newUser?.role}
                 onChange={(e) => setNewUser({ ...newUser, role: e.target.value })}
               >
                 <SelectTrigger className="w-full">

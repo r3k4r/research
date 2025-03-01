@@ -10,7 +10,6 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// Base user model for authentication
 model User {
   id               String    @id @default(uuid())
   email            String    @unique
@@ -21,54 +20,14 @@ model User {
   createdAt        DateTime  @default(now())
   updatedAt        DateTime  @updatedAt
 
-  // Relations
-  accounts        Account[]
-  profile         UserProfile?
-  providerProfile ProviderProfile?
-
-  // New relations to token tables
+  accounts          Account[]
+  profile           UserProfile?
+  providerProfile   ProviderProfile?
   emailVerification EmailVerification?
   passwordReset     PasswordReset?
   twoFactorAuth     TwoFactorAuth?
 }
 
-// New model for email verification
-model EmailVerification {
-  id        String   @id @default(uuid())
-  userId    String   @unique
-  token     String   @unique
-  expires   DateTime
-  createdAt DateTime @default(now())
-
-  // Relation to User
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-}
-
-// New model for password reset
-model PasswordReset {
-  id        String   @id @default(uuid())
-  userId    String   @unique
-  token     String   @unique
-  expires   DateTime
-  createdAt DateTime @default(now())
-
-  // Relation to User
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-}
-
-// New model for two-factor authentication
-model TwoFactorAuth {
-  id        String   @id @default(uuid())
-  userId    String   @unique
-  code      String
-  expires   DateTime
-  createdAt DateTime @default(now())
-
-  // Relation to User
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-}
-
-// Separate profile for user details
 model UserProfile {
   id          String  @id @default(uuid())
   userId      String  @unique
@@ -78,14 +37,13 @@ model UserProfile {
   gender      String?
   image       String?
 
-  // Relations
   user    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   reviews Review[]
 }
 
-// Separate profile for provider details
 model ProviderProfile {
   id            String  @id @default(uuid())
+  name          String
   userId        String  @unique
   businessName  String
   description   String?
@@ -94,13 +52,11 @@ model ProviderProfile {
   businessHours String?
   logo          String?
 
-  // Relations
   user             User                     @relation(fields: [userId], references: [id], onDelete: Cascade)
   foodItems        FoodItem[]
   monthlySummaries ProviderMonthlySummary[]
 }
 
-// OAuth accounts - keep as is for Google auth compatibility
 model Account {
   id                 String  @id @default(uuid())
   userId             String
@@ -136,7 +92,6 @@ model FoodItem {
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 
-  // Relations
   category   Category        @relation(fields: [categoryId], references: [id])
   provider   ProviderProfile @relation(fields: [providerId], references: [id])
   reviews    Review[]
@@ -158,7 +113,6 @@ model Review {
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
-  // Relations
   userProfile UserProfile @relation(fields: [userProfileId], references: [id])
   foodItem    FoodItem    @relation(fields: [foodItemId], references: [id])
 }
@@ -172,7 +126,6 @@ model DailySales {
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
 
-  // Relations
   foodItem FoodItem @relation(fields: [foodItemId], references: [id])
 
   @@unique([foodItemId, date])
@@ -191,7 +144,6 @@ model ProviderMonthlySummary {
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 
-  // Relations
   provider ProviderProfile @relation(fields: [providerId], references: [id])
 
   @@unique([providerId, month])
@@ -206,4 +158,34 @@ enum Role {
 enum OrderStatus {
   SOLD
   EXPIRED
+}
+
+model EmailVerification {
+  id        String   @id @default(uuid())
+  userId    String   @unique
+  token     String   @unique
+  expires   DateTime
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model PasswordReset {
+  id        String   @id @default(uuid())
+  userId    String   @unique
+  token     String   @unique
+  expires   DateTime
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model TwoFactorAuth {
+  id        String   @id @default(uuid())
+  userId    String   @unique
+  code      String
+  expires   DateTime
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
