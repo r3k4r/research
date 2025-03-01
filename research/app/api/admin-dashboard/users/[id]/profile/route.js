@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 
 export async function PATCH(req, { params }) {
     try {
-        const userId = params.id;
+        const userId = await params.id;
         const data = await req.json();
         
         // Find the user to ensure they exist

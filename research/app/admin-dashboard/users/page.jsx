@@ -9,7 +9,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
-import { Search, UserPlus, Trash2, PenSquare, MoreVertical, Eye, ChevronRight } from "lucide-react"
+import { Search, UserPlus, Trash2, PenSquare, MoreVertical, Eye, ChevronRight, RefreshCcw } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { 
@@ -429,9 +429,16 @@ export default function UsersPage() {
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <h1 className="text-xl font-semibold md:text-2xl">Users Management</h1>
-        <Button size="sm" onClick={() => setIsAddingUser(true)}>
-          <UserPlus className="h-4 w-4 mr-1" /> Add User
-        </Button>
+        <div className='flex items-center justify-center gap-4'> 
+          <Button size="sm" variant="outline" onClick={fetchUsers}>
+            <RefreshCcw />
+          </Button>
+
+          <Button size="sm" onClick={() => setIsAddingUser(true)}>
+            <UserPlus className="h-4 w-4 mr-1" /> Add User
+          </Button>
+        
+        </div>
       </div>
 
       <Card className="shadow-sm">

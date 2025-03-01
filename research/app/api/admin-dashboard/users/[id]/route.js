@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 
 export async function GET(req, { params }) {
     try {
-        const userId = params.id;
+        const userId = await params.id;
         
         const user = await prisma.user.findUnique({
             where: { id: userId },
@@ -26,7 +26,7 @@ export async function GET(req, { params }) {
 
 export async function PATCH(req, { params }) {
     try {
-        const userId = params.id;
+        const userId = await params.id;
         const data = await req.json();
         const { role, ...updateData } = data;
         
@@ -85,7 +85,7 @@ export async function PATCH(req, { params }) {
 
 export async function DELETE(req, { params }) {
     try {
-        const userId = params.id;
+        const userId = await params.id;
         
         await prisma.user.delete({
             where: { id: userId }
