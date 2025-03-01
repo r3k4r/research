@@ -9,7 +9,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
-import { Search, UserPlus, Trash2, PenSquare, MoreVertical, Eye, ChevronRight, RefreshCcw } from "lucide-react"
+import { Search, UserPlus, Trash2, PenSquare, MoreVertical, ChevronRight, RefreshCcw } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { 
@@ -19,11 +19,12 @@ import {
   DropdownMenuTrigger 
 } from "@/components/ui/dropdown-menu"
 import { useRouter } from "next/navigation" 
-import { useToast } from "@/components/ui/toast"
+import { useToast } from "@/components/ui/toast" // This is your custom toast
 
 export default function UsersPage() {
-  const { toast } = useToast()
-  const router = useRouter() // Use router for client-side navigation
+  // Use the custom toast hook correctly
+  const { showToast, hideToast, ToastComponent } = useToast()
+  const router = useRouter() 
   const [users, setUsers] = useState([])
   const [searchTerm, setSearchTerm] = useState("")
   const [selectedRole, setSelectedRole] = useState("all")
@@ -67,7 +68,9 @@ export default function UsersPage() {
         url += `&search=${searchTerm}`
       }
       
-      const res = await fetch(url);
+      const res = await fetch(url, {
+        cache: 'no-store' // Prevent caching
+      });
       const data = await res.json();
       
       if (data.users) {
@@ -76,15 +79,17 @@ export default function UsersPage() {
       }
     } catch (err) {
       console.log(err);
-      toast({
-        title: "Error",
-        description: "Failed to fetch users",
-        variant: "destructive",
-      });
+      // Use your custom toast
+      showToast("Failed to fetch users", "error");
     } finally {
       setLoading(false);
     }
   }
+
+  // Refresh data function to force updates
+  const refreshData = () => {
+    fetchUsers();
+  };
 
   useEffect(() => {
     fetchUsers();
@@ -166,29 +171,25 @@ export default function UsersPage() {
         body: JSON.stringify(payload)
       });
       
-      const data = await res.json(); // Always parse the response
+      const data = await res.json();
       
       if (!res.ok) {
         throw new Error(data.error || "Failed to create user");
       }
       
-      toast({
-        title: "Success",
-        description: "User created successfully",
-        variant: "default", // Specify the variant
-      });
+      // Use your custom toast
+      showToast("User created successfully", "success");
       
-      // Refresh user list
-      fetchUsers();
+      // Reset form and close dialog first for better UX
       resetForm();
       setIsAddingUser(false);
+      
+      // Then refresh data
+      refreshData();
     } catch (err) {
       console.error(err);
-      toast({
-        title: "Error",
-        description: err.message || "Failed to create user",
-        variant: "destructive",
-      });
+      // Use your custom toast
+      showToast(err.message || "Failed to create user", "error");
     } finally {
       setLoading(false);
     }
@@ -256,11 +257,8 @@ export default function UsersPage() {
       setIsEditingUser(true);
     } catch (err) {
       console.error(err);
-      toast({
-        title: "Error",
-        description: err.message || "Failed to load user for editing",
-        variant: "destructive",
-      });
+      // Fix: Use showToast instead of toast
+      showToast(err.message || "Failed to load user for editing", "error");
     } finally {
       setLoading(false);
     }
@@ -306,22 +304,19 @@ export default function UsersPage() {
         await updateProviderProfile(userId);
       }
       
-      toast({
-        title: "Success",
-        description: "User updated successfully",
-        variant: "default", // Specify the variant
-      });
+      // Use your custom toast
+      showToast("User updated successfully", "success");
       
-      fetchUsers();
+      // Reset form and close dialog
       resetForm();
       setIsEditingUser(false);
+      
+      // Refresh data
+      refreshData();
     } catch (err) {
       console.error(err);
-      toast({
-        title: "Error",
-        description: err.message || "Failed to update user",
-        variant: "destructive",
-      });
+      // Use your custom toast
+      showToast(err.message || "Failed to update user", "error");
     } finally {
       setLoading(false);
     }
@@ -398,20 +393,15 @@ export default function UsersPage() {
         throw new Error(data.error || "Failed to delete user");
       }
       
-      toast({
-        title: "Success",
-        description: "User deleted successfully",
-        variant: "default", // Specify the variant
-      });
+      // Use your custom toast
+      showToast("User deleted successfully", "success");
       
-      fetchUsers();
+      // Refresh data
+      refreshData();
     } catch (err) {
       console.error(err);
-      toast({
-        title: "Error",
-        description: err.message || "Failed to delete user",
-        variant: "destructive",
-      });
+      // Use your custom toast
+      showToast(err.message || "Failed to delete user", "error");
     } finally {
       setLoading(false);
     }
@@ -427,11 +417,14 @@ export default function UsersPage() {
 
   return (
     <div className="space-y-4">
+      {/* Include your ToastComponent here */}
+      {ToastComponent}
+      
       <div className="flex items-center justify-between">
         <h1 className="text-xl font-semibold md:text-2xl">Users Management</h1>
         <div className='flex items-center justify-center gap-4'> 
-          <Button size="sm" variant="outline" onClick={fetchUsers}>
-            <RefreshCcw />
+          <Button size="sm" variant="outline" onClick={refreshData}>
+            <RefreshCcw className="h-4 w-4 mr-1" /> Refresh
           </Button>
 
           <Button size="sm" onClick={() => setIsAddingUser(true)}>
