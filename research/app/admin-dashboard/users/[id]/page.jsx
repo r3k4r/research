@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { useRouter } from "next/navigation"
+import { useRouter, useParams } from "next/navigation" // Add useParams import
 import { 
   Card, 
   CardContent, 
@@ -21,8 +21,6 @@ import {
   User as UserIcon, 
   Calendar, 
   Shield, 
-  Briefcase, 
-  Building, 
   Clock, 
   Check, 
   X, 
@@ -30,12 +28,101 @@ import {
   Trash 
 } from "lucide-react"
 import { useToast } from "@/components/ui/toast"
+import { Label } from "@/components/ui/label"
+import { Input } from "@/components/ui/input"
+import { Textarea } from "@/components/ui/textarea"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 
 const SingleUser = ({ params }) => {
+  // Use the useParams hook instead of destructuring directly from props
+  const routeParams = useParams()
+  const id = routeParams.id // Access the id safely
+  
   const router = useRouter()
   const { showToast, hideToast, ToastComponent } = useToast()
   const [user, setUser] = useState(null)
   const [loading, setLoading] = useState(true)
+  const [isEditingUser, setIsEditingUser] = useState(false)
+  const [formData, setFormData] = useState({
+    email: "",
+    password: "",
+    role: "USER",
+    profileData: {
+      // User profile fields
+      name: "",
+      location: "",
+      phoneNumber: "",
+      gender: "",
+      image: "",
+      // Provider profile fields
+      name: "",
+      businessName: "",
+      description: "",
+      address: "",
+      businessHours: ""
+    }
+  })
+
+  // Define resetForm function that was missing
+  const resetForm = () => {
+    setFormData({
+      email: "",
+      password: "",
+      role: "USER",
+      profileData: {
+        name: "",
+        location: "",
+        phoneNumber: "",
+        gender: "",
+        image: "",
+        businessName: "",
+        description: "",
+        address: "",
+        businessHours: ""
+      }
+    });
+  }
+
+  // Define handleInputChange function that was missing
+  const handleInputChange = (e, section = null) => {
+    const { name, value } = e.target;
+    
+    if (section) {
+      setFormData({
+        ...formData,
+        [section]: {
+          ...formData[section],
+          [name]: value
+        }
+      });
+    } else {
+      setFormData({
+        ...formData,
+        [name]: value
+      });
+    }
+  }
+
+  // Define refreshData function that was missing
+  const refreshData = async () => {
+    try {
+      setLoading(true);
+      const res = await fetch(`/api/admin-dashboard/users/${id}`);
+      
+      if (!res.ok) {
+        throw new Error("Failed to refresh user data");
+      }
+      
+      const data = await res.json();
+      setUser(data.user);
+    } catch (error) {
+      console.error(error);
+      showToast("Failed to refresh user data", "error");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const formatDate = (dateString) => {
     if (!dateString) return "N/A"
@@ -57,7 +144,7 @@ const SingleUser = ({ params }) => {
     const fetchUserData = async () => {
       try {
         setLoading(true)
-        const res = await fetch(`/api/admin-dashboard/users/${params.id}`)
+        const res = await fetch(`/api/admin-dashboard/users/${id}`)
         
         if (!res.ok) {
           throw new Error("Failed to fetch user data")
@@ -73,8 +160,10 @@ const SingleUser = ({ params }) => {
       }
     }
     
-    fetchUserData()
-  }, [])
+    if (id) {
+      fetchUserData()
+    }
+  }, [id]) // Update dependency array to use the new id
 
   const handleDeleteUser = async () => {
     if (!confirm("Are you sure you want to delete this user? This action cannot be undone.")) {
@@ -82,7 +171,7 @@ const SingleUser = ({ params }) => {
     }
     
     try {
-      const res = await fetch(`/api/admin-dashboard/users/${params.id}`, {
+      const res = await fetch(`/api/admin-dashboard/users/${id}`, {
         method: "DELETE",
       })
       
@@ -100,6 +189,184 @@ const SingleUser = ({ params }) => {
       showToast("Error deleting user", "error")
     }
   }
+
+
+  const handleEditUser = async (userId) => {
+    try {
+      setLoading(true);
+      const res = await fetch(`/api/admin-dashboard/users/${id}`);
+      
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.error || "Failed to fetch user details");
+      }
+      
+      const { user } = await res.json();
+      
+      // Populate form with user data
+      const newFormData = {
+        id: user.id,
+        email: user.email,
+        password: "",  // Don't populate password for security
+        role: user.role,
+        profileData: {
+          name: "",
+          location: "",
+          phoneNumber: "",
+          gender: "",
+          image: "",
+          businessName: "",
+          description: "",
+          address: "",
+          businessHours: ""
+        }
+      };
+      
+      // Add USER or PROVIDER specific data
+      if (user.role === "USER" && user.profile) {
+        newFormData.profileData = {
+          ...newFormData.profileData,
+          name: user.profile.name || "",
+          location: user.profile.location || "",
+          phoneNumber: user.profile.phoneNumber || "",
+          gender: user.profile.gender || "",
+          image: user.profile.image || ""
+        };
+      } else if (user.role === "PROVIDER" && user.providerProfile) {
+        newFormData.profileData = {
+          ...newFormData.profileData,
+          name: user.providerProfile.name || "",
+          businessName: user.providerProfile.businessName || "",
+          description: user.providerProfile.description || "",
+          address: user.providerProfile.address || "",
+          phoneNumber: user.providerProfile.phoneNumber || "",
+          businessHours: user.providerProfile.businessHours || "",
+          image: user.providerProfile.logo || ""
+        };
+      }
+      
+      setFormData(newFormData);
+      setIsEditingUser(true);
+    } catch (err) {
+      console.error(err);
+      // Fix: Use showToast instead of toast
+      showToast(err.message || "Failed to load user for editing", "error");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  
+ const handleUpdateUser = async () => {
+  try {
+    setLoading(true);
+    const userId = formData.id;
+    
+    if (!userId) {
+      throw new Error("User ID is missing");
+    }
+    
+    // Create update payload (similar to add but without password unless provided)
+    const payload = {
+      email: formData.email,
+      role: formData.role
+    };
+    
+    // Only include password if it's provided (for changing password)
+    if (formData.password) {
+      payload.password = formData.password;
+    }
+    
+    // Call API to update user
+    const res = await fetch(`/api/admin-dashboard/users/${id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    
+    const data = await res.json();
+    
+    if (!res.ok) {
+      throw new Error(data.error || "Failed to update user");
+    }
+    
+    // Update profile based on role
+    if (formData.role === "USER") {
+      await updateUserProfile(userId);
+    } else if (formData.role === "PROVIDER") {
+      await updateProviderProfile(userId);
+    }
+    
+    // Use your custom toast
+    showToast("User updated successfully", "success");
+    
+    // Reset form and close dialog
+    resetForm();
+    setIsEditingUser(false);
+    
+    // Refresh data
+    refreshData();
+  } catch (err) {
+    console.error(err);
+    // Use your custom toast
+    showToast(err.message || "Failed to update user", "error");
+  } finally {
+    setLoading(false);
+  }
+}
+
+const updateUserProfile = async (userId) => {
+  if (!userId) throw new Error("User ID is missing");
+  
+  const profileData = {
+    name: formData.profileData.name,
+    location: formData.profileData.location || null,
+    phoneNumber: formData.profileData.phoneNumber || null,
+    gender: formData.profileData.gender || null,
+  };
+  
+  const res = await fetch(`/api/admin-dashboard/users/${userId}/profile`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(profileData)
+  });
+  
+  const data = await res.json();
+  
+  if (!res.ok) {
+    throw new Error(data.error || "Failed to update user profile");
+  }
+  
+  return data;
+}
+
+const updateProviderProfile = async (userId) => {
+  if (!userId) throw new Error("User ID is missing");
+  
+  const profileData = {
+    name: formData.profileData.name,
+    businessName: formData.profileData.businessName,
+    description: formData.profileData.description || null,
+    address: formData.profileData.address,
+    phoneNumber: formData.profileData.phoneNumber,
+    businessHours: formData.profileData.businessHours || null,
+    logo: formData.profileData.image || null
+  };
+  
+  const res = await fetch(`/api/admin-dashboard/users/${userId}/provider-profile`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(profileData)
+  });
+  
+  const data = await res.json();
+  
+  if (!res.ok) {
+    throw new Error(data.error || "Failed to update provider profile");
+  }
+  
+  return data;
+}
 
   if (loading) {
     return (
@@ -159,7 +426,7 @@ const SingleUser = ({ params }) => {
         <div className="flex items-center gap-2">
           <Button 
             variant="outline" 
-            onClick={() => router.push(`/admin-dashboard/users`)}
+            onClick={() => handleEditUser(user.id)}
           >
             <Edit className="h-4 w-4 mr-1" /> Edit
           </Button>
@@ -410,6 +677,243 @@ const SingleUser = ({ params }) => {
           </CardFooter>
         </Card>
       </div>
+
+      {/* Edit User Modal */}
+       {/* Edit User Dialog */}
+       <Dialog 
+        open={isEditingUser} 
+        onOpenChange={(open) => {
+          if (!open) {
+            resetForm();
+          }
+          setIsEditingUser(open);
+        }}
+      >
+        <DialogContent className="max-w-md sm:max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Edit User</DialogTitle>
+          </DialogHeader>
+          
+          <Tabs defaultValue="basic" className="w-full">
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="basic">Basic Information</TabsTrigger>
+              <TabsTrigger value="profile">Profile Details</TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value="basic" className="space-y-4 pt-4">
+              <div className="space-y-1">
+                <Label htmlFor="email">Email Address <span className="text-red-500">*</span></Label>
+                <Input
+                  id="email"
+                  name="email"
+                  type="email"
+                  required
+                  placeholder="user@example.com"
+                  value={formData.email}
+                  onChange={(e) => handleInputChange(e)}
+                />
+              </div>
+              
+              <div className="space-y-1">
+                <Label htmlFor="password">Password</Label>
+                <Input
+                  id="password"
+                  name="password"
+                  type="password"
+                  placeholder="Leave blank to keep unchanged"
+                  value={formData.password}
+                  onChange={(e) => handleInputChange(e)}
+                />
+                <p className="text-xs text-muted-foreground mt-1">
+                  Leave blank if you don't want to change the password.
+                </p>
+              </div>
+              
+              <div className="space-y-1">
+                <Label htmlFor="role">User Role <span className="text-red-500">*</span></Label>
+                <Select 
+                  name="role"
+                  value={formData.role} 
+                  onValueChange={(value) => setFormData({...formData, role: value})}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select role" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="USER">Regular User</SelectItem>
+                    <SelectItem value="PROVIDER">Provider</SelectItem>
+                    <SelectItem value="ADMIN">Administrator</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </TabsContent>
+            
+            <TabsContent value="profile" className="space-y-4 pt-4">
+              {/* Fields common to all roles */}
+              <div className="space-y-1">
+                <Label htmlFor="name">Name <span className="text-red-500">*</span></Label>
+                <Input
+                  id="name"
+                  name="name"
+                  required
+                  placeholder="Full name"
+                  value={formData.profileData.name}
+                  onChange={(e) => handleInputChange(e, 'profileData')}
+                />
+              </div>
+
+              {formData.role === "USER" && (
+                <>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="space-y-1">
+                      <Label htmlFor="phoneNumber">Phone Number</Label>
+                      <Input
+                        id="phoneNumber"
+                        name="phoneNumber"
+                        placeholder="+1 234 567 8900"
+                        value={formData.profileData.phoneNumber}
+                        onChange={(e) => handleInputChange(e, 'profileData')}
+                      />
+                    </div>
+                    
+                    <div className="space-y-1">
+                      <Label htmlFor="gender">Gender</Label>
+                      <Select 
+                        name="gender"
+                        value={formData.profileData.gender || ""}
+                        onValueChange={(value) => setFormData({
+                          ...formData, 
+                          profileData: {...formData.profileData, gender: value}
+                        })}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select gender" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="male">Male</SelectItem>
+                          <SelectItem value="female">Female</SelectItem>
+                          <SelectItem value="other">Other</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                  
+                  <div className="space-y-1">
+                    <Label htmlFor="location">Location</Label>
+                    <Input
+                      id="location"
+                      name="location"
+                      placeholder="City, Country"
+                      value={formData.profileData.location}
+                      onChange={(e) => handleInputChange(e, 'profileData')}
+                    />
+                  </div>
+                  
+                  <div className="space-y-1">
+                    <Label htmlFor="image">Profile Image URL</Label>
+                    <Input
+                      id="image"
+                      name="image"
+                      placeholder="https://example.com/image.jpg"
+                      value={formData.profileData.image}
+                      onChange={(e) => handleInputChange(e, 'profileData')}
+                    />
+                  </div>
+                </>
+              )}
+              
+              {formData.role === "PROVIDER" && (
+                <>
+                  <div className="space-y-1">
+                    <Label htmlFor="businessName">Business Name <span className="text-red-500">*</span></Label>
+                    <Input
+                      id="businessName"
+                      name="businessName"
+                      required
+                      placeholder="Business name"
+                      value={formData.profileData.businessName}
+                      onChange={(e) => handleInputChange(e, 'profileData')}
+                    />
+                  </div>
+                  
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="space-y-1">
+                      <Label htmlFor="phoneNumber">Phone Number <span className="text-red-500">*</span></Label>
+                      <Input
+                        id="phoneNumber"
+                        name="phoneNumber"
+                        required
+                        placeholder="+1 234 567 8900"
+                        value={formData.profileData.phoneNumber}
+                        onChange={(e) => handleInputChange(e, 'profileData')}
+                      />
+                    </div>
+                    
+                    <div className="space-y-1">
+                      <Label htmlFor="address">Address <span className="text-red-500">*</span></Label>
+                      <Input
+                        id="address"
+                        name="address"
+                        required
+                        placeholder="123 Business St"
+                        value={formData.profileData.address}
+                        onChange={(e) => handleInputChange(e, 'profileData')}
+                      />
+                    </div>
+                  </div>
+                  
+                  <div className="space-y-1">
+                    <Label htmlFor="businessHours">Business Hours</Label>
+                    <Input
+                      id="businessHours"
+                      name="businessHours"
+                      placeholder="Mon-Fri: 9am-5pm"
+                      value={formData.profileData.businessHours}
+                      onChange={(e) => handleInputChange(e, 'profileData')}
+                    />
+                  </div>
+                  
+                  <div className="space-y-1">
+                    <Label htmlFor="description">Business Description</Label>
+                    <Textarea
+                      id="description"
+                      name="description"
+                      placeholder="Describe your business..."
+                      value={formData.profileData.description}
+                      onChange={(e) => handleInputChange(e, 'profileData')}
+                      rows={3}
+                    />
+                  </div>
+                  
+                  <div className="space-y-1">
+                    <Label htmlFor="image">Business Logo URL</Label>
+                    <Input
+                      id="image"
+                      name="image"
+                      placeholder="https://example.com/logo.jpg"
+                      value={formData.profileData.image}
+                      onChange={(e) => handleInputChange(e, 'profileData')}
+                    />
+                  </div>
+                </>
+              )}
+                </TabsContent>
+              </Tabs>
+              
+              <DialogFooter>
+                <Button variant="outline" onClick={() => {
+                  resetForm();
+                  setIsEditingUser(false);
+                }}>
+                  Cancel
+                </Button>
+                <Button onClick={handleUpdateUser} disabled={loading}>
+                  {loading ? "Updating..." : "Update User"}
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+
     </div>
   )
 }
