@@ -11,17 +11,17 @@ const slides = [
   {
     title: 'Welcome to Second Serve',
     text: 'We\'re on a mission to reduce food waste and create a more sustainable future.',
-    image: '/welcome/one.jpg',
+    image: 'https://plus.unsplash.com/premium_photo-1673108852141-e8c3c22a4a22?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
   },
   {
     title: 'How It Works',
     text: 'Connect with local restaurants and stores to rescue surplus food at discounted prices.',
-    image: '/welcome/two.jpg',
+    image: 'https://images.unsplash.com/photo-1505935428862-770b6f24f629?q=80&w=2067&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
   },
   {
     title: 'Join Us Today',
     text: 'Sign up now to start making a difference in your community and save money on great food.',
-    image: '/welcome/three.jpg',
+    image: 'https://images.unsplash.com/photo-1553787434-45e1d245bfbb?q=80&w=2020&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
   },
 ]
 
