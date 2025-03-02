@@ -71,14 +71,14 @@ export default function Navbar() {
 
   return (
     <nav className="bg-white shadow-md">
-      <div className="max-w-8xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="container mx-auto px-4">
         <div className="flex items-center justify-between h-16">
           <div className="flex items-center">
             <Link href="/" className="flex-shrink-0">
               <span className="text-2xl font-bold text-primary">Second Serve</span>
             </Link>
-            <div className="hidden md:block ml-10">
-              <div className="flex items-baseline space-x-4">
+            <div className="hidden md:block md:ml-5 lg:ml-10">
+              <div className="flex items-baseline lg:space-x-4">
                  {Links.filter(link => link.visible.includes(session?.user?.role)).map((link, index) => (
                     <Link
                       key={index}
