@@ -574,7 +574,7 @@ export default function UsersPage() {
       </Card>
 
       {/* Add User Dialog */}
-      <Dialog 
+      <Dialog
         open={isAddingUser} 
         onOpenChange={(open) => {
           if (!open) {
@@ -640,9 +640,9 @@ export default function UsersPage() {
               </div>
             </TabsContent>
             
-            <TabsContent value="profile" className="space-y-4 pt-4">
+            <TabsContent value="profile" className="space-y-1 pt-2 overflow-y-auto">
               {/* Fields common to all roles */}
-              <div className="space-y-1">
+              <div className="">
                 <Label htmlFor="name">Name <span className="text-red-500">*</span></Label>
                 <Input
                   id="name"
@@ -791,7 +791,7 @@ export default function UsersPage() {
             </TabsContent>
           </Tabs>
           
-          <DialogFooter>
+          <DialogFooter className={"gap-2"}>
             <Button variant="outline" onClick={() => {
               resetForm();
               setIsAddingUser(false);
