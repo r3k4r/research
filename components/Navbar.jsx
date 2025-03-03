@@ -16,7 +16,7 @@ import { Input } from "@/components/ui/input"
 import Image from "next/image"
 import { useCart } from "@/lib/cart-context"
 import { CartDrawer } from "./CartDrawer"
-import { useSession } from "next-auth/react"
+import { signOut, useSession } from "next-auth/react"
 
 
 const Links = [
@@ -30,28 +30,13 @@ const Links = [
 ]
 
 export default function Navbar() {
-  const [searchQuery, setSearchQuery] = useState("")
   const [isMenuOpen, setIsMenuOpen] = useState(false)
-  const router = useRouter()
   const { openCart, totalItems } = useCart()
   const { data: session, status } = useSession()
+  
 
-  const handleSearch = async (e) => {
-    e.preventDefault()
-    if (!searchQuery.trim()) return
-    
-    try {
-      // For now, just navigate to search page
-      router.push(`/search?q=${encodeURIComponent(searchQuery)}`)
-    } catch (error) {
-      console.error('Search failed:', error)
-    }
-  }
 
-  const handleLogout = async () => {
-    // Mock logout for now
-    console.log("Logging out")
-  }
+
 
   const toggleMenu = () => {
     setIsMenuOpen(!isMenuOpen)
@@ -79,22 +64,6 @@ export default function Navbar() {
                   ))}
                 </div>
               </div>
-            </div>
-            <div className="flex-1 flex justify-center px-2 lg:ml-6 lg:justify-end">
-              <form onSubmit={handleSearch} className="max-w-lg w-full lg:max-w-xs">
-                <div className="relative">
-                  <Input
-                    type="search"
-                    placeholder="Search"
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-primary focus:border-primary sm:text-sm"
-                  />
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <Search className="h-5 w-5 text-gray-400" aria-hidden="true" />
-                  </div>
-                </div>
-              </form>
             </div>
             <div className="hidden md:flex items-center">
               {/* Cart Button */}
@@ -149,7 +118,7 @@ export default function Navbar() {
                       <Settings className="mr-2 h-4 w-4" />
                       <span>Settings</span>
                     </DropdownMenuItem>
-                    <DropdownMenuItem className="bg-red-600 text-white" onClick={handleLogout}>
+                    <DropdownMenuItem className="bg-red-600 text-white" onClick={signOut}>
                       <LogOut className="mr-2 h-4 w-4" />
                       <button>Log out</button>
                     </DropdownMenuItem>
@@ -208,14 +177,17 @@ export default function Navbar() {
                 <div className="flex items-center px-5">
                   <div className="flex-shrink-0">
                     <div className={`h-10 w-10 rounded-full flex items-center justify-center overflow-hidden ${!session.user.image ? 'bg-primary text-primary-foreground' : ''}`}>
-                      {session.user.image ? (
-                        <img 
-                          src={session.user.image} 
+                    {session?.user?.image ? (
+                        <Image 
+                          src={session?.user?.image} 
                           alt="Profile" 
+                          width={100}
+                          height={100}
+                          quality={100}
                           className="h-full w-full object-cover"
                         />
                       ) : (
-                        <span>{session.user.name ? session.user.name[0].toUpperCase() : "U"}</span>
+                        <span>{session?.user?.name ? session?.user?.name[0].toUpperCase() : "U"}</span>
                       )}
                     </div>
                   </div>
@@ -238,7 +210,7 @@ export default function Navbar() {
                     Settings
                   </Link>
                   <button
-                    onClick={handleLogout}
+                    onClick={signOut}
                     className="block w-full text-left px-3 py-2 rounded-md text-base font-medium bg-red-600 text-white"
                   >
                     Log out
