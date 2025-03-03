@@ -2,8 +2,9 @@
 
 import { useState, useEffect } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Line, Bar, Doughnut } from "react-chartjs-2"
+import { Bar, Doughnut } from "react-chartjs-2"
 import DashboardNumbers from "@/components/admin/dashboard/Numbers"
+import SalesOverview from "@/components/admin/dashboard/SalesOverview"
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -29,38 +30,8 @@ export default function AdminDashboard() {
   const [animationsStarted, setAnimationsStarted] = useState(false)
   const [topRestaurants, setTopRestaurants] = useState([])
   const [chartHeight, setChartHeight] = useState(220)
-
-  useEffect(() => {
-    const updateHeight = () => {
-      const mobile = window.innerWidth < 768
-      setChartHeight(mobile ? 180 : 220)
-    }
-    
-    updateHeight()
-    window.addEventListener("resize", updateHeight)
-    
-    // Mock data
-    setTimeout(() => {
-      setStats({
-        totalUsers: 1248,
-        totalFoodItems: 583,
-        totalRevenue: 52750,
-        growthRate: 15.8,
-      })
-      setAnimationsStarted(true)
-      
-      setTopRestaurants([
-        { name: "Pizza Palace", customers: 578, revenue: 15840 },
-        { name: "Burger Bliss", customers: 452, revenue: 12340 },
-        { name: "Sushi Supreme", customers: 412, revenue: 18650 },
-        { name: "Taco Town", customers: 368, revenue: 9240 },
-        { name: "Pasta Paradise", customers: 316, revenue: 11280 },
-      ])
-    }, 300) 
-    
-    return () => window.removeEventListener("resize", updateHeight)
-  }, [])
-
+  
+  // Prepare chart data
   const salesData = {
     labels: ["Jan", "Feb", "Mar", "Apr", "May", "Jun"],
     datasets: [
@@ -103,37 +74,47 @@ export default function AdminDashboard() {
     ],
   }
 
+  useEffect(() => {
+    const updateHeight = () => {
+      const mobile = window.innerWidth < 768
+      setChartHeight(mobile ? 180 : 220)
+    }
+    
+    updateHeight()
+    window.addEventListener("resize", updateHeight)
+    
+    // Mock data
+    setTimeout(() => {
+      setStats({
+        totalUsers: 1248,
+        totalFoodItems: 583,
+        totalRevenue: 52750,
+        growthRate: 15.8,
+      })
+      setAnimationsStarted(true)
+      
+      setTopRestaurants([
+        { name: "Pizza Palace", customers: 578, revenue: 15840 },
+        { name: "Burger Bliss", customers: 452, revenue: 12340 },
+        { name: "Sushi Supreme", customers: 412, revenue: 18650 },
+        { name: "Taco Town", customers: 368, revenue: 9240 },
+        { name: "Pasta Paradise", customers: 316, revenue: 11280 },
+      ])
+    }, 300) 
+    
+    return () => window.removeEventListener("resize", updateHeight)
+  }, [])
+
   return (
     <div className="space-y-4">
       <h1 className="text-xl font-semibold md:text-2xl">Dashboard Overview</h1>
 
-      {/* THE TOP COUNTUP COMPONENT */}
+      {/* Numbers component */}
       <DashboardNumbers stats={stats} animationsStarted={animationsStarted} />
 
       <div className="grid gap-3 md:grid-cols-2">
-        <Card className="shadow-sm">
-          <CardHeader className="p-3 pb-1">
-            <CardTitle className="text-sm md:text-base">Sales Overview</CardTitle>
-          </CardHeader>
-          <CardContent className="p-3 pt-0">
-            <div style={{ height: chartHeight }}>
-              <Line 
-                data={salesData} 
-                options={{ 
-                  responsive: true,
-                  maintainAspectRatio: false,
-                  plugins: {
-                    legend: { display: false }
-                  },
-                  scales: {
-                    y: { beginAtZero: true },
-                    x: { grid: { display: false } }
-                  }
-                }} 
-              />
-            </div>
-          </CardContent>
-        </Card>
+        {/* Sales Overview component */}
+        <SalesOverview salesData={salesData} chartHeight={chartHeight} />
 
         <Card className="shadow-sm">
           <CardHeader className="p-3 pb-1">
