@@ -2,6 +2,7 @@
 
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
+import Image from 'next/image';
 import { 
   LayoutDashboard, 
   ShoppingBag, 
@@ -9,11 +10,12 @@ import {
   Users, 
   BarChart3,
   Settings,
-  LogOut
+  LogOut,
+  User
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-import { signOut } from 'next-auth/react';
+import { signOut, useSession } from 'next-auth/react';
 
 const navItems = [
   {
@@ -50,6 +52,10 @@ const navItems = [
 
 export default function ProviderSidebar({ isOpen }) {
   const pathname = usePathname();
+  const { data: session } = useSession();
+  console.log('session', session);
+  
+  
   
   return (
     <div
@@ -80,6 +86,40 @@ export default function ProviderSidebar({ isOpen }) {
             ))}
           </nav>
         </div>
+        
+        {/* Provider Profile Section */}
+        {session?.user && (
+          <div className="p-4 border-t border-gray-200">
+            <div className="flex items-center space-x-3">
+              <div className="relative h-10 w-10 rounded-full overflow-hidden bg-gray-100">
+                {session?.user?.image ?  (
+                  <Image 
+                    src={session?.user?.image}
+                    alt="Provider Logo"
+                    fill
+                    className="object-cover"
+                  />
+                )
+                :
+                (
+                  <div className="flex items-center justify-center h-full w-full bg-gray-200 text-gray-500">
+                    <User className="h-6 w-6" />
+                  </div>
+                )
+              }
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium text-foreground truncate">
+                  {session?.user?.name || "Provider"}
+                </p>
+                <p className="text-xs text-muted-foreground truncate">
+                  {session?.user?.email || ""}
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+        
         <div className="p-4 border-t border-gray-200">
           <Button 
             variant="outline" 
