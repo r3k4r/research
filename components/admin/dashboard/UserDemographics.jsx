@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Doughnut } from "react-chartjs-2"
-import { fetchGenderData } from "@/utils/api"
+import { fetchGenderData } from "@/lib/api"
 import { ChartSkeleton } from "./SkeletonLoaders"
 
 export default function UserDemographics() {

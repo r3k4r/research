@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { fetchTopRestaurants } from "@/utils/api"
+import { fetchTopRestaurants } from "@/lib/api"
 import { TableSkeleton } from "./SkeletonLoaders"
 
 export default function TopRestaurantsSection() {

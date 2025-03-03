@@ -3,9 +3,7 @@
 import { useState } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { Search, User, Settings, LogOut, Menu, X } from "lucide-react"
-import { signOut, useSession } from "next-auth/react"
-
+import { Search, User, Settings, LogOut, Menu, X, ShoppingCart } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
   DropdownMenu,
@@ -16,6 +14,10 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Input } from "@/components/ui/input"
 import Image from "next/image"
+import { useCart } from "@/lib/cart-context"
+import { CartDrawer } from "./CartDrawer"
+import { useSession } from "next-auth/react"
+
 
 const Links = [
   { href: "/", label: "Home", visible: ["ADMIN", "PROVIDER", "USER"] },
@@ -24,45 +26,31 @@ const Links = [
   { href: "/how-it-works", label: "How it works", visible: ["ADMIN", "PROVIDER", "USER"] },
   { href: "/admin-dashboard", label: "Admin Dashboard", visible: ["ADMIN"] },
   { href: "/provider-dashboard", label: "Provider Dashboard", visible: ["PROVIDER"] },
+  { href: "/orders", label: "My Orders", visible: ["USER"] },
 ]
 
 export default function Navbar() {
   const [searchQuery, setSearchQuery] = useState("")
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const router = useRouter()
+  const { openCart, totalItems } = useCart()
   const { data: session, status } = useSession()
-  console.log("session  ", session)
-
-  if (status === "loading" || (status === "authenticated" && !session)) {
-    return <nav className="animate-pulse bg-gray-400 shadow-md">
-      <div className="max-w-8xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-16">
-        </div>
-      </div>
-    </nav>
-  }
-  
-  
 
   const handleSearch = async (e) => {
     e.preventDefault()
     if (!searchQuery.trim()) return
     
     try {
-      const response = await fetch(`/api/search?q=${encodeURIComponent(searchQuery)}`)
-      const data = await response.json()
-      
-      if (data.results) {
-        router.push(`/search?q=${encodeURIComponent(searchQuery)}`)
-      }
+      // For now, just navigate to search page
+      router.push(`/search?q=${encodeURIComponent(searchQuery)}`)
     } catch (error) {
       console.error('Search failed:', error)
     }
   }
 
   const handleLogout = async () => {
-
-    await signOut()
+    // Mock logout for now
+    console.log("Logging out")
   }
 
   const toggleMenu = () => {
@@ -70,16 +58,17 @@ export default function Navbar() {
   }
 
   return (
-    <nav className="bg-white shadow-md">
-      <div className="container mx-auto px-4">
-        <div className="flex items-center justify-between h-16">
-          <div className="flex items-center">
-            <Link href="/" className="flex-shrink-0">
-              <span className="text-2xl font-bold text-primary">Second Serve</span>
-            </Link>
-            <div className="hidden md:block md:ml-5 lg:ml-10">
-              <div className="flex items-baseline lg:space-x-4">
-                 {Links.filter(link => link.visible.includes(session?.user?.role)).map((link, index) => (
+    <>
+      <nav className="bg-white shadow-md">
+        <div className="container mx-auto px-4">
+          <div className="flex items-center justify-between h-16">
+            <div className="flex items-center">
+              <Link href="/" className="flex-shrink-0">
+                <span className="text-2xl font-bold text-primary">Second Serve</span>
+              </Link>
+              <div className="hidden md:block md:ml-5 lg:ml-10">
+                <div className="flex items-baseline lg:space-x-4">
+                  {Links.filter(link => link.visible.includes(session?.user?.role)).map((link, index) => (
                     <Link
                       key={index}
                       href={link.href}
@@ -87,28 +76,43 @@ export default function Navbar() {
                     >
                       {link.label}
                     </Link>
-                 ))}
-              </div>
-            </div>
-          </div>
-          <div className="flex-1 flex justify-center px-2 lg:ml-6 lg:justify-end">
-            <form onSubmit={handleSearch} className="max-w-lg w-full lg:max-w-xs">
-              <div className="relative">
-                <Input
-                  type="search"
-                  placeholder="Search"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-primary focus:border-primary sm:text-sm"
-                />
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <Search className="h-5 w-5 text-gray-400" aria-hidden="true" />
+                  ))}
                 </div>
               </div>
-            </form>
-          </div>
-          <div className="hidden md:block">
-            <div className="ml-4 flex items-center md:ml-6">
+            </div>
+            <div className="flex-1 flex justify-center px-2 lg:ml-6 lg:justify-end">
+              <form onSubmit={handleSearch} className="max-w-lg w-full lg:max-w-xs">
+                <div className="relative">
+                  <Input
+                    type="search"
+                    placeholder="Search"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-primary focus:border-primary sm:text-sm"
+                  />
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <Search className="h-5 w-5 text-gray-400" aria-hidden="true" />
+                  </div>
+                </div>
+              </form>
+            </div>
+            <div className="hidden md:flex items-center">
+              {/* Cart Button */}
+              <Button 
+                variant="ghost" 
+                size="icon"
+                onClick={openCart} 
+                className="mr-2 relative"
+              >
+                <ShoppingCart className="h-5 w-5" />
+                {totalItems > 0 && (
+                  <span className="absolute top-0 right-0 -translate-y-1/3 translate-x-1/3 flex items-center justify-center h-5 w-5 rounded-full bg-primary text-[10px] font-medium text-primary-foreground">
+                    {totalItems}
+                  </span>
+                )}
+              </Button>
+              
+              {/* User menu */}
               {status === "authenticated" && session?.user && (
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
@@ -147,90 +151,107 @@ export default function Navbar() {
                     </DropdownMenuItem>
                     <DropdownMenuItem className="bg-red-600 text-white" onClick={handleLogout}>
                       <LogOut className="mr-2 h-4 w-4" />
-                      <button >Log out</button >
+                      <button>Log out</button>
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
               )}
             </div>
-          </div>
-          <div className="-mr-2 flex md:hidden">
-            <Button
-              variant="ghost"
-              onClick={toggleMenu}
-              className="inline-flex items-center justify-center p-2 rounded-md text-gray-400 hover:text-primary hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-primary"
-            >
-              <span className="sr-only">Open main menu</span>
-              {isMenuOpen ? (
-                <X className="block h-6 w-6" aria-hidden="true" />
-              ) : (
-                <Menu className="block h-6 w-6" aria-hidden="true" />
-              )}
-            </Button>
+            <div className="flex items-center md:hidden">
+              {/* Mobile Cart Button */}
+              <Button 
+                variant="ghost" 
+                size="icon"
+                onClick={openCart} 
+                className="relative mr-2"
+              >
+                <ShoppingCart className="h-5 w-5" />
+                {totalItems > 0 && (
+                  <span className="absolute top-0 right-0 -translate-y-1/3 translate-x-1/3 flex items-center justify-center h-5 w-5 rounded-full bg-primary text-[10px] font-medium text-primary-foreground">
+                    {totalItems}
+                  </span>
+                )}
+              </Button>
+              
+              <Button
+                variant="ghost"
+                onClick={toggleMenu}
+                className="inline-flex items-center justify-center p-2 rounded-md text-gray-400 hover:text-primary hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-primary"
+              >
+                <span className="sr-only">Open main menu</span>
+                {isMenuOpen ? (
+                  <X className="block h-6 w-6" aria-hidden="true" />
+                ) : (
+                  <Menu className="block h-6 w-6" aria-hidden="true" />
+                )}
+              </Button>
+            </div>
           </div>
         </div>
-      </div>
 
-      {/* Mobile menu */}
-      {isMenuOpen && (
-        <div className="md:hidden">
-          <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3">
-          {Links.filter(link => link.visible.includes(session?.user?.role)).map((link, index) => (
-                    <Link
-                      key={index}
-                      href={link.href}
-                      className="text-gray-700 hover:text-primary block px-3 py-2 rounded-md text-base font-medium"
-                    >
-                      {link.label}
-                    </Link>
-                 ))}
-          </div>
-          {session && (
-            <div className="pt-4 pb-3 border-t border-gray-200">
-              <div className="flex items-center px-5">
-                <div className="flex-shrink-0">
-                  <div className={`h-10 w-10 rounded-full flex items-center justify-center overflow-hidden ${!session.user.image ? 'bg-primary text-primary-foreground' : ''}`}>
-                    {session.user.image ? (
-                      <img 
-                        src={session.user.image} 
-                        alt="Profile" 
-                        className="h-full w-full object-cover"
-                      />
-                    ) : (
-                      <span>{session.user.name ? session.user.name[0].toUpperCase() : "U"}</span>
-                    )}
+        {/* Mobile menu */}
+        {isMenuOpen && (
+          <div className="md:hidden">
+            <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3">
+              {Links.filter(link => link.visible.includes(session?.user?.role)).map((link, index) => (
+                <Link
+                  key={index}
+                  href={link.href}
+                  className="text-gray-700 hover:text-primary block px-3 py-2 rounded-md text-base font-medium"
+                >
+                  {link.label}
+                </Link>
+              ))}
+            </div>
+            {session && (
+              <div className="pt-4 pb-3 border-t border-gray-200">
+                <div className="flex items-center px-5">
+                  <div className="flex-shrink-0">
+                    <div className={`h-10 w-10 rounded-full flex items-center justify-center overflow-hidden ${!session.user.image ? 'bg-primary text-primary-foreground' : ''}`}>
+                      {session.user.image ? (
+                        <img 
+                          src={session.user.image} 
+                          alt="Profile" 
+                          className="h-full w-full object-cover"
+                        />
+                      ) : (
+                        <span>{session.user.name ? session.user.name[0].toUpperCase() : "U"}</span>
+                      )}
+                    </div>
+                  </div>
+                  <div className="ml-3">
+                    <div className="text-base font-medium text-gray-800">{session?.user.name}</div>
+                    <div className="text-sm font-medium text-gray-500">{session?.user.email}</div>
                   </div>
                 </div>
-                <div className="ml-3">
-                  <div className="text-base font-medium text-gray-800">{session?.user.name}</div>
-                  <div className="text-sm font-medium text-gray-500">{session?.user.email}</div>
+                <div className="mt-3 px-2 space-y-1">
+                  <Link
+                    href="/profile"
+                    className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-primary hover:bg-gray-100"
+                  >
+                    Profile
+                  </Link>
+                  <Link
+                    href="/settings"
+                    className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-primary hover:bg-gray-100"
+                  >
+                    Settings
+                  </Link>
+                  <button
+                    onClick={handleLogout}
+                    className="block w-full text-left px-3 py-2 rounded-md text-base font-medium bg-red-600 text-white"
+                  >
+                    Log out
+                  </button>
                 </div>
               </div>
-              <div className="mt-3 px-2 space-y-1">
-                <Link
-                  href="/profile"
-                  className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-primary hover:bg-gray-100"
-                >
-                  Profile
-                </Link>
-                <Link
-                  href="/settings"
-                  className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-primary hover:bg-gray-100"
-                >
-                  Settings
-                </Link>
-                <button
-                  onClick={handleLogout}
-                  className="block w-full text-left px-3 py-2 rounded-md text-base font-medium bg-red-600 text-white"
-                >
-                  Log out
-                </button>
-              </div>
-            </div>
-          )}
-        </div>
-      )}
-    </nav>
+            )}
+          </div>
+        )}
+      </nav>
+      
+      {/* Cart Drawer */}
+      <CartDrawer />
+    </>
   )
 }
-

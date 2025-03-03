@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Line } from "react-chartjs-2"
-import { fetchSalesData } from "@/utils/api"
+import { fetchSalesData } from "@/lib/api"
 import { ChartSkeleton } from "./SkeletonLoaders"
 
 export default function SalesOverview() {

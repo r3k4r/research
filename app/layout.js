@@ -2,6 +2,7 @@ import SessionProviderWrapper from "@/components/SessionProviderWrapper";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import "./globals.css";
+import { CartProvider } from "@/lib/cart-context";
 
 export const metadata = {
   title: "Second Serve",
@@ -15,7 +16,9 @@ export default async function RootLayout({ children }) {
     <html lang="en">
       <body>
         <SessionProviderWrapper session={session}>
-          {children}
+          <CartProvider>
+            {children}
+          </CartProvider>
         </SessionProviderWrapper>
       </body>
     </html>

@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Bar } from "react-chartjs-2"
-import { fetchUserGrowthData } from "@/utils/api"
+import { fetchUserGrowthData } from "@/lib/api"
 import { ChartSkeleton } from "./SkeletonLoaders"
 
 export default function UserGrowth() {

@@ -4,7 +4,7 @@ import { useState, useEffect } from "react"
 import { Users, ShoppingBag, DollarSign, TrendingUp } from "lucide-react"
 import { Card, CardContent } from "@/components/ui/card"
 import CountUp from "react-countup"
-import { fetchDashboardStats } from "@/utils/api"
+import { fetchDashboardStats } from "@/lib/api"
 import { NumbersSkeleton } from "./SkeletonLoaders"
 
 export default function DashboardNumbers() {
