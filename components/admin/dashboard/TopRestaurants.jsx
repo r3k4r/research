@@ -1,6 +1,33 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+"use client"
 
-export default function TopRestaurantsSection({ topRestaurants }) {
+import { useState, useEffect } from "react"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { fetchTopRestaurants } from "@/utils/api"
+import { TableSkeleton } from "./SkeletonLoaders"
+
+export default function TopRestaurantsSection() {
+  const [topRestaurants, setTopRestaurants] = useState([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    const getData = async () => {
+      try {
+        const data = await fetchTopRestaurants()
+        setTopRestaurants(data)
+      } catch (error) {
+        console.error("Failed to fetch top restaurants:", error)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    getData()
+  }, [])
+
+  if (loading) {
+    return <TableSkeleton title="Top Restaurants" />
+  }
+  
   return (
     <Card className="shadow-sm">
       <CardHeader className="p-3 pb-1">
