@@ -19,6 +19,7 @@ import {
   Tooltip,
   Legend,
 } from "chart.js"
+import TopRestaurantsSection from "@/components/admin/dashboard/TopRestaurants"
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, BarElement, ArcElement, Title, Tooltip, Legend)
 
@@ -127,6 +128,7 @@ export default function AdminDashboard() {
         <UserDemographics genderData={genderData} chartHeight={chartHeight} />
 
         {/* Top Restaurants component */}
+        <TopRestaurantsSection topRestaurants={topRestaurants} />
       </div>
     </div>
   )
