@@ -70,11 +70,6 @@ export default function CheckoutPage() {
       showToast('Order placed successfully!', 'success');
       clearCart();
       
-      // Redirect to confirmation page
-      setTimeout(() => {
-        router.push('/order-confirmation');
-      }, 1000);
-      
     } catch (error) {
       console.error('Error placing order:', error);
       showToast('Failed to place order. Please try again.', 'error');
