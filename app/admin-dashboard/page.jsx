@@ -6,7 +6,7 @@ import DashboardNumbers from "@/components/admin/dashboard/Numbers"
 import SalesOverview from "@/components/admin/dashboard/SalesOverview"
 import UserGrowth from "@/components/admin/dashboard/UserGrowth"
 import UserDemographics from "@/components/admin/dashboard/UserDemographics"
-import TopRestaurants from "@/components/admin/dashboard/TopRestaurants"
+
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -127,7 +127,6 @@ export default function AdminDashboard() {
         <UserDemographics genderData={genderData} chartHeight={chartHeight} />
 
         {/* Top Restaurants component */}
-        <TopRestaurants topRestaurants={topRestaurants} />
       </div>
     </div>
   )
