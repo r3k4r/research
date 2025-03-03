@@ -71,7 +71,7 @@ export default function Sidebar() {
             <span className="font-bold text-lg">Second Serve</span>
           </div>
           
-          <nav className="flex-1 py-3 flex flex-col gap-1 px-2">
+          <nav className="flex-1 py-2 flex flex-col gap-1 px-3">
             {menuItems.map((item) => (
               <Link key={item.name} href={item.href} className="w-full">
                 <div

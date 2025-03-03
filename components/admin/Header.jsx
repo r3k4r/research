@@ -37,9 +37,11 @@ export default function Header() {
         </div>
         
         <div className="flex items-center gap-1">
-          <Button>
-              <Link href="/">Back to Main Page</Link>
-          </Button>
+              <Link href="/">
+                <Button size="sm">
+                    Back to Main Page
+                </Button>
+              </Link>
 
           {status === "authenticated" && session?.user && (
             <DropdownMenu>

@@ -61,7 +61,6 @@ export default function ProviderSidebar({ isOpen, setIsOpen }) {
   const pathname = usePathname();
   const { data: session } = useSession();
   
-  // Get user initials for avatar fallback
   const getInitials = (name) => {
     return name
       ? name
@@ -83,13 +82,13 @@ export default function ProviderSidebar({ isOpen, setIsOpen }) {
       
       {/* Sidebar */}
       <aside className={cn(
-        "fixed inset-y-0 left-0 z-50 flex h-full w-72 flex-col bg-card shadow-lg transition-transform duration-300 ease-in-out lg:static lg:translate-x-0",
+        "fixed inset-y-0 left-0 z-50 flex h-full flex-col bg-card shadow-lg transition-transform duration-300 ease-in-out lg:static lg:translate-x-0",
         isOpen ? "translate-x-0" : "-translate-x-full"
       )}>
         {/* Sidebar header */}
-        <div className="flex h-16 items-center justify-between border-b px-4">
+        <div className="flex h-14 items-center justify-between border-b px-3">
           <Link href="/provider-dashboard" className="flex items-center">
-            <h1 className="text-xl font-bold text-foreground">Provider Portal</h1>
+            <h1 className="text-lg font-bold text-foreground">Provider Portal</h1>
           </Link>
           <Button 
             variant="ghost" 
@@ -102,14 +101,14 @@ export default function ProviderSidebar({ isOpen, setIsOpen }) {
         </div>
         
         {/* Navigation menu */}
-        <div className="flex-1 overflow-y-auto py-4 px-3">
+        <div className="flex-1 py-4 px-3">
           <nav className="space-y-1">
             {navItems.map((item) => (
               <Link
                 key={item.href}
                 href={item.href}
                 className={cn(
-                  "flex items-center rounded-md px-3 py-2 text-sm font-medium transition-colors",
+                  "flex items-center rounded-md px-3 py-2 text-sm transition-colors",
                   pathname === item.href
                     ? "bg-accent text-accent-foreground"
                     : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
