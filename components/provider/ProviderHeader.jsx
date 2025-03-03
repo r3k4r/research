@@ -1,8 +1,6 @@
 'use client';
 
-import { useState } from 'react';
-import { Bell, Menu, X } from 'lucide-react';
-import { useSession } from 'next-auth/react';
+import { Bell, Menu } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -12,94 +10,61 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
-export default function ProviderHeader({ toggleSidebar }) {
-  const { data: session } = useSession();
-  const [notifications, setNotifications] = useState([
-    { id: 1, message: 'New order received', time: '5 mins ago' },
-    { id: 2, message: 'Product about to expire', time: '1 hour ago' },
-  ]);
-
-  const clearNotifications = () => {
-    setNotifications([]);
-  };
-
-  const getInitials = (name) => {
-    return name
-      ? name
-          .split(' ')
-          .map((n) => n[0])
-          .join('')
-      : 'U';
-  };
-
+export default function ProviderHeader({ setIsSidebarOpen }) {
   return (
-    <header className="bg-white border-b border-gray-200">
-      <div className="px-4 flex items-center justify-between h-16">
-        <div className="flex items-center">
-          <Button variant="ghost" size="icon" onClick={toggleSidebar} className="md:hidden">
-            <Menu className="h-6 w-6" />
-          </Button>
-          <h1 className="text-xl font-semibold text-gray-800 ml-2">Provider Dashboard</h1>
-        </div>
-
-        <div className="flex items-center space-x-3">
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon" className="relative">
-                <Bell className="h-5 w-5" />
-                {notifications.length > 0 && (
-                  <span className="absolute top-0 right-0 -translate-y-1/3 translate-x-1/3 flex items-center justify-center h-5 w-5 rounded-full bg-primary text-[10px] font-medium text-primary-foreground">
-                    {notifications.length}
-                  </span>
-                )}
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-80">
-              <DropdownMenuLabel className="flex items-center justify-between">
-                <span>Notifications</span>
-                {notifications.length > 0 && (
-                  <Button variant="ghost" size="sm" onClick={clearNotifications}>
-                    Clear all
-                  </Button>
-                )}
-              </DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              {notifications.length === 0 ? (
-                <div className="py-4 text-center text-sm text-gray-500">
-                  No new notifications
-                </div>
-              ) : (
-                notifications.map((notification) => (
-                  <DropdownMenuItem key={notification.id} className="p-3 cursor-pointer">
-                    <div>
-                      <p className="font-medium">{notification.message}</p>
-                      <p className="text-xs text-gray-500">{notification.time}</p>
-                    </div>
-                  </DropdownMenuItem>
-                ))
-              )}
-            </DropdownMenuContent>
-          </DropdownMenu>
-
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="sm" className="relative h-8 w-8 rounded-full">
-                <Avatar>
-                  <AvatarImage src={session?.user?.image} alt={session?.user?.name} />
-                  <AvatarFallback>{getInitials(session?.user?.name)}</AvatarFallback>
-                </Avatar>
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuLabel>{session?.user?.name}</DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem>Profile</DropdownMenuItem>
-              <DropdownMenuItem>Settings</DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
+    <header className="sticky top-0 z-30 flex h-16 items-center gap-4 border-b bg-background px-6">
+      {/* Mobile menu button */}
+      <Button 
+        variant="ghost" 
+        size="icon" 
+        onClick={() => setIsSidebarOpen(true)}
+        className="lg:hidden"
+      >
+        <Menu className="h-5 w-5" />
+        <span className="sr-only">Open menu</span>
+      </Button>
+      
+      {/* Page title can go here if needed */}
+      <div className="flex-1" />
+      
+      
+      {/* Right side items */}
+      <div className="flex items-center gap-3">
+        {/* Notifications */}
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" size="icon" className="relative">
+              <Bell className="h-5 w-5" />
+              <span className="absolute top-0 right-0 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-xs text-primary-foreground">
+                2
+              </span>
+              <span className="sr-only">Notifications</span>
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-80">
+            <DropdownMenuLabel>Notifications</DropdownMenuLabel>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem>
+              <div className="flex flex-col">
+                <span>New order received</span>
+                <span className="text-xs text-muted-foreground">5 minutes ago</span>
+              </div>
+            </DropdownMenuItem>
+            <DropdownMenuItem>
+              <div className="flex flex-col">
+                <span>Product about to expire</span>
+                <span className="text-xs text-muted-foreground">1 hour ago</span>
+              </div>
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem className="justify-center">
+              View all notifications
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+        
+        {/* Theme toggle */}
       </div>
     </header>
   );

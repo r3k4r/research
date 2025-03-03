@@ -1,24 +1,36 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import ProviderSidebar from '@/components/provider/ProviderSidebar';
 import ProviderHeader from '@/components/provider/ProviderHeader';
 
 export default function ProviderDashboardLayout({ children }) {
-  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
-
-  const toggleSidebar = () => {
-    setIsSidebarOpen(!isSidebarOpen);
-  };
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  
+  // Handle responsive behavior - auto-open on desktop, closed on mobile
+  useEffect(() => {
+    const handleResize = () => {
+      setIsSidebarOpen(window.innerWidth >= 1024);
+    };
+    
+    // Set initial state
+    handleResize();
+    
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   return (
-    <div className="flex h-screen bg-gray-100 overflow-hidden">
-      <ProviderSidebar isOpen={isSidebarOpen} />
+    <div className="flex h-screen overflow-hidden bg-background">
+      {/* Sidebar */}
+      <ProviderSidebar isOpen={isSidebarOpen} setIsOpen={setIsSidebarOpen} />
       
-      <div className="flex flex-col flex-1 overflow-hidden">
-        <ProviderHeader toggleSidebar={toggleSidebar} />
+      {/* Content area */}
+      <div className="relative flex flex-col flex-1 overflow-hidden">
+        <ProviderHeader setIsSidebarOpen={setIsSidebarOpen} />
         
-        <main className="flex-1 overflow-y-auto p-4 md:p-6">
+        {/* Main content with scroll */}
+        <main className="flex-1 overflow-y-auto px-4 py-6 md:px-6 lg:px-8">
           {children}
         </main>
       </div>

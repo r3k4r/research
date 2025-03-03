@@ -9,12 +9,16 @@ import {
   Users, 
   BarChart3,
   Settings,
-  LogOut
+  LogOut,
+  User,
+  X
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-import { signOut } from 'next-auth/react';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { useSession } from 'next-auth/react';
 
+// Navigation items with Profile added to the list
 const navItems = [
   {
     title: 'Dashboard',
@@ -42,37 +46,73 @@ const navItems = [
     icon: BarChart3,
   },
   {
+    title: 'Profile',
+    href: '/provider-dashboard/profile',
+    icon: User,
+  },
+  {
     title: 'Settings',
     href: '/provider-dashboard/settings',
     icon: Settings,
   },
 ];
 
-export default function ProviderSidebar({ isOpen }) {
+export default function ProviderSidebar({ isOpen, setIsOpen }) {
   const pathname = usePathname();
+  const { data: session } = useSession();
+  
+  // Get user initials for avatar fallback
+  const getInitials = (name) => {
+    return name
+      ? name
+          .split(' ')
+          .map((n) => n[0])
+          .join('')
+      : 'P';
+  };
   
   return (
-    <div
-      className={cn(
-        "fixed inset-y-0 left-0 z-50 w-64 bg-white border-r border-gray-200 transform transition-transform duration-200 ease-in-out md:relative md:translate-x-0",
-        isOpen ? "translate-x-0" : "-translate-x-full"
+    <>
+      {/* Mobile overlay */}
+      {isOpen && (
+        <div 
+          className="fixed inset-0 z-40 bg-black/50 lg:hidden"
+          onClick={() => setIsOpen(false)}
+        />
       )}
-    >
-      <div className="flex flex-col h-full">
-        <div className="flex items-center justify-center h-16 border-b border-gray-200">
-          <h1 className="text-xl font-bold text-primary">Provider Dashboard</h1>
+      
+      {/* Sidebar */}
+      <aside className={cn(
+        "fixed inset-y-0 left-0 z-50 flex h-full w-72 flex-col bg-card shadow-lg transition-transform duration-300 ease-in-out lg:static lg:translate-x-0",
+        isOpen ? "translate-x-0" : "-translate-x-full"
+      )}>
+        {/* Sidebar header */}
+        <div className="flex h-16 items-center justify-between border-b px-4">
+          <Link href="/provider-dashboard" className="flex items-center">
+            <h1 className="text-xl font-bold text-foreground">Provider Portal</h1>
+          </Link>
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            onClick={() => setIsOpen(false)} 
+            className="lg:hidden"
+          >
+            <X className="h-5 w-5" />
+          </Button>
         </div>
-        <div className="flex-1 overflow-y-auto py-4">
-          <nav className="space-y-1 px-2">
+        
+        {/* Navigation menu */}
+        <div className="flex-1 overflow-y-auto py-4 px-3">
+          <nav className="space-y-1">
             {navItems.map((item) => (
               <Link
                 key={item.href}
                 href={item.href}
                 className={cn(
-                  "flex items-center px-3 py-2 text-sm font-medium rounded-md hover:bg-gray-100",
+                  "flex items-center rounded-md px-3 py-2 text-sm font-medium transition-colors",
                   pathname === item.href
-                    ? "bg-gray-100 text-primary"
-                    : "text-gray-600 hover:text-primary"
+                    ? "bg-accent text-accent-foreground"
+                    : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
                 )}
               >
                 <item.icon className="mr-3 h-5 w-5" />
@@ -81,17 +121,31 @@ export default function ProviderSidebar({ isOpen }) {
             ))}
           </nav>
         </div>
-        <div className="p-4 border-t border-gray-200">
+        
+        {/* Profile & logout section at bottom */}
+        <div className="border-t p-4">
+          <div className="mb-4 flex items-center space-x-3">
+            <Avatar>
+              <AvatarImage src={session?.user?.image} />
+              <AvatarFallback>{getInitials(session?.user?.name)}</AvatarFallback>
+            </Avatar>
+            <div>
+              <p className="text-sm font-medium">{session?.user?.name || 'Provider Name'}</p>
+              <p className="text-xs text-muted-foreground">{session?.user?.email || 'provider@example.com'}</p>
+            </div>
+          </div>
+          
           <Button 
             variant="outline" 
-            className="w-full justify-start text-red-600 hover:text-red-700 hover:bg-red-50"
+            size="sm"
+            className="w-full justify-start text-destructive hover:bg-destructive/10 hover:text-destructive"
             onClick={() => signOut({ callbackUrl: '/' })}
           >
-            <LogOut className="mr-3 h-4 w-4" />
-            Logout
+            <LogOut className="mr-2 h-4 w-4" />
+            Sign out
           </Button>
         </div>
-      </div>
-    </div>
+      </aside>
+    </>
   );
 }
