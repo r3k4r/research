@@ -1,9 +1,9 @@
 
 
-
-export const ProviderDashboard = () => {
+const ProviderDashboard = () => {
   return (
-    <div className=''>Page</div>
+    <div className=''>ProviderDashboard</div>
   )
 }
 
+export default ProviderDashboard

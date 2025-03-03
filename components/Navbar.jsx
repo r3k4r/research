@@ -121,8 +121,9 @@ export default function Navbar() {
                         <Image 
                           src={session?.user?.image} 
                           alt="Profile" 
-                          width={32}
-                          height={32}
+                          width={100}
+                          height={100}
+                          quality={100}
                           className="h-full w-full object-cover"
                         />
                       ) : (

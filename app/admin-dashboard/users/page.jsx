@@ -640,7 +640,7 @@ export default function UsersPage() {
               </div>
             </TabsContent>
             
-            <TabsContent value="profile" className="space-y-1 pt-2 overflow-y-auto">
+            <TabsContent value="profile" className="space-y-1 pt-2">
               {/* Fields common to all roles */}
               <div className="">
                 <Label htmlFor="name">Name <span className="text-red-500">*</span></Label>
@@ -662,7 +662,7 @@ export default function UsersPage() {
                       <Input
                         id="phoneNumber"
                         name="phoneNumber"
-                        placeholder="+1 234 567 8900"
+                        placeholder="+964 0000 000 0000"
                         value={formData.profileData.phoneNumber}
                         onChange={(e) => handleInputChange(e, 'profileData')}
                       />
@@ -734,7 +734,7 @@ export default function UsersPage() {
                         id="phoneNumber"
                         name="phoneNumber"
                         required
-                        placeholder="+1 234 567 8900"
+                        placeholder="+964 0000 000 0000"
                         value={formData.profileData.phoneNumber}
                         onChange={(e) => handleInputChange(e, 'profileData')}
                       />
