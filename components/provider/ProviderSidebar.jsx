@@ -88,7 +88,7 @@ export default function ProviderSidebar({ isOpen }) {
         </div>
         
         {/* Provider Profile Section */}
-        {session?.user && (
+        {session?.user?.role ==="PROVIDER" && (
           <div className="p-4 border-t border-gray-200">
             <div className="flex items-center space-x-3">
               <div className="relative h-10 w-10 rounded-full overflow-hidden bg-gray-100">
@@ -119,18 +119,22 @@ export default function ProviderSidebar({ isOpen }) {
             </div>
           </div>
         )}
-        
-        <div className="p-4 border-t border-gray-200">
-          <Button 
-            variant="outline" 
-            className="w-full justify-start text-red-600 hover:text-red-700 hover:bg-red-50"
-            onClick={() => signOut({ callbackUrl: '/' })}
-          >
-            <LogOut className="mr-3 h-4 w-4" />
-            Logout
-          </Button>
+
+
+        {
+          session?.user?.role === "PROVIDER" && (
+            <div className={`p-4 border-t border-gray-200 ${session?.user?.role === 'PROVIDER' ? 'block' : 'hidden'}`}>
+              <Button 
+                variant="outline" 
+                className="w-full justify-start text-red-600 hover:text-red-700 hover:bg-red-50"
+                onClick={() => signOut({ callbackUrl: '/' })}
+              >
+                <LogOut className="mr-3 h-4 w-4" />
+                Logout
+              </Button>
+            </div>
+        ) }
+          </div>
         </div>
-      </div>
-    </div>
   );
 }
