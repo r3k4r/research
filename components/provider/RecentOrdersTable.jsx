@@ -13,6 +13,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { OrderStatusBadge } from './OrderStatusBadge';
 import { Eye } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 
 // Mock data for recent orders
 const mockOrders = [
@@ -69,6 +70,7 @@ const mockOrders = [
 
 export function RecentOrdersTable({ extended = false }) {
   const [orders] = useState(mockOrders);
+  const router = useRouter();
   
   // For non-extended view, only show first 5 orders
   const displayedOrders = extended ? orders : orders.slice(0, 5);
@@ -76,6 +78,10 @@ export function RecentOrdersTable({ extended = false }) {
   const formatTimeAgo = (dateString) => {
     return formatDistance(new Date(dateString), new Date(), { addSuffix: true });
   };
+
+  const viewAllOrdersHandler = () => {
+    router.push('/provider-dashboard/orders');
+  }
 
   return (
     <div className="w-full">
@@ -129,7 +135,7 @@ export function RecentOrdersTable({ extended = false }) {
       
       {!extended && orders.length > 5 && (
         <div className="mt-4 text-center">
-          <Button variant="outline" size="sm">
+          <Button variant="outline" size="sm" onClick={viewAllOrdersHandler}>
             View All Orders
           </Button>
         </div>
