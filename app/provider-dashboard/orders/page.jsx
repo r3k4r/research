@@ -162,8 +162,8 @@ export default function OrdersPage() {
         </Button>
       </div>
       
-      <div className="flex items-center space-x-2">
-        <div className="relative flex-1">
+      <div className="flex items-center space-x-2 max-w-[400px]">
+        <div className="relative w-full">
           <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
           <Input
             placeholder="Search orders by ID or customer name..."
@@ -174,8 +174,8 @@ export default function OrdersPage() {
         </div>
       </div>
       
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        <div className="lg:col-span-1">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 w-full">
+        <div className="lg:w-[100%]">
           <Card>
             <CardHeader className="p-4">
               <CardTitle className="text-lg">Order List</CardTitle>
@@ -187,22 +187,22 @@ export default function OrdersPage() {
               <Tabs defaultValue="all" value={activeTab} onValueChange={setActiveTab} className="w-full">
                 <div className="px-4 border-b">
                   <TabsList className="w-full justify-start h-auto py-0 bg-transparent space-x-4 overflow-auto">
-                    <TabsTrigger value="all" className="py-2 px-1 data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none">
+                    <TabsTrigger value="all" className="py-2 px-1 text-[13px] md:text-md data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none">
                       All
                     </TabsTrigger>
-                    <TabsTrigger value="PENDING" className="py-2 px-1 data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none">
+                    <TabsTrigger value="PENDING" className="py-2 px-1 text-[13px] md:text-md data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none">
                       Pending
                     </TabsTrigger>
-                    <TabsTrigger value="ACCEPTED" className="py-2 px-1 data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none">
+                    <TabsTrigger value="ACCEPTED" className="py-2 px-1 text-[13px] md:text-md data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none">
                       Accepted
                     </TabsTrigger>
-                    <TabsTrigger value="PREPARING" className="py-2 px-1 data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none">
+                    <TabsTrigger value="PREPARING" className="py-2 px-1 text-[13px] md:text-md data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none">
                       Preparing
                     </TabsTrigger>
-                    <TabsTrigger value="READY_FOR_PICKUP" className="py-2 px-1 data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none">
+                    <TabsTrigger value="READY_FOR_PICKUP" className="py-2 px-1 text-[13px] md:text-md data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none">
                       Ready
                     </TabsTrigger>
-                    <TabsTrigger value="DELIVERED" className="py-2 px-1 data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none">
+                    <TabsTrigger value="DELIVERED" className="py-2 px-1 text-[13px] md:text-md data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none">
                       Delivered
                     </TabsTrigger>
                   </TabsList>
@@ -219,7 +219,7 @@ export default function OrdersPage() {
           </Card>
         </div>
         
-        <div className="lg:col-span-2">
+        <div className="lg:w-[100%]">
           {selectedOrder ? (
             <OrderDetails 
               order={selectedOrder} 
