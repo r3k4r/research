@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/db";
 import { NextResponse } from "next/server";
+import bcrypt from 'bcryptjs';
 
 export async function GET(req, { params }) {
     try {
@@ -29,6 +30,8 @@ export async function PATCH(req, { params }) {
         const userId = params.id;
         const data = await req.json();
         const { role, ...updateData } = data;
+        console.log(updateData);
+        
         
         // First get the current user to check their role
         const currentUser = await prisma.user.findUnique({
@@ -43,12 +46,15 @@ export async function PATCH(req, { params }) {
             return NextResponse.json({ error: 'User not found' }, { status: 404 });
         }
 
+        const hashedPassword = await bcrypt.hash(updateData.password, 10);
+
         // Update the user with new role
         const user = await prisma.user.update({
             where: { id: userId },
             data: { 
                 role,
-                ...updateData
+                ...updateData,
+                password: hashedPassword,
             }
         });
         
@@ -61,7 +67,7 @@ export async function PATCH(req, { params }) {
                     name: currentUser.profile?.name || "New Provider",
                     businessName: "New Business",
                     address: "Address needed",
-                    phoneNumber: currentUser.profile?.phoneNumber || "Phone needed"
+                    phoneNumber: currentUser.profile?.phoneNumber || "Phone needed",
                 }
             });
         }

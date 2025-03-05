@@ -195,22 +195,6 @@ model OrderStatusLog {
   order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
 }
 
-enum Role {
-  USER
-  PROVIDER
-  ADMIN
-}
-
-enum OrderStatus {
-  PENDING
-  ACCEPTED
-  PREPARING
-  READY_FOR_PICKUP
-  IN_TRANSIT
-  DELIVERED
-  CANCELLED
-}
-
 model EmailVerification {
   id        String   @id @default(uuid())
   userId    String   @unique
@@ -239,4 +223,20 @@ model TwoFactorAuth {
   createdAt DateTime @default(now())
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+enum Role {
+  USER
+  PROVIDER
+  ADMIN
+}
+
+enum OrderStatus {
+  PENDING
+  ACCEPTED
+  PREPARING
+  READY_FOR_PICKUP
+  IN_TRANSIT
+  DELIVERED
+  CANCELLED
 }
