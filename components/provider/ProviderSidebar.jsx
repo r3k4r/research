@@ -11,7 +11,8 @@ import {
   BarChart3,
   Settings,
   LogOut,
-  User
+  User,
+  X
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -50,24 +51,39 @@ const navItems = [
   },
 ];
 
-export default function ProviderSidebar({ isOpen }) {
+export default function ProviderSidebar({ isOpen, setIsOpen }) {
   const pathname = usePathname();
   const { data: session } = useSession();
-  console.log('session', session);
-  
-  
   
   return (
-    <div
-      className={cn(
-        "sticky top-0 h-screen bg-card border-r border-border shadow-sm flex flex-col transform transition-transform duration-200 ease-in-out md:relative md:translate-x-0",
-        isOpen ? "translate-x-0" : "-translate-x-full"
+    <>
+      {/* Mobile overlay - only shows when drawer is open on mobile */}
+      {isOpen && (
+        <div 
+          className="fixed inset-0 bg-black/50 z-40 lg:hidden"
+          onClick={() => setIsOpen(false)}
+        />
       )}
-    >
-      <div className="flex flex-col h-full">
-        <div className="flex items-center justify-center h-14 px-4 border-b border-gray-200">
+      
+      <div
+        className={cn(
+          "fixed top-0 left-0 h-screen bg-card border-r border-border z-50 shadow-lg flex flex-col transition-transform duration-300 ease-in-out w-64 lg:w-auto lg:static lg:shadow-none lg:transform-none",
+          isOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
+        )}
+      >
+        <div className="flex items-center justify-between h-14 px-4 border-b border-gray-200">
           <h1 className="text-lg font-bold text-primary">Provider Dashboard</h1>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="lg:hidden"
+            onClick={() => setIsOpen(false)}
+          >
+            <X className="h-5 w-5" />
+            <span className="sr-only">Close menu</span>
+          </Button>
         </div>
+        
         <div className="flex-1 overflow-y-auto py-2">
           <nav className="space-y-1 px-2">
             {navItems.map((item) => (
@@ -79,6 +95,7 @@ export default function ProviderSidebar({ isOpen }) {
                     ? "bg-primary text-primary-foreground"
                     : "hover:bg-accent hover:text-accent-foreground text-muted-foreground"
                 }`}
+                onClick={() => setIsOpen(false)}
               >
                 <item.icon className="mr-3 h-5 w-5" />
                 {item.title}
@@ -120,7 +137,6 @@ export default function ProviderSidebar({ isOpen }) {
           </div>
         )}
 
-
         {
           session?.user?.role === "PROVIDER" && (
             <div className={`p-4 border-t border-gray-200 ${session?.user?.role === 'PROVIDER' ? 'block' : 'hidden'}`}>
@@ -134,7 +150,7 @@ export default function ProviderSidebar({ isOpen }) {
               </Button>
             </div>
         ) }
-          </div>
-        </div>
+      </div>
+    </>
   );
 }
