@@ -36,6 +36,8 @@ export async function GET() {
           totalAmount: true
         }
       });
+      console.log('Orders data:', orders);
+      
       
       // Calculate total revenue as 30% of all completed orders
       totalRevenue = orders.reduce((sum, order) => sum + (order.totalAmount * 0.3), 0);
@@ -64,9 +66,7 @@ export async function GET() {
           }
         }
       });
-      
-      console.log('User growth data:', { newUsersThisMonth, newUsersPrevMonth });
-      
+            
       // Calculate growth percentage
       if (newUsersPrevMonth > 0) {
         growthRate = ((newUsersThisMonth - newUsersPrevMonth) / newUsersPrevMonth) * 100;
