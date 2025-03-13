@@ -19,29 +19,42 @@ export default function DashboardNumbers() {
   useEffect(() => {
     const fetchStats = async () => {
       try {
-        const response = await fetch('/api/admin/dashboard/stats')
-        
-        // Fix: only call response.json() once
-        const data = await response.json()
+        setLoading(true);
+        const response = await fetch('/api/admin/dashboard/stats', {
+          method: 'GET',
+          headers: {
+            'Accept': 'application/json',
+          },
+          cache: 'no-store'
+        });
         
         if (!response.ok) {
-          // Handle error from the response data
-          throw new Error(data.error || 'Failed to fetch stats')
+          throw new Error(`API responded with status: ${response.status}`);
         }
         
-        console.log('Fetched stats:', data)
-        setStats(data)
-        setError(null)
+        const data = await response.json();
+        console.log('Dashboard stats:', data);
+        
+        if (data) {
+          setStats({
+            totalUsers: data.totalUsers || 0,
+            totalFoodItems: data.totalFoodItems || 0,
+            totalRevenue: data.totalRevenue || 0,
+            growthRate: data.growthRate || 0
+          });
+          setError(null);
+        }
       } catch (error) {
-        console.error('Error fetching dashboard stats:', error)
-        setError(error.message)
+        console.error('Error fetching dashboard stats:', error);
+        setError(error.message);
+        // Keep showing previously loaded data if any
       } finally {
-        setLoading(false)
+        setLoading(false);
       }
-    }
+    };
 
     fetchStats();
-  }, [])
+  }, []);
 
   if (loading) {
     return <NumbersSkeleton />
