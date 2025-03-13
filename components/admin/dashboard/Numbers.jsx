@@ -4,30 +4,56 @@ import { useState, useEffect } from "react"
 import { Users, ShoppingBag, DollarSign, TrendingUp } from "lucide-react"
 import { Card, CardContent } from "@/components/ui/card"
 import CountUp from "react-countup"
-import { fetchDashboardStats } from "@/lib/api"
 import { NumbersSkeleton } from "./SkeletonLoaders"
 
 export default function DashboardNumbers() {
-  const [stats, setStats] = useState(null)
+  const [stats, setStats] = useState({
+    totalUsers: 0,
+    totalFoodItems: 0,
+    totalRevenue: 0,
+    growthRate: 0
+  })
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
 
   useEffect(() => {
-    const getStats = async () => {
+    const fetchStats = async () => {
       try {
-        const data = await fetchDashboardStats()
+        const response = await fetch('/api/admin/dashboard/stats')
+        
+        // Fix: only call response.json() once
+        const data = await response.json()
+        
+        if (!response.ok) {
+          // Handle error from the response data
+          throw new Error(data.error || 'Failed to fetch stats')
+        }
+        
+        console.log('Fetched stats:', data)
         setStats(data)
+        setError(null)
       } catch (error) {
-        console.error("Failed to fetch dashboard stats:", error)
+        console.error('Error fetching dashboard stats:', error)
+        setError(error.message)
       } finally {
         setLoading(false)
       }
     }
 
-    getStats()
+    fetchStats();
   }, [])
 
   if (loading) {
     return <NumbersSkeleton />
+  }
+
+  if (error) {
+    return (
+      <div className="p-4 bg-red-50 border border-red-200 rounded-md text-red-700">
+        <p>Error loading dashboard data: {error}</p>
+        <p className="text-sm mt-2">Please try refreshing the page</p>
+      </div>
+    )
   }
 
   const dashboardItems = [
@@ -78,7 +104,7 @@ export default function DashboardNumbers() {
                   {item.prefix}
                   <CountUp
                     start={0}
-                    end={item.value}
+                    end={item.value || 0}
                     duration={2}
                     separator=","
                     decimals={item.decimals || 0}
