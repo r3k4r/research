@@ -37,9 +37,9 @@ model UserProfile {
   gender      String?
   image       String?
 
-  user    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user    User             @relation(fields: [userId], references: [id], onDelete: Cascade)
   reviews Review[]
-  orders  Order[]
+  orders  PurchasedOrder[]
 }
 
 model ProviderProfile {
@@ -56,7 +56,7 @@ model ProviderProfile {
   user             User                     @relation(fields: [userId], references: [id], onDelete: Cascade)
   foodItems        FoodItem[]
   monthlySummaries ProviderMonthlySummary[]
-  orders           Order[]
+  orders           PurchasedOrder[]
 }
 
 model Account {
@@ -152,7 +152,7 @@ model ProviderMonthlySummary {
   @@unique([providerId, month])
 }
 
-model Order {
+model PurchasedOrder {
   id                 String      @id @default(uuid())
   userProfileId      String
   providerId         String
@@ -181,8 +181,8 @@ model OrderItem {
   quantity   Int
   price      Float
 
-  order    Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  foodItem FoodItem @relation(fields: [foodItemId], references: [id])
+  order    PurchasedOrder @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  foodItem FoodItem       @relation(fields: [foodItemId], references: [id])
 }
 
 model OrderStatusLog {
@@ -192,7 +192,7 @@ model OrderStatusLog {
   notes     String?
   createdAt DateTime    @default(now())
 
-  order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  order PurchasedOrder @relation(fields: [orderId], references: [id], onDelete: Cascade)
 }
 
 model EmailVerification {

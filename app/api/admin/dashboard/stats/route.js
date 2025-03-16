@@ -28,7 +28,7 @@ export async function GET() {
     // Calculate actual revenue from completed orders (taking 30% cut)
     let totalRevenue = 0;
     try {
-      const orders = await prisma.order.findMany({
+      const orders = await prisma.purchasedOrder.findMany({
         where: {
           status: "DELIVERED" // Only count DELIVERED orders
         },
@@ -36,7 +36,6 @@ export async function GET() {
           totalAmount: true
         }
       });
-      console.log('Orders data:', orders);
       
       
       // Calculate total revenue as 30% of all completed orders
