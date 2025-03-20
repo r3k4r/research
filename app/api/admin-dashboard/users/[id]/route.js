@@ -63,36 +63,47 @@ export async function PATCH(req, { params }) {
             data: updateData
         });
         
-        // If role changed to PROVIDER and they don't have a provider profile, create one
-        if (role === "PROVIDER" && !currentUser.providerProfile) {
-            // Create a basic provider profile
-            await prisma.providerProfile.create({
-                data: {
-                    userId: userId,
-                    name: currentUser.profile?.name || "New Provider",
-                    businessName: "New Business",
-                    address: "Address needed",
-                    phoneNumber: currentUser.profile?.phoneNumber || "Phone needed",
-                }
-            });
-
-            await prisma.userProfile.delete({
-                where: { userId: userId }
-            });
+        // Handle role change to PROVIDER
+        if (role === "PROVIDER") {
+            // Delete user profile if exists
+            if (currentUser.profile) {
+                await prisma.userProfile.delete({
+                    where: { userId: userId }
+                });
+            }
+            
+            // Create provider profile if doesn't exist
+            if (!currentUser.providerProfile) {
+                await prisma.providerProfile.create({
+                    data: {
+                        userId: userId,
+                        name: currentUser.profile?.name || "New Provider",
+                        businessName: "New Business",
+                        address: "Address needed",
+                        phoneNumber: currentUser.profile?.phoneNumber || "Phone needed",
+                    }
+                });
+            }
         }
         
-        // If role changed to USER and they don't have a user profile, create one
-        if (role === "USER" && !currentUser.profile) {
-            await prisma.userProfile.create({
-                data: {
-                    userId: userId,
-                    name: currentUser.providerProfile?.name || "New User"
-                }
-            });
-
-            await prisma.providerProfile.delete({
-                where: { userId: userId }
-            });
+        // Handle role change to USER
+        if (role === "USER") {
+            // Delete provider profile if exists
+            if (currentUser.providerProfile) {
+                await prisma.providerProfile.delete({
+                    where: { userId: userId }
+                });
+            }
+            
+            // Create user profile if doesn't exist
+            if (!currentUser.profile) {
+                await prisma.userProfile.create({
+                    data: {
+                        userId: userId,
+                        name: currentUser.providerProfile?.name || "New User"
+                    }
+                });
+            }
         }
         
         return NextResponse.json({ user }, { status: 200 });
