@@ -29,9 +29,8 @@ export async function PATCH(req, { params }) {
     try {
         const userId = params.id;
         const data = await req.json();
-        const { role, ...updateData } = data;
-        console.log(updateData);
-        
+        const { role, password, ...otherUpdateData } = data;
+        console.log(data);
         
         // First get the current user to check their role
         const currentUser = await prisma.user.findUnique({
@@ -46,16 +45,22 @@ export async function PATCH(req, { params }) {
             return NextResponse.json({ error: 'User not found' }, { status: 404 });
         }
 
-        const hashedPassword = await bcrypt.hash(updateData.password, 10);
+        // Prepare update data
+        const updateData = { 
+            role,
+            ...otherUpdateData
+        };
+        
+        // Only hash and update password if it's provided
+        if (password) {
+            const hashedPassword = await bcrypt.hash(password, 10);
+            updateData.password = hashedPassword;
+        }
 
-        // Update the user with new role
+        // Update the user with new data
         const user = await prisma.user.update({
             where: { id: userId },
-            data: { 
-                role,
-                ...updateData,
-                password: hashedPassword,
-            }
+            data: updateData
         });
         
         // If role changed to PROVIDER and they don't have a provider profile, create one
@@ -70,6 +75,10 @@ export async function PATCH(req, { params }) {
                     phoneNumber: currentUser.profile?.phoneNumber || "Phone needed",
                 }
             });
+
+            await prisma.userProfile.delete({
+                where: { userId: userId }
+            });
         }
         
         // If role changed to USER and they don't have a user profile, create one
@@ -79,6 +88,10 @@ export async function PATCH(req, { params }) {
                     userId: userId,
                     name: currentUser.providerProfile?.name || "New User"
                 }
+            });
+
+            await prisma.providerProfile.delete({
+                where: { userId: userId }
             });
         }
         
