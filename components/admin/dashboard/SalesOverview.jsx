@@ -3,8 +3,26 @@
 import { useState, useEffect } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Line } from "react-chartjs-2"
-import { fetchSalesData } from "@/lib/api"
 import { ChartSkeleton } from "./SkeletonLoaders"
+
+import {
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  Tooltip,
+  Legend
+} from 'chart.js'
+
+ChartJS.register(
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  Tooltip,
+  Legend
+)
 
 export default function SalesOverview() {
   const [salesData, setSalesData] = useState(null)
@@ -20,18 +38,33 @@ export default function SalesOverview() {
     updateHeight()
     window.addEventListener("resize", updateHeight)
     
-    const getData = async () => {
+    const fetchSalesData = async () => {
       try {
-        const data = await fetchSalesData()
+        const response = await fetch('/api/admin/dashboard/salesoverview')
+        if (!response.ok) throw new Error('Failed to fetch sales data')
+        const data = await response.json()
+      console.log('Sales data:', data);
+      
         setSalesData(data)
       } catch (error) {
         console.error("Failed to fetch sales data:", error)
+        // Provide fallback data if API fails
+        setSalesData({
+          labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+          datasets: [{
+            label: 'Sales',
+            data: [0, 0, 0, 0, 0, 0, 0],
+            borderColor: 'rgb(53, 162, 235)',
+            backgroundColor: 'rgba(53, 162, 235, 0.5)',
+            tension: 0.3
+          }]
+        })
       } finally {
         setLoading(false)
       }
     }
 
-    getData()
+    fetchSalesData()
     
     return () => window.removeEventListener("resize", updateHeight)
   }, [])
@@ -56,7 +89,12 @@ export default function SalesOverview() {
                 legend: { display: false }
               },
               scales: {
-                y: { beginAtZero: true },
+                y: { 
+                  beginAtZero: true,
+                  ticks: {
+                    callback: (value) => `$${value}`
+                  }
+                },
                 x: { grid: { display: false } }
               }
             }} 

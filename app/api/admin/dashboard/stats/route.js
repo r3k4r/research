@@ -39,13 +39,14 @@ export async function GET() {
       
       
       // Calculate total revenue as 30% of all completed orders
-      totalRevenue = orders.reduce((sum, order) => sum + (order.totalAmount * 0.3), 0);
+      totalRevenue = orders.reduce((sum, order) => sum + (order.totalAmount * 0.2), 0);
         } catch (e) {
       console.log('Error calculating revenue:', e?.message || 'Unknown error');
     }
     
     // Calculate growth based on user registrations (instead of orders)
     let growthRate = 0;
+    let growthContext = {};
     try {
       // Count users registered this month
       const newUsersThisMonth = await prisma.user.count({
@@ -65,13 +66,40 @@ export async function GET() {
           }
         }
       });
+      
+     
             
-      // Calculate growth percentage
+      // Calculate growth percentage with business-relevant logic
       if (newUsersPrevMonth > 0) {
+        // Standard month-over-month growth calculation
         growthRate = ((newUsersThisMonth - newUsersPrevMonth) / newUsersPrevMonth) * 100;
       } else if (newUsersThisMonth > 0) {
-        growthRate = 100; // If no users last month but some this month
-      }      
+        // We have users this month but none last month
+        // For new platforms, show positive growth based on actual user count
+        growthRate = 100; // Fixed positive indicator when we're just starting
+      } else {
+        // No users in either month - no growth (stays at 0%)
+        growthRate = 0;
+      }
+      
+      // If all users are from this month, show appropriate growth
+      if (totalUsers > 0 && totalUsers === newUsersThisMonth) {
+        // All our users are new this month - set positive growth indicator
+        growthRate = 100;
+      }
+      
+      // Apply reasonable growth limits only for extreme values
+      growthRate = Math.max(Math.min(growthRate, 200), -90);
+      
+      // Add additional growth context
+      growthContext = {
+        newUsersThisMonth,
+        newUsersPrevMonth,
+        allUsersAreNew: totalUsers > 0 && totalUsers === newUsersThisMonth,
+        isGrowthAccelerating: newUsersPrevMonth > 0 && 
+                              newUsersThisMonth > newUsersPrevMonth && 
+                              newUsersThisMonth / newUsersPrevMonth > 1.1
+      };
     } catch (e) {
       console.log('Error calculating growth rate:', e?.message || 'Unknown error');
     }
@@ -81,6 +109,7 @@ export async function GET() {
       totalFoodItems,
       totalRevenue: parseFloat(totalRevenue.toFixed(2)),
       growthRate: parseFloat(growthRate.toFixed(1)),
+      growthContext,
     };
     
     console.log('API response data (real calculations):', result);
