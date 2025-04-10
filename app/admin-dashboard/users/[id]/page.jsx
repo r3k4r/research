@@ -108,7 +108,7 @@ const SingleUser = ({ params }) => {
   const refreshData = async () => {
     try {
       setLoading(true);
-      const res = await fetch(`/api/admin-dashboard/users/${id}`);
+      const res = await fetch(`/api/admin/users/${id}`);
       
       if (!res.ok) {
         throw new Error("Failed to refresh user data");
@@ -144,7 +144,7 @@ const SingleUser = ({ params }) => {
     const fetchUserData = async () => {
       try {
         setLoading(true)
-        const res = await fetch(`/api/admin-dashboard/users/${id}`)
+        const res = await fetch(`/api/admin/users/${id}`)
         
         if (!res.ok) {
           throw new Error("Failed to fetch user data")
@@ -171,7 +171,7 @@ const SingleUser = ({ params }) => {
     }
     
     try {
-      const res = await fetch(`/api/admin-dashboard/users/${id}`, {
+      const res = await fetch(`/api/admin/users/${id}`, {
         method: "DELETE",
       })
       
@@ -182,7 +182,7 @@ const SingleUser = ({ params }) => {
       showToast("User deleted successfully", "success")
       
       setTimeout(() => {
-        router.push("/admin-dashboard/users")
+        router.push("/admin/users")
       }, 1500)
     } catch (error) {
       console.error(error)
@@ -194,7 +194,7 @@ const SingleUser = ({ params }) => {
   const handleEditUser = async (userId) => {
     try {
       setLoading(true);
-      const res = await fetch(`/api/admin-dashboard/users/${id}`);
+      const res = await fetch(`/api/admin/users/${id}`);
       
       if (!res.ok) {
         const error = await res.json();
@@ -278,7 +278,7 @@ const SingleUser = ({ params }) => {
     }
     
     // Call API to update user
-    const res = await fetch(`/api/admin-dashboard/users/${id}`, {
+    const res = await fetch(`/api/admin/users/${id}`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload)
@@ -325,7 +325,7 @@ const updateUserProfile = async (userId) => {
     gender: formData.profileData.gender || null,
   };
   
-  const res = await fetch(`/api/admin-dashboard/users/${userId}/profile`, {
+  const res = await fetch(`/api/admin/users/${userId}/profile`, {
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(profileData)
@@ -353,7 +353,7 @@ const updateProviderProfile = async (userId) => {
     logo: formData.profileData.image || null
   };
   
-  const res = await fetch(`/api/admin-dashboard/users/${userId}/provider-profile`, {
+  const res = await fetch(`/api/admin/users/${userId}/provider-profile`, {
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(profileData)
@@ -389,7 +389,7 @@ const updateProviderProfile = async (userId) => {
         <Card>
           <CardContent className="py-10 text-center">
             <p>The user you're looking for doesn't exist or has been deleted.</p>
-            <Button className="mt-4" onClick={() => router.push('/admin-dashboard/users')}>
+            <Button className="mt-4" onClick={() => router.push('/admin/users')}>
               Return to User List
             </Button>
           </CardContent>

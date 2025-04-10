@@ -65,7 +65,7 @@ export default function UsersPage() {
   const fetchUsers = async () => {
     try {
       setLoading(true)
-      let url = `/api/admin-dashboard/users?page=${currentPage}&limit=10`
+      let url = `/api/admin/users?page=${currentPage}&limit=10`
       
       if (selectedRole !== "all") {
         url += `&role=${selectedRole}`
@@ -172,7 +172,7 @@ export default function UsersPage() {
         };
       }
       
-      const res = await fetch('/api/admin-dashboard/users', {
+      const res = await fetch('/api/admin/users', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
@@ -203,13 +203,13 @@ export default function UsersPage() {
   }
 
   const handleViewUser = (userId) => {
-    router.push(`/admin-dashboard/users/${userId}`);
+    router.push(`/admin/users/${userId}`);
   }
 
   const handleEditUser = async (userId) => {
     try {
       setLoading(true);
-      const res = await fetch(`/api/admin-dashboard/users/${userId}`);
+      const res = await fetch(`/api/admin/users/${userId}`);
       
       if (!res.ok) {
         const error = await res.json();
@@ -292,7 +292,7 @@ export default function UsersPage() {
       }
       
       // Call API to update user
-      const res = await fetch(`/api/admin-dashboard/users/${userId}`, {
+      const res = await fetch(`/api/admin/users/${userId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
@@ -339,7 +339,7 @@ export default function UsersPage() {
       gender: formData.profileData.gender || null,
     };
     
-    const res = await fetch(`/api/admin-dashboard/users/${userId}/profile`, {
+    const res = await fetch(`/api/admin/users/${userId}/profile`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(profileData)
@@ -367,7 +367,7 @@ export default function UsersPage() {
       logo: formData.profileData.image || null
     };
     
-    const res = await fetch(`/api/admin-dashboard/users/${userId}/provider-profile`, {
+    const res = await fetch(`/api/admin/users/${userId}/provider-profile`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(profileData)
@@ -390,7 +390,7 @@ export default function UsersPage() {
         throw new Error("User ID is missing");
       }
       
-      const res = await fetch(`/api/admin-dashboard/users/${userId}`, {
+      const res = await fetch(`/api/admin/users/${userId}`, {
         method: 'DELETE'
       });
       
