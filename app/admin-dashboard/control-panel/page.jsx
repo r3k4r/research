@@ -34,6 +34,8 @@ import {
   Star,
   Settings
 } from "lucide-react"
+import { Textarea } from "@/components/ui/textarea"
+
 
 export default function ControlPanelPage() {
   const { showToast, ToastComponent } = useToast()
@@ -46,6 +48,21 @@ export default function ControlPanelPage() {
   const [selectedProvider, setSelectedProvider] = useState(null)
   const [isEditingProvider, setIsEditingProvider] = useState(false)
   const [isDeleteProviderDialogOpen, setIsDeleteProviderDialogOpen] = useState(false)
+  const [isAddingProvider, setIsAddingProvider] = useState(false)
+  const [providerFormData, setProviderFormData] = useState({
+    email: "",
+    password: "",
+    role: "PROVIDER",
+    profileData: {
+      name: "",
+      businessName: "",
+      description: "",
+      address: "",
+      phoneNumber: "",
+      businessHours: "",
+      logo: ""
+    }
+  })
   
   // Categories state
   const [categories, setCategories] = useState([])
@@ -140,6 +157,87 @@ export default function ControlPanelPage() {
     } catch (error) {
       console.error("Error deleting provider:", error)
       showToast(`Error: ${error.message}`, "error")
+    }
+  }
+
+  const resetProviderForm = () => {
+    setProviderFormData({
+      email: "",
+      password: "",
+      role: "PROVIDER",
+      profileData: {
+        name: "",
+        businessName: "",
+        description: "",
+        address: "",
+        phoneNumber: "",
+        businessHours: "",
+        logo: ""
+      }
+    });
+  }
+  
+  const handleProviderInputChange = (e, section = null) => {
+    const { name, value } = e.target;
+    
+    if (section) {
+      setProviderFormData({
+        ...providerFormData,
+        [section]: {
+          ...providerFormData[section],
+          [name]: value
+        }
+      });
+    } else {
+      setProviderFormData({
+        ...providerFormData,
+        [name]: value
+      });
+    }
+  }
+  
+  const handleAddProvider = async () => {
+    try {
+      setLoading(true);
+      
+      const payload = {
+        email: providerFormData.email,
+        password: providerFormData.password,
+        role: "PROVIDER",
+        profileData: {
+          name: providerFormData.profileData.name,
+          businessName: providerFormData.profileData.businessName,
+          description: providerFormData.profileData.description || null,
+          address: providerFormData.profileData.address,
+          phoneNumber: providerFormData.profileData.phoneNumber,
+          businessHours: providerFormData.profileData.businessHours || null,
+          logo: providerFormData.profileData.logo || null
+        }
+      };
+      
+      const res = await fetch('/api/admin/users', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      
+      const data = await res.json();
+      
+      if (!res.ok) {
+        throw new Error(data.error || "Failed to create provider");
+      }
+      
+      showToast("Provider created successfully", "success");
+      
+      resetProviderForm();
+      setIsAddingProvider(false);
+      
+      fetchProviders();
+    } catch (error) {
+      console.error("Error adding provider:", error);
+      showToast(`Error: ${error.message}`, "error");
+    } finally {
+      setLoading(false);
     }
   }
   
@@ -389,9 +487,17 @@ export default function ControlPanelPage() {
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-xl font-bold">Providers Management</CardTitle>
-              <Button variant="outline" size="sm" onClick={fetchProviders}>
-                <RefreshCw className="h-4 w-4 mr-1" /> Refresh
-              </Button>
+              <div className="space-x-2">
+                <Button variant="outline" size="sm" onClick={fetchProviders}>
+                  <RefreshCw className="h-4 w-4 mr-1" /> Refresh
+                </Button>
+                <Button size="sm" onClick={() => {
+                  resetProviderForm();
+                  setIsAddingProvider(true);
+                }}>
+                  <Plus className="h-4 w-4 mr-1" /> Add Provider
+                </Button>
+              </div>
             </CardHeader>
             <CardContent>
               <div className="mb-4 flex flex-col sm:flex-row gap-2">
@@ -969,6 +1075,129 @@ export default function ControlPanelPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+      
+      {/* Add Provider Dialog */}
+      <Dialog open={isAddingProvider} onOpenChange={setIsAddingProvider}>
+        <DialogContent className="sm:max-w-[550px]">
+          <DialogHeader>
+            <DialogTitle>Add New Provider</DialogTitle>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid grid-cols-1 gap-2">
+              <Label htmlFor="provider-email">Email Address <span className="text-red-500">*</span></Label>
+              <Input
+                id="provider-email"
+                name="email"
+                type="email"
+                value={providerFormData.email}
+                onChange={(e) => handleProviderInputChange(e)}
+                placeholder="provider@example.com"
+                required
+              />
+            </div>
+            <div className="grid grid-cols-1 gap-2">
+              <Label htmlFor="provider-password">Password <span className="text-red-500">*</span></Label>
+              <Input
+                id="provider-password"
+                name="password"
+                type="password"
+                value={providerFormData.password}
+                onChange={(e) => handleProviderInputChange(e)}
+                placeholder="••••••••"
+                required
+              />
+            </div>
+            <div className="grid grid-cols-1 gap-2">
+              <Label htmlFor="provider-name">Contact Name <span className="text-red-500">*</span></Label>
+              <Input
+                id="provider-name"
+                name="name"
+                value={providerFormData.profileData.name}
+                onChange={(e) => handleProviderInputChange(e, 'profileData')}
+                placeholder="Full name"
+                required
+              />
+            </div>
+            <div className="grid grid-cols-1 gap-2">
+              <Label htmlFor="provider-businessName">Business Name <span className="text-red-500">*</span></Label>
+              <Input
+                id="provider-businessName"
+                name="businessName"
+                value={providerFormData.profileData.businessName}
+                onChange={(e) => handleProviderInputChange(e, 'profileData')}
+                placeholder="Business name"
+                required
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="grid gap-2">
+                <Label htmlFor="provider-phoneNumber">Phone Number <span className="text-red-500">*</span></Label>
+                <Input
+                  id="provider-phoneNumber"
+                  name="phoneNumber"
+                  value={providerFormData.profileData.phoneNumber}
+                  onChange={(e) => handleProviderInputChange(e, 'profileData')}
+                  placeholder="+964 0000 000 0000"
+                  required
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="provider-businessHours">Business Hours</Label>
+                <Input
+                  id="provider-businessHours"
+                  name="businessHours"
+                  value={providerFormData.profileData.businessHours}
+                  onChange={(e) => handleProviderInputChange(e, 'profileData')}
+                  placeholder="Mon-Fri: 9am-5pm"
+                />
+              </div>
+            </div>
+            <div className="grid grid-cols-1 gap-2">
+              <Label htmlFor="provider-address">Address <span className="text-red-500">*</span></Label>
+              <Input
+                id="provider-address"
+                name="address"
+                value={providerFormData.profileData.address}
+                onChange={(e) => handleProviderInputChange(e, 'profileData')}
+                placeholder="123 Business St, City"
+                required
+              />
+            </div>
+            <div className="grid grid-cols-1 gap-2">
+              <Label htmlFor="provider-description">Description</Label>
+              <Textarea
+                id="provider-description"
+                name="description"
+                value={providerFormData.profileData.description}
+                onChange={(e) => handleProviderInputChange(e, 'profileData')}
+                placeholder="Describe the business..."
+                rows={3}
+              />
+            </div>
+            <div className="grid grid-cols-1 gap-2">
+              <Label htmlFor="provider-logo">Logo URL</Label>
+              <Input
+                id="provider-logo"
+                name="logo"
+                value={providerFormData.profileData.logo}
+                onChange={(e) => handleProviderInputChange(e, 'profileData')}
+                placeholder="https://example.com/logo.jpg"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => {
+              resetProviderForm();
+              setIsAddingProvider(false);
+            }}>
+              Cancel
+            </Button>
+            <Button onClick={handleAddProvider} disabled={loading}>
+              {loading ? "Creating..." : "Add Provider"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
