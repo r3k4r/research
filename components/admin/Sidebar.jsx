@@ -4,15 +4,14 @@ import { useState, useEffect } from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { motion, AnimatePresence } from "framer-motion"
-import { Home, Users, ShoppingBag, BarChart2, Settings, Menu, X } from "lucide-react"
+import { Home, Users, ShoppingBag, MonitorCog, Menu, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
 
 const menuItems = [
   { icon: Home, name: "Dashboard", href: "/admin-dashboard" },
   { icon: Users, name: "Users", href: "/admin-dashboard/users" },
   { icon: ShoppingBag, name: "Food", href: "/admin-dashboard/food-items" },
-  { icon: BarChart2, name: "Analytics", href: "/admin-dashboard/analytics" },
-  { icon: Settings, name: "Settings", href: "/admin-dashboard/settings" },
+  { icon: MonitorCog, name: "Control-Panel", href: "/admin-dashboard/control-panel" },
 ]
 
 export default function Sidebar() {
