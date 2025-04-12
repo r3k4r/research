@@ -45,28 +45,44 @@ export async function PUT(request, { params }) {
       expiresAt.setHours(expiresAt.getHours() + parseInt(body.expiresIn));
     }
     
-    // Find or create the category with case-insensitive search
-    let categoryId;
-    if (body.category) {
-      let category = await prisma.category.findFirst({
-        where: { 
-          name: {
-            equals: body.category,
-            mode: 'insensitive'
-          }
-        }
-      });
-      
-      if (!category) {
-        category = await prisma.category.create({
-          data: { name: body.category }
-        });
-      }
-      
-      categoryId = category.id;
+    // Find or create the category
+    const categoryName = body.category?.trim();
+    
+    if (!categoryName) {
+      return NextResponse.json(
+        { error: "Category name is required" },
+        { status: 400 }
+      );
     }
     
-    // Update the food item
+    // First try to find existing category case-insensitively
+    let category = await prisma.category.findFirst({
+      where: { 
+        name: { 
+          equals: categoryName,
+          mode: 'insensitive'
+        }
+      }
+    });
+    
+    // If category doesn't exist, create it
+    if (!category) {
+      console.log(`Creating new category during update: ${categoryName}`);
+      try {
+        category = await prisma.category.create({
+          data: { name: categoryName }
+        });
+        console.log("New category created during update:", category);
+      } catch (categoryError) {
+        console.error("Error creating category during update:", categoryError);
+        return NextResponse.json(
+          { error: "Failed to create category", details: categoryError.message },
+          { status: 500 }
+        );
+      }
+    }
+    
+    // Update the food item with the proper category ID
     const updatedItem = await prisma.foodItem.update({
       where: { id },
       data: {
@@ -76,16 +92,11 @@ export async function PUT(request, { params }) {
         discountedPrice: parseFloat(body.discountedPrice),
         quantity: body.quantity !== undefined ? parseInt(body.quantity) : undefined,
         image: body.image,
-        categoryId: categoryId,
+        categoryId: category.id,
         expiresAt: expiresAt
       },
       include: {
-        provider: {
-          select: {
-            businessName: true,
-            logo: true
-          }
-        },
+        provider: true,
         category: true
       }
     });
@@ -109,11 +120,11 @@ export async function DELETE(request, { params }) {
       where: { id }
     });
     
-    return NextResponse.json({ success: true });
+    return NextResponse.json({ message: "Food item deleted successfully" });
   } catch (error) {
     console.error("Error deleting food item:", error);
     return NextResponse.json(
-      { error: "Failed to delete food item" }, 
+      { error: "Failed to delete food item", details: error.message }, 
       { status: 500 }
     );
   }

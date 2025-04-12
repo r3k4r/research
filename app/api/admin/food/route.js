@@ -3,51 +3,52 @@ import { NextResponse } from "next/server";
 
 // Get food items with search and filtering
 export async function GET(request) {
-  const url = new URL(request.url);
-  const search = url.searchParams.get("search") || "";
-  const categoryId = url.searchParams.get("category") || "";
-
+  const searchParams = request.nextUrl.searchParams;
+  const search = searchParams.get('search') || '';
+  const categoryId = searchParams.get('category');
+  
   try {
-    // Build where clause for filtering and search
+    // Build filter conditions
     const where = {};
     
-    // Add search condition
     if (search) {
       where.OR = [
         { name: { contains: search, mode: 'insensitive' } },
+        { description: { contains: search, mode: 'insensitive' } },
         { provider: { businessName: { contains: search, mode: 'insensitive' } } }
       ];
     }
     
-    // Add category filter
-    if (categoryId) {
+    if (categoryId && categoryId !== 'all') {
       where.categoryId = categoryId;
     }
     
-    // Fetch food items
+    // Fetch food items with filter
     const foodItems = await prisma.foodItem.findMany({
       where,
       include: {
-        provider: {
-          select: {
-            businessName: true,
-            logo: true
-          }
-        },
+        provider: true,
         category: true
       },
-      orderBy: { createdAt: 'desc' }
+      orderBy: {
+        createdAt: 'desc'
+      }
     });
     
-    // Get all categories for the filter dropdown
+    // Fetch all categories for the dropdown
     const categories = await prisma.category.findMany({
-      orderBy: { name: 'asc' }
+      orderBy: {
+        name: 'asc'
+      }
     });
     
-    return NextResponse.json({ 
-      foodItems, 
+    // Count total items (without pagination)
+    const totalItems = foodItems.length;
+    
+    return NextResponse.json({
+      foodItems,
       categories,
-      totalItems: foodItems.length
+      totalItems
     });
   } catch (error) {
     console.error("Error fetching food items:", error);
@@ -67,23 +68,43 @@ export async function POST(request) {
     const expiresAt = new Date();
     expiresAt.setHours(expiresAt.getHours() + parseInt(body.expiresIn));
     
-    // Find or create the category with better case-insensitive search
+    // Ensure we have a category name
+    const categoryName = body.category?.trim();
+    if (!categoryName) {
+      return NextResponse.json(
+        { error: "Category name is required" },
+        { status: 400 }
+      );
+    }
+    
+    // First check if this is a new category that needs to be created
     let category = await prisma.category.findFirst({
       where: { 
         name: { 
-          equals: body.category,
+          equals: categoryName,
           mode: 'insensitive'
         }
       }
     });
     
+    // If category doesn't exist, create it in the Category table
     if (!category) {
-      category = await prisma.category.create({
-        data: { name: body.category }
-      });
+      try {
+        console.log(`Creating new category: ${categoryName}`);
+        category = await prisma.category.create({
+          data: { name: categoryName }
+        });
+        console.log("New category created:", category);
+      } catch (categoryError) {
+        console.error("Error creating category:", categoryError);
+        return NextResponse.json(
+          { error: "Failed to create category", details: categoryError.message },
+          { status: 500 }
+        );
+      }
     }
     
-    // Create the food item
+    // Create the food item with the category ID
     const newItem = await prisma.foodItem.create({
       data: {
         name: body.name,
@@ -92,7 +113,7 @@ export async function POST(request) {
         discountedPrice: parseFloat(body.discountedPrice),
         quantity: parseInt(body.quantity || 1),
         image: body.image || "/default-food.jpg",
-        categoryId: category.id,
+        categoryId: category.id,  // Use the Category table ID
         providerId: body.providerId,
         expiresAt: expiresAt
       },

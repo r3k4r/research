@@ -1,10 +1,10 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { FoodCard } from "@/components/Food-Card"
 import { 
   Select, 
@@ -17,6 +17,17 @@ import {
 } from "@/components/ui/select"
 import { Plus, Check, X, Search } from "lucide-react"
 import Image from "next/image"
+import { useToast } from "@/components/ui/toast"
+import { 
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle 
+} from "@/components/ui/alert-dialog"
 
 export default function FoodItemsPage() {
   const [foodItems, setFoodItems] = useState([])
@@ -32,6 +43,9 @@ export default function FoodItemsPage() {
   const [newCategoryName, setNewCategoryName] = useState("")
   const [providerSearchOpen, setProviderSearchOpen] = useState(false)
   const [providerSearchTerm, setProviderSearchTerm] = useState("")
+  const [deleteItemId, setDeleteItemId] = useState(null)
+  const [isDeleteAlertOpen, setIsDeleteAlertOpen] = useState(false)
+  const { showToast, ToastComponent } = useToast()
   
   const [formData, setFormData] = useState({
     name: "",
@@ -46,16 +60,19 @@ export default function FoodItemsPage() {
     image: ""
   })
 
-  // Fetch food items with filters
-  const fetchFoodItems = async () => {
+  const fetchFoodItems = useCallback(async (searchQuery = searchTerm, categoryFilter = selectedCategory) => {
     setLoading(true)
     
     try {
       const params = new URLSearchParams()
-      if (searchTerm) params.append("search", searchTerm)
-      if (selectedCategory && selectedCategory !== "all") params.append("category", selectedCategory) 
+      if (searchQuery) params.append("search", searchQuery)
+      if (categoryFilter && categoryFilter !== "all") params.append("category", categoryFilter) 
       
-      const response = await fetch(`/api/admin/food?${params.toString()}`)
+      params.append("t", Date.now())
+      
+      const response = await fetch(`/api/admin/food?${params.toString()}`, { cache: 'no-store' })
+      if (!response.ok) throw new Error("Failed to fetch food items")
+      
       const data = await response.json()
       
       setFoodItems(data?.foodItems)
@@ -63,20 +80,19 @@ export default function FoodItemsPage() {
       setTotalItems(data?.totalItems)
     } catch (error) {
       console.error("Error fetching food items:", error)
+      showToast("Failed to load food items", "error")
     } finally {
       setLoading(false)
     }
-  }
+  }, [searchTerm, selectedCategory])
 
-  // Fetch providers 
-  const fetchProviders = async () => {
+  const fetchProviders = useCallback(async () => {
     try {
-      const response = await fetch('/api/admin/users?role=PROVIDER&limit=100')
+      const response = await fetch('/api/admin/users?role=PROVIDER&limit=100&t=' + Date.now(), { cache: 'no-store' })
       if (!response.ok) throw new Error("Failed to fetch providers")
       
       const data = await response.json()
       
-      // Extract provider profiles from users data
       const providersList = data.users
         .filter(user => user.providerProfile)
         .map(user => ({
@@ -89,22 +105,20 @@ export default function FoodItemsPage() {
     } catch (error) {
       console.error("Error fetching providers:", error)
     }
-  }
+  }, [])
 
-  // Initial load
   useEffect(() => {
     fetchFoodItems()
     fetchProviders()
-  }, [])
+  }, [fetchFoodItems, fetchProviders])
   
-  // Fetch when search or filter changes
   useEffect(() => {
     const timer = setTimeout(() => {
-      fetchFoodItems()
+      fetchFoodItems(searchTerm, selectedCategory)
     }, 300)
     
     return () => clearTimeout(timer)
-  }, [searchTerm, selectedCategory])
+  }, [searchTerm, selectedCategory, fetchFoodItems])
 
   const resetForm = () => {
     setFormData({
@@ -146,7 +160,6 @@ export default function FoodItemsPage() {
       
       setEditingItem(item)
       
-      // Calculate expires in hours
       const now = new Date()
       const expiresAt = new Date(item.expiresAt)
       const hours = Math.max(1, Math.round((expiresAt - now) / (1000 * 60 * 60)))
@@ -170,6 +183,62 @@ export default function FoodItemsPage() {
     }
   }
   
+  const handleAddNewCategory = async () => {
+    if (!newCategoryName.trim()) return;
+    
+    const categoryName = newCategoryName.trim();
+    
+    try {
+      const existingCategory = categories.find(
+        c => c.name.toLowerCase() === categoryName.toLowerCase()
+      );
+      
+      if (existingCategory) {
+        setFormData({ ...formData, category: existingCategory.name });
+        showToast(`Using existing category "${existingCategory.name}"`, "success");
+      } else {
+        setFormData({ ...formData, category: categoryName });
+        
+        const testData = {
+          name: `__TEST_${Date.now()}`,
+          description: "Test item for category creation - will be deleted",
+          originalPrice: "0.01",
+          discountedPrice: "0.01",
+          quantity: "1",
+          category: categoryName,
+          providerId: providers[0]?.id || "",
+          expiresIn: "1",
+          image: ""
+        };
+        
+        const response = await fetch('/api/admin/food', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(testData)
+        });
+        
+        if (response.ok) {
+          const result = await response.json();
+          if (result.id) {
+            await fetch(`/api/admin/food/${result.id}`, { method: 'DELETE' });
+          }
+          
+          await fetchFoodItems();
+          showToast(`New category "${categoryName}" created`, "success");
+        } else {
+          const error = await response.json();
+          throw new Error(error.error || "Failed to create category");
+        }
+      }
+    } catch (error) {
+      console.error("Error creating category:", error);
+      showToast(`Error: ${error.message}`, "error");
+    } finally {
+      setShowNewCategoryInput(false);
+      setNewCategoryName("");
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault()
     
@@ -185,50 +254,63 @@ export default function FoodItemsPage() {
         headers: {
           "Content-Type": "application/json"
         },
-        body: JSON.stringify(formData)
+        body: JSON.stringify(formData),
+        cache: 'no-store'
       })
       
-      if (!response.ok) throw new Error("Failed to save food item")
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || "Failed to save food item")
+      }
       
-      fetchFoodItems()
+      const result = await response.json()
+      
+      showToast(
+        editingItem 
+          ? `"${formData.name}" has been updated successfully` 
+          : `"${formData.name}" has been added successfully`, 
+        "success"
+      )
+      
+      await fetchFoodItems()
       setIsDialogOpen(false)
       resetForm()
     } catch (error) {
       console.error("Error saving food item:", error)
+      showToast(`Error: ${error.message}`, "error")
     }
   }
 
-  const handleDeleteItem = async (id) => {
-    if (!window.confirm("Are you sure you want to delete this item?")) return
-    
+  const confirmDelete = (id) => {
+    setDeleteItemId(id)
+    setIsDeleteAlertOpen(true)
+  }
+
+  const handleDeleteItem = async () => {
     try {
-      const response = await fetch(`/api/admin/food/${id}`, {
-        method: "DELETE"
+      const response = await fetch(`/api/admin/food/${deleteItemId}`, {
+        method: "DELETE",
+        cache: 'no-store'
       })
       
       if (!response.ok) throw new Error("Failed to delete item")
       
-      fetchFoodItems()
+      showToast("Food item deleted successfully", "success")
+      
+      await fetchFoodItems()
     } catch (error) {
       console.error("Error deleting item:", error)
+      showToast(`Error: ${error.message}`, "error")
+    } finally {
+      setIsDeleteAlertOpen(false)
+      setDeleteItemId(null)
     }
   }
 
-  // Filter providers based on search term
   const filteredProviders = providers.filter(provider =>
     provider.businessName.toLowerCase().includes(providerSearchTerm.toLowerCase())
   )
   
-  // Handle creating a new category
-  const handleAddNewCategory = () => {
-    if (!newCategoryName.trim()) return
-    
-    setFormData({ ...formData, category: newCategoryName.trim() })
-    setShowNewCategoryInput(false)
-    setNewCategoryName("")
-  }
-  
-  // Handle selecting a provider
   const handleSelectProvider = (provider) => {
     setFormData({
       ...formData,
@@ -313,7 +395,7 @@ export default function FoodItemsPage() {
                     <Button 
                       variant="destructive" 
                       size="sm" 
-                      onClick={() => handleDeleteItem(item?.id)}
+                      onClick={() => confirmDelete(item?.id)}
                     >
                       Delete
                     </Button>
@@ -324,6 +406,27 @@ export default function FoodItemsPage() {
           )}
         </CardContent>
       </Card>
+      
+      <AlertDialog open={isDeleteAlertOpen} onOpenChange={setIsDeleteAlertOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete the food item
+              and remove it from our servers.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setDeleteItemId(null)}>Cancel</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={handleDeleteItem}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
       
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <DialogContent>
@@ -381,7 +484,6 @@ export default function FoodItemsPage() {
                 </div>
               </div>
               
-              {/* Enhanced Category Selection with Add New Option */}
               <div className="grid gap-2">
                 <label htmlFor="category">Category</label>
                 {showNewCategoryInput ? (
@@ -441,7 +543,6 @@ export default function FoodItemsPage() {
                 )}
               </div>
               
-              {/* Provider Selection - Modern Two-Panel Approach */}
               {!editingItem && (
                 <div className="grid gap-2">
                   <label htmlFor="provider">Provider</label>
@@ -611,11 +712,12 @@ export default function FoodItemsPage() {
           </form>
         </DialogContent>
       </Dialog>
+      
+      {ToastComponent}
     </div>
   )
 }
 
-// Helper function to format expires in text
 function getExpiresInText(expiresAt) {
   const now = new Date()
   const expires = new Date(expiresAt)
