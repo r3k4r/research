@@ -11,8 +11,14 @@ import {
   SelectContent, 
   SelectItem, 
   SelectTrigger, 
-  SelectValue 
+  SelectValue,
+  SelectGroup,
+  SelectLabel
 } from "@/components/ui/select"
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command"
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import { Plus, Check, X, Search } from "lucide-react"
+import Image from "next/image"
 
 export default function FoodItemsPage() {
   const [foodItems, setFoodItems] = useState([])
@@ -23,6 +29,11 @@ export default function FoodItemsPage() {
   const [searchTerm, setSearchTerm] = useState("")
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [editingItem, setEditingItem] = useState(null)
+  const [providers, setProviders] = useState([])
+  const [showNewCategoryInput, setShowNewCategoryInput] = useState(false)
+  const [newCategoryName, setNewCategoryName] = useState("")
+  const [providerSearchOpen, setProviderSearchOpen] = useState(false)
+  const [providerSearchTerm, setProviderSearchTerm] = useState("")
   
   const [formData, setFormData] = useState({
     name: "",
@@ -59,9 +70,33 @@ export default function FoodItemsPage() {
     }
   }
 
+  // Fetch providers 
+  const fetchProviders = async () => {
+    try {
+      const response = await fetch('/api/admin/users?role=PROVIDER&limit=100')
+      if (!response.ok) throw new Error("Failed to fetch providers")
+      
+      const data = await response.json()
+      
+      // Extract provider profiles from users data
+      const providersList = data.users
+        .filter(user => user.providerProfile)
+        .map(user => ({
+          id: user.providerProfile.id,
+          businessName: user.providerProfile.businessName,
+          logo: user.providerProfile.logo
+        }))
+      
+      setProviders(providersList)
+    } catch (error) {
+      console.error("Error fetching providers:", error)
+    }
+  }
+
   // Initial load
   useEffect(() => {
     fetchFoodItems()
+    fetchProviders()
   }, [])
   
   // Fetch when search or filter changes
@@ -87,6 +122,9 @@ export default function FoodItemsPage() {
       image: ""
     })
     setEditingItem(null)
+    setShowNewCategoryInput(false)
+    setNewCategoryName("")
+    setProviderSearchTerm("")
   }
 
   const handleInputChange = (e) => {
@@ -178,6 +216,30 @@ export default function FoodItemsPage() {
     }
   }
 
+  // Filter providers based on search term
+  const filteredProviders = providers.filter(provider =>
+    provider.businessName.toLowerCase().includes(providerSearchTerm.toLowerCase())
+  )
+  
+  // Handle creating a new category
+  const handleAddNewCategory = () => {
+    if (!newCategoryName.trim()) return
+    
+    setFormData({ ...formData, category: newCategoryName.trim() })
+    setShowNewCategoryInput(false)
+    setNewCategoryName("")
+  }
+  
+  // Handle selecting a provider
+  const handleSelectProvider = (provider) => {
+    setFormData({
+      ...formData,
+      providerId: provider.id,
+      provider: provider.businessName
+    })
+    setProviderSearchOpen(false)
+  }
+
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
@@ -206,7 +268,7 @@ export default function FoodItemsPage() {
                   <SelectValue placeholder="All Categories" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">All Categories</SelectItem> {/* Changed from "" to "all" */}
+                  <SelectItem value="all">All Categories</SelectItem>
                   {categories.map(category => (
                     <SelectItem key={category?.id} value={category?.id}>
                       {category?.name}
@@ -320,17 +382,148 @@ export default function FoodItemsPage() {
                   />
                 </div>
               </div>
-              <div className="grid grid-cols-2 gap-4">
+              
+              {/* Enhanced Category Selection with Add New Option */}
+              <div className="grid gap-2">
+                <label htmlFor="category">Category</label>
+                {showNewCategoryInput ? (
+                  <div className="flex gap-2">
+                    <Input
+                      id="newCategory"
+                      value={newCategoryName}
+                      onChange={(e) => setNewCategoryName(e.target.value)}
+                      placeholder="New category name"
+                      autoFocus
+                    />
+                    <Button 
+                      type="button" 
+                      size="icon" 
+                      variant="ghost" 
+                      onClick={() => setShowNewCategoryInput(false)}
+                    >
+                      <X size={16} />
+                    </Button>
+                    <Button 
+                      type="button" 
+                      size="icon" 
+                      onClick={handleAddNewCategory}
+                    >
+                      <Check size={16} />
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="flex gap-2">
+                    <Select
+                      value={formData.category}
+                      onValueChange={(value) => setFormData({ ...formData, category: value })}
+                    >
+                      <SelectTrigger className="w-full">
+                        <SelectValue placeholder="Select a category" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectGroup>
+                          <SelectLabel>Categories</SelectLabel>
+                          {categories?.map(category => (
+                            <SelectItem key={category?.id} value={category?.name}>
+                              {category?.name}
+                            </SelectItem>
+                          ))}
+                        </SelectGroup>
+                      </SelectContent>
+                    </Select>
+                    <Button 
+                      type="button" 
+                      size="icon" 
+                      variant="outline"
+                      onClick={() => setShowNewCategoryInput(true)}
+                    >
+                      <Plus size={16} />
+                    </Button>
+                  </div>
+                )}
+              </div>
+              
+              {/* Provider Selection with Search */}
+              {!editingItem && (
                 <div className="grid gap-2">
-                  <label htmlFor="category">Category</label>
-                  <Input
-                    id="category"
-                    name="category"
-                    value={formData?.category}
-                    onChange={handleInputChange}
-                    required
-                  />
+                  <label htmlFor="provider">Provider</label>
+                  <Popover open={providerSearchOpen} onOpenChange={setProviderSearchOpen}>
+                    <PopoverTrigger asChild>
+                      <Button 
+                        type="button"
+                        variant="outline"
+                        role="combobox"
+                        aria-expanded={providerSearchOpen}
+                        className="w-full justify-between"
+                      >
+                        {formData.providerId ? (
+                          <div className="flex items-center gap-2">
+                            {providers.find(p => p.id === formData.providerId)?.logo && (
+                              <div className="relative w-6 h-6 rounded-full overflow-hidden">
+                                <Image 
+                                  src={providers.find(p => p.id === formData.providerId)?.logo || "/default-logo.png"} 
+                                  alt={formData.provider}
+                                  fill
+                                  className="object-cover"
+                                />
+                              </div>
+                            )}
+                            <span>{formData.provider}</span>
+                          </div>
+                        ) : (
+                          <span>Select provider</span>
+                        )}
+                        <Search className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-[300px] p-0">
+                      <Command>
+                        <CommandInput 
+                          placeholder="Search providers..." 
+                          className="h-9"
+                          value={providerSearchTerm}
+                          onValueChange={setProviderSearchTerm}
+                        />
+                        <CommandList>
+                          <CommandEmpty>No provider found.</CommandEmpty>
+                          <CommandGroup>
+                            {filteredProviders.map(provider => (
+                              <CommandItem
+                                key={provider.id}
+                                onSelect={() => handleSelectProvider(provider)}
+                                className="cursor-pointer"
+                              >
+                                <div className="flex items-center gap-2 w-full">
+                                  <div className="relative w-6 h-6 rounded-full overflow-hidden bg-muted">
+                                    {provider.logo ? (
+                                      <Image
+                                        src={provider.logo}
+                                        alt={provider.businessName}
+                                        fill
+                                        className="object-cover"
+                                      />
+                                    ) : (
+                                      <div className="w-full h-full flex items-center justify-center text-xs font-medium text-muted-foreground">
+                                        {provider.businessName.charAt(0)}
+                                      </div>
+                                    )}
+                                  </div>
+                                  <span>{provider.businessName}</span>
+                                  {formData.providerId === provider.id && (
+                                    <Check className="ml-auto h-4 w-4" />
+                                  )}
+                                </div>
+                              </CommandItem>
+                            ))}
+                          </CommandGroup>
+                        </CommandList>
+                      </Command>
+                    </PopoverContent>
+                  </Popover>
                 </div>
+              )}
+              
+              <div className="grid grid-cols-2 gap-4">
                 <div className="grid gap-2">
                   <label htmlFor="expiresIn">Expires In (hours)</label>
                   <Input
@@ -342,7 +535,19 @@ export default function FoodItemsPage() {
                     required
                   />
                 </div>
+                <div className="grid gap-2">
+                  <label htmlFor="quantity">Quantity</label>
+                  <Input
+                    id="quantity"
+                    name="quantity"
+                    type="number"
+                    value={formData?.quantity}
+                    onChange={handleInputChange}
+                    required
+                  />
+                </div>
               </div>
+              
               <div className="grid gap-2">
                 <label htmlFor="image">Image URL</label>
                 <Input
@@ -352,18 +557,6 @@ export default function FoodItemsPage() {
                   onChange={handleInputChange}
                 />
               </div>
-              {!editingItem && (
-                <div className="grid gap-2">
-                  <label htmlFor="providerId">Provider ID</label>
-                  <Input
-                    id="providerId"
-                    name="providerId"
-                    value={formData?.providerId}
-                    onChange={handleInputChange}
-                    required
-                  />
-                </div>
-              )}
             </div>
             <div className="flex justify-end gap-2">
               <Button 

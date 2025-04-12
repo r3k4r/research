@@ -34,21 +34,27 @@ export async function GET(request, { params }) {
 // Update a food item
 export async function PUT(request, { params }) {
   const { id } = params;
-  const body = await request.json();
   
   try {
-    // Calculate expiry date if provided
+    const body = await request.json();
+    
+    // Calculate expiry date from expiresIn hours if provided
     let expiresAt;
     if (body.expiresIn) {
       expiresAt = new Date();
       expiresAt.setHours(expiresAt.getHours() + parseInt(body.expiresIn));
     }
     
-    // Find or create category if provided
+    // Find or create the category with case-insensitive search
     let categoryId;
     if (body.category) {
       let category = await prisma.category.findFirst({
-        where: { name: body.category }
+        where: { 
+          name: {
+            equals: body.category,
+            mode: 'insensitive'
+          }
+        }
       });
       
       if (!category) {
@@ -68,13 +74,18 @@ export async function PUT(request, { params }) {
         description: body.description,
         price: parseFloat(body.originalPrice),
         discountedPrice: parseFloat(body.discountedPrice),
-        quantity: body.quantity ? parseInt(body.quantity) : undefined,
+        quantity: body.quantity !== undefined ? parseInt(body.quantity) : undefined,
         image: body.image,
-        categoryId,
-        expiresAt
+        categoryId: categoryId,
+        expiresAt: expiresAt
       },
       include: {
-        provider: true,
+        provider: {
+          select: {
+            businessName: true,
+            logo: true
+          }
+        },
         category: true
       }
     });
@@ -83,7 +94,7 @@ export async function PUT(request, { params }) {
   } catch (error) {
     console.error("Error updating food item:", error);
     return NextResponse.json(
-      { error: "Failed to update food item" }, 
+      { error: "Failed to update food item", details: error.message }, 
       { status: 500 }
     );
   }

@@ -67,9 +67,14 @@ export async function POST(request) {
     const expiresAt = new Date();
     expiresAt.setHours(expiresAt.getHours() + parseInt(body.expiresIn));
     
-    // Find or create the category
+    // Find or create the category with better case-insensitive search
     let category = await prisma.category.findFirst({
-      where: { name: body.category }
+      where: { 
+        name: { 
+          equals: body.category,
+          mode: 'insensitive'
+        }
+      }
     });
     
     if (!category) {
@@ -101,7 +106,7 @@ export async function POST(request) {
   } catch (error) {
     console.error("Error creating food item:", error);
     return NextResponse.json(
-      { error: "Failed to create food item" }, 
+      { error: "Failed to create food item", details: error.message }, 
       { status: 500 }
     );
   }
