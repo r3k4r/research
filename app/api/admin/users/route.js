@@ -90,13 +90,51 @@ export async function POST(req) {
         const data = await req.json();
         const { email, role, password, profileData } = data;
         
-         const hashedPassword = await bcrypt.hash(password, 10)
+        // Check for duplicates
+        // 1. Check for duplicate email
+        const existingEmail = await prisma.user.findUnique({
+            where: {
+                email: email
+            }
+        });
+        
+        if (existingEmail) {
+            return NextResponse.json({ error: 'email already exists' }, { status: 400 });
+        }
+        
+        // 2. If it's a provider, check for duplicate business name
+        if (role === "PROVIDER") {
+            const existingBusinessName = await prisma.providerProfile.findFirst({
+                where: {
+                    businessName: profileData.businessName
+                }
+            });
+            
+            if (existingBusinessName) {
+                return NextResponse.json({ error: 'business name already exists' }, { status: 400 });
+            }
+            
+            // 3. Check for duplicate phone number
+            const existingPhoneNumber = await prisma.providerProfile.findFirst({
+                where: {
+                    phoneNumber: profileData.phoneNumber
+                }
+            });
+            
+            if (existingPhoneNumber) {
+                return NextResponse.json({ error: 'phone number already exists' }, { status: 400 });
+            }
+        }
+        
+        // If all checks passed, create the user
+        const hashedPassword = await bcrypt.hash(password, 10)
+        
         // Create user with the appropriate profile based on role
         const user = await prisma.user.create({
             data: {
                 email,
                 role,
-                password : hashedPassword,
+                password: hashedPassword,
                 ...(role === "USER" && {
                     profile: {
                         create: profileData

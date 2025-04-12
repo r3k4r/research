@@ -32,10 +32,31 @@ import {
   Trash2, 
   Plus, 
   Star,
-  Settings
+  Settings,
+  AlertCircle
 } from "lucide-react"
 import { Textarea } from "@/components/ui/textarea"
+import { z } from "zod" // Import zod for validation
 
+// Define Zod schema for provider form validation
+const providerSchema = z.object({
+  email: z.string().email({ message: "Invalid email address format" }),
+  password: z
+    .string()
+    .min(8, { message: "Password must be at least 8 characters long" })
+    .regex(/[A-Z]/, { message: "Password must contain at least one uppercase letter" })
+    .regex(/[!@#$%^&*(),.?":{}|<>]/, { message: "Password must contain at least one special character" }),
+  role: z.literal("PROVIDER"),
+  profileData: z.object({
+    name: z.string().min(3, { message: "Name must be at least 3 characters" }),
+    businessName: z.string().min(2, { message: "Business name is required" }),
+    description: z.string().nullable().optional(),
+    address: z.string().min(5, { message: "Valid address is required" }),
+    phoneNumber: z.string().min(8, { message: "Valid phone number is required" }),
+    businessHours: z.string().nullable().optional(),
+    logo: z.string().nullable().optional(),
+  })
+});
 
 export default function ControlPanelPage() {
   const { showToast, ToastComponent } = useToast()
@@ -63,6 +84,7 @@ export default function ControlPanelPage() {
       logo: ""
     }
   })
+  const [formErrors, setFormErrors] = useState({})
   
   // Categories state
   const [categories, setCategories] = useState([])
@@ -175,10 +197,18 @@ export default function ControlPanelPage() {
         logo: ""
       }
     });
+    setFormErrors({});
   }
   
   const handleProviderInputChange = (e, section = null) => {
     const { name, value } = e.target;
+    
+    // Clear error when editing the field
+    if (section) {
+      setFormErrors(prev => ({...prev, [`${section}.${name}`]: undefined}));
+    } else {
+      setFormErrors(prev => ({...prev, [name]: undefined}));
+    }
     
     if (section) {
       setProviderFormData({
@@ -196,9 +226,34 @@ export default function ControlPanelPage() {
     }
   }
   
+  const validateProviderForm = () => {
+    try {
+      // Validate with Zod schema
+      providerSchema.parse(providerFormData);
+      return true;
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        // Transform Zod errors into form errors
+        const errors = {};
+        error.errors.forEach(err => {
+          const path = err.path.join('.');
+          errors[path] = err.message;
+        });
+        setFormErrors(errors);
+      }
+      return false;
+    }
+  }
+  
   const handleAddProvider = async () => {
     try {
       setLoading(true);
+      
+      // First validate the form with Zod
+      if (!validateProviderForm()) {
+        setLoading(false);
+        return;
+      }
       
       const payload = {
         email: providerFormData.email,
@@ -224,7 +279,21 @@ export default function ControlPanelPage() {
       const data = await res.json();
       
       if (!res.ok) {
-        throw new Error(data.error || "Failed to create provider");
+        // Handle specific backend validation errors
+        if (data.error) {
+          if (data.error.includes("email already exists")) {
+            setFormErrors(prev => ({...prev, email: "This email is already registered"}));
+          } else if (data.error.includes("business name already exists")) {
+            setFormErrors(prev => ({...prev, "profileData.businessName": "This business name is already registered"}));
+          } else if (data.error.includes("phone number already exists")) {
+            setFormErrors(prev => ({...prev, "profileData.phoneNumber": "This phone number is already registered"}));
+          } else {
+            throw new Error(data.error);
+          }
+          setLoading(false);
+          return;
+        }
+        throw new Error("Failed to create provider");
       }
       
       showToast("Provider created successfully", "success");
@@ -239,6 +308,11 @@ export default function ControlPanelPage() {
     } finally {
       setLoading(false);
     }
+  }
+  
+  // Helper to get field error
+  const getFieldError = (field, section = null) => {
+    return section ? formErrors[`${section}.${field}`] : formErrors[field];
   }
   
   // Categories methods
@@ -1076,113 +1150,184 @@ export default function ControlPanelPage() {
         </AlertDialogContent>
       </AlertDialog>
       
-      {/* Add Provider Dialog */}
-      <Dialog open={isAddingProvider} onOpenChange={setIsAddingProvider}>
-        <DialogContent className="sm:max-w-[550px]">
+      {/* Add Provider Dialog - Modified with improved validation */}
+      <Dialog open={isAddingProvider} onOpenChange={(open) => {
+        if (!open) {
+          resetProviderForm();
+        }
+        setIsAddingProvider(open);
+      }}>
+        <DialogContent className="sm:max-w-[550px] max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Add New Provider</DialogTitle>
           </DialogHeader>
           <div className="grid gap-4 py-4">
-            <div className="grid grid-cols-1 gap-2">
-              <Label htmlFor="provider-email">Email Address <span className="text-red-500">*</span></Label>
-              <Input
-                id="provider-email"
-                name="email"
-                type="email"
-                value={providerFormData.email}
-                onChange={(e) => handleProviderInputChange(e)}
-                placeholder="provider@example.com"
-                required
-              />
-            </div>
-            <div className="grid grid-cols-1 gap-2">
-              <Label htmlFor="provider-password">Password <span className="text-red-500">*</span></Label>
-              <Input
-                id="provider-password"
-                name="password"
-                type="password"
-                value={providerFormData.password}
-                onChange={(e) => handleProviderInputChange(e)}
-                placeholder="••••••••"
-                required
-              />
-            </div>
-            <div className="grid grid-cols-1 gap-2">
-              <Label htmlFor="provider-name">Contact Name <span className="text-red-500">*</span></Label>
-              <Input
-                id="provider-name"
-                name="name"
-                value={providerFormData.profileData.name}
-                onChange={(e) => handleProviderInputChange(e, 'profileData')}
-                placeholder="Full name"
-                required
-              />
-            </div>
-            <div className="grid grid-cols-1 gap-2">
-              <Label htmlFor="provider-businessName">Business Name <span className="text-red-500">*</span></Label>
-              <Input
-                id="provider-businessName"
-                name="businessName"
-                value={providerFormData.profileData.businessName}
-                onChange={(e) => handleProviderInputChange(e, 'profileData')}
-                placeholder="Business name"
-                required
-              />
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="grid gap-2">
-                <Label htmlFor="provider-phoneNumber">Phone Number <span className="text-red-500">*</span></Label>
-                <Input
-                  id="provider-phoneNumber"
-                  name="phoneNumber"
-                  value={providerFormData.profileData.phoneNumber}
-                  onChange={(e) => handleProviderInputChange(e, 'profileData')}
-                  placeholder="+964 0000 000 0000"
-                  required
-                />
-              </div>
-              <div className="grid gap-2">
-                <Label htmlFor="provider-businessHours">Business Hours</Label>
-                <Input
-                  id="provider-businessHours"
-                  name="businessHours"
-                  value={providerFormData.profileData.businessHours}
-                  onChange={(e) => handleProviderInputChange(e, 'profileData')}
-                  placeholder="Mon-Fri: 9am-5pm"
-                />
+            {/* Account Information Section */}
+            <div className="bg-muted/40 p-3 rounded-lg">
+              <h3 className="text-sm font-medium mb-3">Account Information</h3>
+              <div className="space-y-4">
+                <div>
+                  <Label htmlFor="provider-email">Email Address <span className="text-red-500">*</span></Label>
+                  <Input
+                    id="provider-email"
+                    name="email"
+                    type="email"
+                    value={providerFormData.email}
+                    onChange={(e) => handleProviderInputChange(e)}
+                    placeholder="provider@example.com"
+                    required
+                    className={getFieldError('email') ? "border-red-500" : ""}
+                  />
+                  {getFieldError('email') && (
+                    <div className="text-xs text-red-500 flex items-center gap-1 mt-1">
+                      <AlertCircle className="h-3 w-3" /> {getFieldError('email')}
+                    </div>
+                  )}
+                </div>
+                
+                <div>
+                  <Label htmlFor="provider-password">Password <span className="text-red-500">*</span></Label>
+                  <Input
+                    id="provider-password"
+                    name="password"
+                    type="password"
+                    value={providerFormData.password}
+                    onChange={(e) => handleProviderInputChange(e)}
+                    placeholder="••••••••"
+                    required
+                    className={getFieldError('password') ? "border-red-500" : ""}
+                  />
+                  {getFieldError('password') ? (
+                    <div className="text-xs text-red-500 flex items-center gap-1 mt-1">
+                      <AlertCircle className="h-3 w-3" /> {getFieldError('password')}
+                    </div>
+                  ) : (
+                    <div className="text-xs text-muted-foreground mt-1">
+                      Password must have at least 8 characters, one uppercase letter, and one special character
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
-            <div className="grid grid-cols-1 gap-2">
-              <Label htmlFor="provider-address">Address <span className="text-red-500">*</span></Label>
-              <Input
-                id="provider-address"
-                name="address"
-                value={providerFormData.profileData.address}
-                onChange={(e) => handleProviderInputChange(e, 'profileData')}
-                placeholder="123 Business St, City"
-                required
-              />
+            
+            {/* Business Information */}
+            <div className="bg-muted/40 p-3 rounded-lg">
+              <h3 className="text-sm font-medium mb-3">Business Information</h3>
+              <div className="space-y-4">
+                <div>
+                  <Label htmlFor="provider-businessName">Business Name <span className="text-red-500">*</span></Label>
+                  <Input
+                    id="provider-businessName"
+                    name="businessName"
+                    value={providerFormData.profileData.businessName}
+                    onChange={(e) => handleProviderInputChange(e, 'profileData')}
+                    placeholder="Business name"
+                    required
+                    className={getFieldError('businessName', 'profileData') ? "border-red-500" : ""}
+                  />
+                  {getFieldError('businessName', 'profileData') && (
+                    <div className="text-xs text-red-500 flex items-center gap-1 mt-1">
+                      <AlertCircle className="h-3 w-3" /> {getFieldError('businessName', 'profileData')}
+                    </div>
+                  )}
+                </div>
+                
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="provider-name">Contact Name <span className="text-red-500">*</span></Label>
+                    <Input
+                      id="provider-name"
+                      name="name"
+                      value={providerFormData.profileData.name}
+                      onChange={(e) => handleProviderInputChange(e, 'profileData')}
+                      placeholder="Full name"
+                      required
+                      className={getFieldError('name', 'profileData') ? "border-red-500" : ""}
+                    />
+                    {getFieldError('name', 'profileData') && (
+                      <div className="text-xs text-red-500 flex items-center gap-1 mt-1">
+                        <AlertCircle className="h-3 w-3" /> {getFieldError('name', 'profileData')}
+                      </div>
+                    )}
+                  </div>
+                  
+                  <div>
+                    <Label htmlFor="provider-phoneNumber">Phone Number <span className="text-red-500">*</span></Label>
+                    <Input
+                      id="provider-phoneNumber"
+                      name="phoneNumber"
+                      value={providerFormData.profileData.phoneNumber}
+                      onChange={(e) => handleProviderInputChange(e, 'profileData')}
+                      placeholder="+964 0000 000 0000"
+                      required
+                      className={getFieldError('phoneNumber', 'profileData') ? "border-red-500" : ""}
+                    />
+                    {getFieldError('phoneNumber', 'profileData') && (
+                      <div className="text-xs text-red-500 flex items-center gap-1 mt-1">
+                        <AlertCircle className="h-3 w-3" /> {getFieldError('phoneNumber', 'profileData')}
+                      </div>
+                    )}
+                  </div>
+                </div>
+                
+                <div>
+                  <Label htmlFor="provider-address">Address <span className="text-red-500">*</span></Label>
+                  <Input
+                    id="provider-address"
+                    name="address"
+                    value={providerFormData.profileData.address}
+                    onChange={(e) => handleProviderInputChange(e, 'profileData')}
+                    placeholder="123 Business St, City"
+                    required
+                    className={getFieldError('address', 'profileData') ? "border-red-500" : ""}
+                  />
+                  {getFieldError('address', 'profileData') && (
+                    <div className="text-xs text-red-500 flex items-center gap-1 mt-1">
+                      <AlertCircle className="h-3 w-3" /> {getFieldError('address', 'profileData')}
+                    </div>
+                  )}
+                </div>
+              </div>
             </div>
-            <div className="grid grid-cols-1 gap-2">
-              <Label htmlFor="provider-description">Description</Label>
-              <Textarea
-                id="provider-description"
-                name="description"
-                value={providerFormData.profileData.description}
-                onChange={(e) => handleProviderInputChange(e, 'profileData')}
-                placeholder="Describe the business..."
-                rows={3}
-              />
-            </div>
-            <div className="grid grid-cols-1 gap-2">
-              <Label htmlFor="provider-logo">Logo URL</Label>
-              <Input
-                id="provider-logo"
-                name="logo"
-                value={providerFormData.profileData.logo}
-                onChange={(e) => handleProviderInputChange(e, 'profileData')}
-                placeholder="https://example.com/logo.jpg"
-              />
+            
+            {/* Additional Information */}
+            <div className="bg-muted/40 p-3 rounded-lg">
+              <h3 className="text-sm font-medium mb-3">Additional Information</h3>
+              <div className="space-y-4">
+                <div>
+                  <Label htmlFor="provider-businessHours">Business Hours</Label>
+                  <Input
+                    id="provider-businessHours"
+                    name="businessHours"
+                    value={providerFormData.profileData.businessHours}
+                    onChange={(e) => handleProviderInputChange(e, 'profileData')}
+                    placeholder="Mon-Fri: 9am-5pm"
+                  />
+                </div>
+                
+                <div>
+                  <Label htmlFor="provider-description">Description</Label>
+                  <Textarea
+                    id="provider-description"
+                    name="description"
+                    value={providerFormData.profileData.description}
+                    onChange={(e) => handleProviderInputChange(e, 'profileData')}
+                    placeholder="Describe the business..."
+                    rows={2}
+                  />
+                </div>
+                
+                <div>
+                  <Label htmlFor="provider-logo">Logo URL</Label>
+                  <Input
+                    id="provider-logo"
+                    name="logo"
+                    value={providerFormData.profileData.logo}
+                    onChange={(e) => handleProviderInputChange(e, 'profileData')}
+                    placeholder="https://example.com/logo.jpg"
+                  />
+                </div>
+              </div>
             </div>
           </div>
           <DialogFooter>
