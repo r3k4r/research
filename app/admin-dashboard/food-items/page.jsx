@@ -15,8 +15,6 @@ import {
   SelectGroup,
   SelectLabel
 } from "@/components/ui/select"
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command"
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Plus, Check, X, Search } from "lucide-react"
 import Image from "next/image"
 
@@ -443,83 +441,120 @@ export default function FoodItemsPage() {
                 )}
               </div>
               
-              {/* Provider Selection with Search */}
+              {/* Provider Selection - Modern Two-Panel Approach */}
               {!editingItem && (
                 <div className="grid gap-2">
                   <label htmlFor="provider">Provider</label>
-                  <Popover open={providerSearchOpen} onOpenChange={setProviderSearchOpen}>
-                    <PopoverTrigger asChild>
-                      <Button 
-                        type="button"
-                        variant="outline"
-                        role="combobox"
-                        aria-expanded={providerSearchOpen}
-                        className="w-full justify-between"
-                      >
-                        {formData.providerId ? (
-                          <div className="flex items-center gap-2">
-                            {providers.find(p => p.id === formData.providerId)?.logo && (
-                              <div className="relative w-6 h-6 rounded-full overflow-hidden">
-                                <Image 
-                                  src={providers.find(p => p.id === formData.providerId)?.logo || "/default-logo.png"} 
-                                  alt={formData.provider}
-                                  fill
-                                  className="object-cover"
-                                />
+                  <div className="relative">
+                    <Button 
+                      type="button"
+                      variant="outline"
+                      className="w-full justify-between"
+                      onClick={() => setProviderSearchOpen(!providerSearchOpen)}
+                    >
+                      {formData.providerId ? (
+                        <div className="flex items-center gap-2">
+                          <div className="relative w-6 h-6 rounded-full overflow-hidden">
+                            {providers.find(p => p.id === formData.providerId)?.logo ? (
+                              <Image 
+                                src={providers.find(p => p.id === formData.providerId)?.logo}
+                                alt={formData.provider}
+                                fill
+                                className="object-cover"
+                              />
+                            ) : (
+                              <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center">
+                                <span className="text-xs font-medium">{formData.provider?.charAt(0)}</span>
                               </div>
                             )}
-                            <span>{formData.provider}</span>
                           </div>
-                        ) : (
-                          <span>Select provider</span>
-                        )}
-                        <Search className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-[300px] p-0">
-                      <Command>
-                        <CommandInput 
-                          placeholder="Search providers..." 
-                          className="h-9"
-                          value={providerSearchTerm}
-                          onValueChange={setProviderSearchTerm}
-                        />
-                        <CommandList>
-                          <CommandEmpty>No provider found.</CommandEmpty>
-                          <CommandGroup>
-                            {filteredProviders.map(provider => (
-                              <CommandItem
+                          <span className="truncate">{formData.provider}</span>
+                        </div>
+                      ) : (
+                        <span>Select provider</span>
+                      )}
+                      <Search className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                    </Button>
+                    
+                    {providerSearchOpen && (
+                      <div className="absolute z-50 top-full left-0 right-0 mt-1 bg-popover rounded-md border shadow-md">
+                        <div className="p-2 border-b sticky top-0 bg-popover z-10">
+                          <div className="relative">
+                            <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+                            <Input
+                              placeholder="Search providers..."
+                              value={providerSearchTerm}
+                              onChange={(e) => setProviderSearchTerm(e.target.value)}
+                              className="pl-8"
+                              autoFocus
+                            />
+                          </div>
+                        </div>
+                        
+                        <div className="max-h-[250px] overflow-y-auto p-1">
+                          {filteredProviders.length === 0 ? (
+                            <div className="py-6 text-center text-sm text-muted-foreground">
+                              No providers found
+                            </div>
+                          ) : (
+                            filteredProviders.map(provider => (
+                              <div
                                 key={provider.id}
-                                onSelect={() => handleSelectProvider(provider)}
-                                className="cursor-pointer"
+                                onClick={() => {
+                                  handleSelectProvider(provider);
+                                  setProviderSearchTerm("");
+                                  setProviderSearchOpen(false);
+                                }}
+                                className={`
+                                  flex items-center gap-3 p-2.5 rounded-sm cursor-pointer
+                                  ${formData.providerId === provider.id ? 'bg-primary/5 text-primary' : 'hover:bg-accent'}
+                                `}
                               >
-                                <div className="flex items-center gap-2 w-full">
-                                  <div className="relative w-6 h-6 rounded-full overflow-hidden bg-muted">
-                                    {provider.logo ? (
-                                      <Image
-                                        src={provider.logo}
-                                        alt={provider.businessName}
-                                        fill
-                                        className="object-cover"
-                                      />
-                                    ) : (
-                                      <div className="w-full h-full flex items-center justify-center text-xs font-medium text-muted-foreground">
+                                <div className="relative w-8 h-8 rounded-full overflow-hidden bg-muted flex-shrink-0">
+                                  {provider.logo ? (
+                                    <Image
+                                      src={provider.logo}
+                                      alt={provider.businessName}
+                                      fill
+                                      className="object-cover"
+                                    />
+                                  ) : (
+                                    <div className="w-full h-full flex items-center justify-center">
+                                      <span className="text-base font-medium">
                                         {provider.businessName.charAt(0)}
-                                      </div>
-                                    )}
-                                  </div>
-                                  <span>{provider.businessName}</span>
-                                  {formData.providerId === provider.id && (
-                                    <Check className="ml-auto h-4 w-4" />
+                                      </span>
+                                    </div>
                                   )}
                                 </div>
-                              </CommandItem>
-                            ))}
-                          </CommandGroup>
-                        </CommandList>
-                      </Command>
-                    </PopoverContent>
-                  </Popover>
+                                
+                                <div className="flex-1 min-w-0">
+                                  <p className="font-medium truncate">{provider.businessName}</p>
+                                </div>
+                                
+                                {formData.providerId === provider.id && (
+                                  <Check className="h-4 w-4 flex-shrink-0 text-primary" />
+                                )}
+                              </div>
+                            ))
+                          )}
+                        </div>
+                        
+                        <div className="p-2 border-t sticky bottom-0 bg-popover flex justify-end">
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => {
+                              setProviderSearchOpen(false);
+                              setProviderSearchTerm("");
+                            }}
+                          >
+                            Close
+                          </Button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 </div>
               )}
               
