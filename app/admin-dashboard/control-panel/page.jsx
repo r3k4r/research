@@ -164,7 +164,7 @@ export default function ControlPanelPage() {
       
       showToast("Provider deleted successfully", "success")
       fetchProviders()
-      setIsDeleteProviderDialogOpen(false)
+      setIsDeleteProviderDialogOpen(false);
     } catch (error) {
       console.error("Error deleting provider:", error)
       showToast(`Error: ${error.message}`, "error")
@@ -1128,7 +1128,12 @@ export default function ControlPanelPage() {
       </AlertDialog>
       
       {/* Category Add Dialog */}
-      <Dialog open={isAddingCategory} onOpenChange={setIsAddingCategory}>
+      <Dialog open={isAddingCategory} onOpenChange={(open) => {
+        if (!open) {
+          setCategoryFormData({ name: "" });
+        }
+        setIsAddingCategory(open);
+      }}>
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
             <DialogTitle>Add Category</DialogTitle>
@@ -1156,7 +1161,13 @@ export default function ControlPanelPage() {
       </Dialog>
       
       {/* Category Edit Dialog */}
-      <Dialog open={isEditingCategory} onOpenChange={setIsEditingCategory}>
+      <Dialog open={isEditingCategory} onOpenChange={(open) => {
+        if (!open) {
+          setCategoryFormData({ name: "" });
+          setSelectedCategory(null);
+        }
+        setIsEditingCategory(open);
+      }}>
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
             <DialogTitle>Edit Category</DialogTitle>
