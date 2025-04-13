@@ -41,11 +41,7 @@ import { z } from "zod" // Import zod for validation
 // Define Zod schema for provider form validation
 const providerSchema = z.object({
   email: z.string().email({ message: "Invalid email address format" }),
-  password: z
-    .string()
-    .min(8, { message: "Password must be at least 8 characters long" })
-    .regex(/[A-Z]/, { message: "Password must contain at least one uppercase letter" })
-    .regex(/[!@#$%^&*(),.?":{}|<>]/, { message: "Password must contain at least one special character" }),
+  password: z.string().optional(), // Password is optional when editing
   role: z.literal("PROVIDER"),
   profileData: z.object({
     name: z.string().min(3, { message: "Name must be at least 3 characters" }),
@@ -56,6 +52,14 @@ const providerSchema = z.object({
     businessHours: z.string().nullable().optional(),
     logo: z.string().nullable().optional(),
   })
+});
+
+// Define schema for creating a provider (with required password)
+const providerCreateSchema = providerSchema.extend({
+  password: z.string()
+    .min(8, { message: "Password must be at least 8 characters long" })
+    .regex(/[A-Z]/, { message: "Password must contain at least one uppercase letter" })
+    .regex(/[!@#$%^&*(),.?":{}|<>]/, { message: "Password must contain at least one special character" })
 });
 
 export default function ControlPanelPage() {
@@ -198,6 +202,7 @@ export default function ControlPanelPage() {
       }
     });
     setFormErrors({});
+    setSelectedProvider(null);
   }
   
   const handleProviderInputChange = (e, section = null) => {
@@ -226,10 +231,18 @@ export default function ControlPanelPage() {
     }
   }
   
-  const validateProviderForm = () => {
+  const validateProviderForm = (isEditing = false) => {
     try {
+      // Use the appropriate schema based on whether we're editing or creating
+      const schema = isEditing ? providerSchema : providerCreateSchema;
+      
+      // If editing and password is empty, remove it from validation
+      const dataToValidate = isEditing && !providerFormData.password 
+        ? { ...providerFormData, password: undefined }
+        : providerFormData;
+      
       // Validate with Zod schema
-      providerSchema.parse(providerFormData);
+      schema.parse(dataToValidate);
       return true;
     } catch (error) {
       if (error instanceof z.ZodError) {
@@ -244,13 +257,130 @@ export default function ControlPanelPage() {
       return false;
     }
   }
+
+  const handleEditProvider = (provider) => {
+    // Set selected provider
+    setSelectedProvider(provider);
+    
+    // Populate the form with provider data
+    setProviderFormData({
+      id: provider.id,
+      email: provider.email,
+      password: "", // Password is empty when editing
+      role: "PROVIDER",
+      profileId: provider.profileId,
+      profileData: {
+        name: provider.name || "",
+        businessName: provider.businessName || "",
+        description: provider.description || "",
+        address: provider.address || "",
+        phoneNumber: provider.phoneNumber || "",
+        businessHours: provider.businessHours || "",
+        logo: provider.logo || ""
+      }
+    });
+    
+    // Clear any previous errors
+    setFormErrors({});
+    
+    // Open the editing dialog
+    setIsEditingProvider(true);
+  }
+  
+  const handleUpdateProvider = async () => {
+    try {
+      setLoading(true);
+      
+      // First validate the form with Zod (in edit mode)
+      if (!validateProviderForm(true)) {
+        setLoading(false);
+        return;
+      }
+      
+      // Create payload for user update
+      const userPayload = {
+        email: providerFormData.email
+      };
+      
+      // Only include password if it's provided
+      if (providerFormData.password) {
+        userPayload.password = providerFormData.password;
+      }
+      
+      // Create payload for provider profile update
+      const profilePayload = {
+        name: providerFormData.profileData.name,
+        businessName: providerFormData.profileData.businessName,
+        description: providerFormData.profileData.description || null,
+        address: providerFormData.profileData.address,
+        phoneNumber: providerFormData.profileData.phoneNumber,
+        businessHours: providerFormData.profileData.businessHours || null,
+        logo: providerFormData.profileData.logo || null
+      };
+      
+      // First update the user
+      const userRes = await fetch(`/api/admin/users/${providerFormData.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(userPayload)
+      });
+      
+      if (!userRes.ok) {
+        const data = await userRes.json();
+        // Check for duplicate email error
+        if (data.error && data.error.includes("email already exists")) {
+          setFormErrors(prev => ({...prev, email: "This email is already registered"}));
+          setLoading(false);
+          return;
+        }
+        throw new Error(data.error || "Failed to update provider");
+      }
+      
+      // Next update the provider profile
+      const profileRes = await fetch(`/api/admin/users/${providerFormData.id}/provider-profile`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(profilePayload)
+      });
+      
+      if (!profileRes.ok) {
+        const data = await profileRes.json();
+        // Check for duplicate business name or phone
+        if (data.error) {
+          if (data.error.includes("business name already exists")) {
+            setFormErrors(prev => ({...prev, "profileData.businessName": "This business name is already registered"}));
+            setLoading(false);
+            return;
+          } else if (data.error.includes("phone number already exists")) {
+            setFormErrors(prev => ({...prev, "profileData.phoneNumber": "This phone number is already registered"}));
+            setLoading(false);
+            return;
+          }
+          throw new Error(data.error);
+        }
+        throw new Error("Failed to update provider profile");
+      }
+      
+      showToast("Provider updated successfully", "success");
+      
+      resetProviderForm();
+      setIsEditingProvider(false);
+      
+      fetchProviders();
+    } catch (error) {
+      console.error("Error updating provider:", error);
+      showToast(`Error: ${error.message}`, "error");
+    } finally {
+      setLoading(false);
+    }
+  }
   
   const handleAddProvider = async () => {
     try {
       setLoading(true);
       
-      // First validate the form with Zod
-      if (!validateProviderForm()) {
+      // First validate the form with Zod (in create mode)
+      if (!validateProviderForm(false)) {
         setLoading(false);
         return;
       }
@@ -630,10 +760,7 @@ export default function ControlPanelPage() {
                                 </Button>
                               </DropdownMenuTrigger>
                               <DropdownMenuContent align="end">
-                                <DropdownMenuItem onClick={() => {
-                                  // Redirect to user detail page
-                                  window.location.href = `/admin-dashboard/users/${provider.id}`;
-                                }}>
+                                <DropdownMenuItem onClick={() => handleEditProvider(provider)}>
                                   <PenSquare className="mr-2 h-4 w-4" /> Edit
                                 </DropdownMenuItem>
                                 <DropdownMenuItem 
@@ -1150,7 +1277,7 @@ export default function ControlPanelPage() {
         </AlertDialogContent>
       </AlertDialog>
       
-      {/* Add Provider Dialog - Modified with improved validation */}
+      {/* Add Provider Dialog */}
       <Dialog open={isAddingProvider} onOpenChange={(open) => {
         if (!open) {
           resetProviderForm();
@@ -1339,6 +1466,199 @@ export default function ControlPanelPage() {
             </Button>
             <Button onClick={handleAddProvider} disabled={loading}>
               {loading ? "Creating..." : "Add Provider"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      
+      {/* Edit Provider Dialog */}
+      <Dialog open={isEditingProvider} onOpenChange={(open) => {
+        if (!open) {
+          resetProviderForm();
+        }
+        setIsEditingProvider(open);
+      }}>
+        <DialogContent className="sm:max-w-[550px] max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Edit Provider</DialogTitle>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            {/* Account Information Section */}
+            <div className="bg-muted/40 p-3 rounded-lg">
+              <h3 className="text-sm font-medium mb-3">Account Information</h3>
+              <div className="space-y-4">
+                <div>
+                  <Label htmlFor="edit-provider-email">Email Address <span className="text-red-500">*</span></Label>
+                  <Input
+                    id="edit-provider-email"
+                    name="email"
+                    type="email"
+                    value={providerFormData.email}
+                    onChange={(e) => handleProviderInputChange(e)}
+                    placeholder="provider@example.com"
+                    required
+                    className={getFieldError('email') ? "border-red-500" : ""}
+                  />
+                  {getFieldError('email') && (
+                    <div className="text-xs text-red-500 flex items-center gap-1 mt-1">
+                      <AlertCircle className="h-3 w-3" /> {getFieldError('email')}
+                    </div>
+                  )}
+                </div>
+                
+                <div>
+                  <Label htmlFor="edit-provider-password">Password</Label>
+                  <Input
+                    id="edit-provider-password"
+                    name="password"
+                    type="password"
+                    value={providerFormData.password}
+                    onChange={(e) => handleProviderInputChange(e)}
+                    placeholder="Leave empty to keep current password"
+                    className={getFieldError('password') ? "border-red-500" : ""}
+                  />
+                  {getFieldError('password') ? (
+                    <div className="text-xs text-red-500 flex items-center gap-1 mt-1">
+                      <AlertCircle className="h-3 w-3" /> {getFieldError('password')}
+                    </div>
+                  ) : (
+                    <div className="text-xs text-muted-foreground mt-1">
+                      Leave blank to keep the current password, or enter a new password
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+            
+            {/* Business Information Section */}
+            <div className="bg-muted/40 p-3 rounded-lg">
+              <h3 className="text-sm font-medium mb-3">Business Information</h3>
+              <div className="space-y-4">
+                <div>
+                  <Label htmlFor="edit-provider-businessName">Business Name <span className="text-red-500">*</span></Label>
+                  <Input
+                    id="edit-provider-businessName"
+                    name="businessName"
+                    value={providerFormData.profileData.businessName}
+                    onChange={(e) => handleProviderInputChange(e, 'profileData')}
+                    placeholder="Business name"
+                    required
+                    className={getFieldError('businessName', 'profileData') ? "border-red-500" : ""}
+                  />
+                  {getFieldError('businessName', 'profileData') && (
+                    <div className="text-xs text-red-500 flex items-center gap-1 mt-1">
+                      <AlertCircle className="h-3 w-3" /> {getFieldError('businessName', 'profileData')}
+                    </div>
+                  )}
+                </div>
+                
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="edit-provider-name">Contact Name <span className="text-red-500">*</span></Label>
+                    <Input
+                      id="edit-provider-name"
+                      name="name"
+                      value={providerFormData.profileData.name}
+                      onChange={(e) => handleProviderInputChange(e, 'profileData')}
+                      placeholder="Full name"
+                      required
+                      className={getFieldError('name', 'profileData') ? "border-red-500" : ""}
+                    />
+                    {getFieldError('name', 'profileData') && (
+                      <div className="text-xs text-red-500 flex items-center gap-1 mt-1">
+                        <AlertCircle className="h-3 w-3" /> {getFieldError('name', 'profileData')}
+                      </div>
+                    )}
+                  </div>
+                  
+                  <div>
+                    <Label htmlFor="edit-provider-phoneNumber">Phone Number <span className="text-red-500">*</span></Label>
+                    <Input
+                      id="edit-provider-phoneNumber"
+                      name="phoneNumber"
+                      value={providerFormData.profileData.phoneNumber}
+                      onChange={(e) => handleProviderInputChange(e, 'profileData')}
+                      placeholder="+964 0000 000 0000"
+                      required
+                      className={getFieldError('phoneNumber', 'profileData') ? "border-red-500" : ""}
+                    />
+                    {getFieldError('phoneNumber', 'profileData') && (
+                      <div className="text-xs text-red-500 flex items-center gap-1 mt-1">
+                        <AlertCircle className="h-3 w-3" /> {getFieldError('phoneNumber', 'profileData')}
+                      </div>
+                    )}
+                  </div>
+                </div>
+                
+                <div>
+                  <Label htmlFor="edit-provider-address">Address <span className="text-red-500">*</span></Label>
+                  <Input
+                    id="edit-provider-address"
+                    name="address"
+                    value={providerFormData.profileData.address}
+                    onChange={(e) => handleProviderInputChange(e, 'profileData')}
+                    placeholder="123 Business St, City"
+                    required
+                    className={getFieldError('address', 'profileData') ? "border-red-500" : ""}
+                  />
+                  {getFieldError('address', 'profileData') && (
+                    <div className="text-xs text-red-500 flex items-center gap-1 mt-1">
+                      <AlertCircle className="h-3 w-3" /> {getFieldError('address', 'profileData')}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+            
+            {/* Additional Information Section */}
+            <div className="bg-muted/40 p-3 rounded-lg">
+              <h3 className="text-sm font-medium mb-3">Additional Information</h3>
+              <div className="space-y-4">
+                <div>
+                  <Label htmlFor="edit-provider-businessHours">Business Hours</Label>
+                  <Input
+                    id="edit-provider-businessHours"
+                    name="businessHours"
+                    value={providerFormData.profileData.businessHours}
+                    onChange={(e) => handleProviderInputChange(e, 'profileData')}
+                    placeholder="Mon-Fri: 9am-5pm"
+                  />
+                </div>
+                
+                <div>
+                  <Label htmlFor="edit-provider-description">Description</Label>
+                  <Textarea
+                    id="edit-provider-description"
+                    name="description"
+                    value={providerFormData.profileData.description}
+                    onChange={(e) => handleProviderInputChange(e, 'profileData')}
+                    placeholder="Describe the business..."
+                    rows={2}
+                  />
+                </div>
+                
+                <div>
+                  <Label htmlFor="edit-provider-logo">Logo URL</Label>
+                  <Input
+                    id="edit-provider-logo"
+                    name="logo"
+                    value={providerFormData.profileData.logo}
+                    onChange={(e) => handleProviderInputChange(e, 'profileData')}
+                    placeholder="https://example.com/logo.jpg"
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => {
+              resetProviderForm();
+              setIsEditingProvider(false);
+            }}>
+              Cancel
+            </Button>
+            <Button onClick={handleUpdateProvider} disabled={loading}>
+              {loading ? "Updating..." : "Update Provider"}
             </Button>
           </DialogFooter>
         </DialogContent>
