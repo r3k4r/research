@@ -490,6 +490,11 @@ export default function ControlPanelPage() {
       showToast(`Error: ${error.message}`, "error")
     }
   }
+
+  const resetCategoryForm = () => {
+    setCategoryFormData({ name: "" });
+    setSelectedCategory(null);
+  }
   
   // Reviews methods
   const fetchReviews = async () => {
@@ -1106,7 +1111,12 @@ export default function ControlPanelPage() {
       </Tabs>
       
       {/* Provider Delete Confirmation */}
-      <AlertDialog open={isDeleteProviderDialogOpen} onOpenChange={setIsDeleteProviderDialogOpen}>
+      <AlertDialog open={isDeleteProviderDialogOpen} onOpenChange={(open) => {
+        if (!open) {
+          setSelectedProvider(null);
+        }
+        setIsDeleteProviderDialogOpen(open);
+      }}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Are you sure?</AlertDialogTitle>
@@ -1163,8 +1173,7 @@ export default function ControlPanelPage() {
       {/* Category Edit Dialog */}
       <Dialog open={isEditingCategory} onOpenChange={(open) => {
         if (!open) {
-          setCategoryFormData({ name: "" });
-          setSelectedCategory(null);
+          resetCategoryForm();
         }
         setIsEditingCategory(open);
       }}>
@@ -1184,8 +1193,7 @@ export default function ControlPanelPage() {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => {
-              setCategoryFormData({ name: "" });
-              setSelectedCategory(null);
+              resetCategoryForm();
               setIsEditingCategory(false);
             }}>
               Cancel
