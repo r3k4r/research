@@ -140,25 +140,10 @@ export default function ControlPanelPage() {
   const fetchProviders = async () => {
     setLoading(true)
     try {
-      const response = await fetch('/api/admin/users?role=PROVIDER&limit=100')
+      const response = await fetch('/api/admin/control-panel/provider')
       if (!response.ok) throw new Error("Failed to fetch providers")
       const data = await response.json()
-      
-      // Map to the format we need
-      const formattedProviders = data.users
-        .filter(user => user.providerProfile)
-        .map(user => ({
-          id: user.id,
-          profileId: user.providerProfile.id,
-          email: user.email,
-          name: user.providerProfile.name,
-          businessName: user.providerProfile.businessName,
-          phoneNumber: user.providerProfile.phoneNumber || 'N/A',
-          address: user.providerProfile.address || 'N/A',
-          logo: user.providerProfile.logo || null,
-        }))
-      
-      setProviders(formattedProviders)
+      setProviders(data)
     } catch (error) {
       console.error("Error fetching providers:", error)
       showToast("Failed to load providers", "error")
@@ -169,7 +154,7 @@ export default function ControlPanelPage() {
   
   const handleDeleteProvider = async (id) => {
     try {
-      const response = await fetch(`/api/admin/users/${id}`, {
+      const response = await fetch(`/api/admin/control-panel/provider?id=${id}`, {
         method: 'DELETE'
       })
       
@@ -297,36 +282,29 @@ export default function ControlPanelPage() {
         return;
       }
       
-      // Create payload for user update
-      const userPayload = {
-        email: providerFormData.email
+      const payload = {
+        id: providerFormData.id,
+        email: providerFormData.email,
+        password: providerFormData.password,
+        profileData: {
+          name: providerFormData.profileData.name,
+          businessName: providerFormData.profileData.businessName,
+          description: providerFormData.profileData.description || null,
+          address: providerFormData.profileData.address,
+          phoneNumber: providerFormData.profileData.phoneNumber,
+          businessHours: providerFormData.profileData.businessHours || null,
+          logo: providerFormData.profileData.logo || null
+        }
       };
       
-      // Only include password if it's provided
-      if (providerFormData.password) {
-        userPayload.password = providerFormData.password;
-      }
-      
-      // Create payload for provider profile update
-      const profilePayload = {
-        name: providerFormData.profileData.name,
-        businessName: providerFormData.profileData.businessName,
-        description: providerFormData.profileData.description || null,
-        address: providerFormData.profileData.address,
-        phoneNumber: providerFormData.profileData.phoneNumber,
-        businessHours: providerFormData.profileData.businessHours || null,
-        logo: providerFormData.profileData.logo || null
-      };
-      
-      // First update the user
-      const userRes = await fetch(`/api/admin/users/${providerFormData.id}`, {
+      const res = await fetch('/api/admin/control-panel/provider', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(userPayload)
+        body: JSON.stringify(payload)
       });
       
-      if (!userRes.ok) {
-        const data = await userRes.json();
+      if (!res.ok) {
+        const data = await res.json();
         // Check for duplicate email error
         if (data.error && data.error.includes("email already exists")) {
           setFormErrors(prev => ({...prev, email: "This email is already registered"}));
@@ -334,31 +312,6 @@ export default function ControlPanelPage() {
           return;
         }
         throw new Error(data.error || "Failed to update provider");
-      }
-      
-      // Next update the provider profile
-      const profileRes = await fetch(`/api/admin/users/${providerFormData.id}/provider-profile`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(profilePayload)
-      });
-      
-      if (!profileRes.ok) {
-        const data = await profileRes.json();
-        // Check for duplicate business name or phone
-        if (data.error) {
-          if (data.error.includes("business name already exists")) {
-            setFormErrors(prev => ({...prev, "profileData.businessName": "This business name is already registered"}));
-            setLoading(false);
-            return;
-          } else if (data.error.includes("phone number already exists")) {
-            setFormErrors(prev => ({...prev, "profileData.phoneNumber": "This phone number is already registered"}));
-            setLoading(false);
-            return;
-          }
-          throw new Error(data.error);
-        }
-        throw new Error("Failed to update provider profile");
       }
       
       showToast("Provider updated successfully", "success");
@@ -388,7 +341,6 @@ export default function ControlPanelPage() {
       const payload = {
         email: providerFormData.email,
         password: providerFormData.password,
-        role: "PROVIDER",
         profileData: {
           name: providerFormData.profileData.name,
           businessName: providerFormData.profileData.businessName,
@@ -400,7 +352,7 @@ export default function ControlPanelPage() {
         }
       };
       
-      const res = await fetch('/api/admin/users', {
+      const res = await fetch('/api/admin/control-panel/provider', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
