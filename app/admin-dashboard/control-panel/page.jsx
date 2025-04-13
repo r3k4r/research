@@ -18,6 +18,15 @@ import {
   DialogFooter 
 } from "@/components/ui/dialog"
 import { 
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+  SheetFooter,
+  SheetClose,
+} from "@/components/ui/sheet"
+import { 
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
@@ -1137,17 +1146,20 @@ export default function ControlPanelPage() {
         </AlertDialogContent>
       </AlertDialog>
       
-      {/* Category Add Dialog */}
-      <Dialog open={isAddingCategory} onOpenChange={(open) => {
+      {/* Category Add Sheet */}
+      <Sheet open={isAddingCategory} onOpenChange={(open) => {
         if (!open) {
           setCategoryFormData({ name: "" });
         }
         setIsAddingCategory(open);
       }}>
-        <DialogContent className="sm:max-w-[425px]">
-          <DialogHeader>
-            <DialogTitle>Add Category</DialogTitle>
-          </DialogHeader>
+        <SheetContent>
+          <SheetHeader>
+            <SheetTitle>Add Category</SheetTitle>
+            <SheetDescription>
+              Create a new category for food items.
+            </SheetDescription>
+          </SheetHeader>
           <div className="grid gap-4 py-4">
             <div className="grid gap-2">
               <Label htmlFor="name">Category Name</Label>
@@ -1158,29 +1170,29 @@ export default function ControlPanelPage() {
               />
             </div>
           </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => {
-              setCategoryFormData({ name: "" });
-              setIsAddingCategory(false);
-            }}>
-              Cancel
-            </Button>
+          <SheetFooter>
+            <SheetClose asChild>
+              <Button variant="outline">Cancel</Button>
+            </SheetClose>
             <Button onClick={handleAddCategory}>Add Category</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+          </SheetFooter>
+        </SheetContent>
+      </Sheet>
       
-      {/* Category Edit Dialog */}
-      <Dialog open={isEditingCategory} onOpenChange={(open) => {
+      {/* Category Edit Sheet */}
+      <Sheet open={isEditingCategory} onOpenChange={(open) => {
         if (!open) {
           resetCategoryForm();
         }
         setIsEditingCategory(open);
       }}>
-        <DialogContent className="sm:max-w-[425px]">
-          <DialogHeader>
-            <DialogTitle>Edit Category</DialogTitle>
-          </DialogHeader>
+        <SheetContent>
+          <SheetHeader>
+            <SheetTitle>Edit Category</SheetTitle>
+            <SheetDescription>
+              Update the name of the category.
+            </SheetDescription>
+          </SheetHeader>
           <div className="grid gap-4 py-4">
             <div className="grid gap-2">
               <Label htmlFor="edit-name">Category Name</Label>
@@ -1191,20 +1203,22 @@ export default function ControlPanelPage() {
               />
             </div>
           </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => {
-              resetCategoryForm();
-              setIsEditingCategory(false);
-            }}>
-              Cancel
-            </Button>
+          <SheetFooter>
+            <SheetClose asChild>
+              <Button variant="outline">Cancel</Button>
+            </SheetClose>
             <Button onClick={handleUpdateCategory}>Update Category</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+          </SheetFooter>
+        </SheetContent>
+      </Sheet>
       
       {/* Category Delete Confirmation */}
-      <AlertDialog open={isDeleteCategoryDialogOpen} onOpenChange={setIsDeleteCategoryDialogOpen}>
+      <AlertDialog open={isDeleteCategoryDialogOpen} onOpenChange={(open) => {
+        if (!open) {
+          setSelectedCategory(null);
+        }
+        setIsDeleteCategoryDialogOpen(open);
+      }}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Are you sure?</AlertDialogTitle>
@@ -1228,7 +1242,12 @@ export default function ControlPanelPage() {
       </AlertDialog>
       
       {/* Review Delete Confirmation */}
-      <AlertDialog open={isDeleteReviewDialogOpen} onOpenChange={setIsDeleteReviewDialogOpen}>
+      <AlertDialog open={isDeleteReviewDialogOpen} onOpenChange={(open) => {
+        if (!open) {
+          setSelectedReview(null);
+        }
+        setIsDeleteReviewDialogOpen(open);
+      }}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Are you sure?</AlertDialogTitle>
@@ -1248,17 +1267,20 @@ export default function ControlPanelPage() {
         </AlertDialogContent>
       </AlertDialog>
       
-      {/* Add Provider Dialog */}
-      <Dialog open={isAddingProvider} onOpenChange={(open) => {
+      {/* Add Provider Sheet */}
+      <Sheet open={isAddingProvider} onOpenChange={(open) => {
         if (!open) {
           resetProviderForm();
         }
         setIsAddingProvider(open);
       }}>
-        <DialogContent className="sm:max-w-[550px] max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Add New Provider</DialogTitle>
-          </DialogHeader>
+        <SheetContent className="sm:max-w-[550px] overflow-y-auto">
+          <SheetHeader>
+            <SheetTitle>Add New Provider</SheetTitle>
+            <SheetDescription>
+              Enter the details for the new provider account and business.
+            </SheetDescription>
+          </SheetHeader>
           <div className="grid gap-4 py-4">
             {/* Account Information Section */}
             <div className="bg-muted/40 p-3 rounded-lg">
@@ -1428,31 +1450,31 @@ export default function ControlPanelPage() {
               </div>
             </div>
           </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => {
-              resetProviderForm();
-              setIsAddingProvider(false);
-            }}>
-              Cancel
-            </Button>
+          <SheetFooter>
+            <SheetClose asChild>
+              <Button variant="outline">Cancel</Button>
+            </SheetClose>
             <Button onClick={handleAddProvider} disabled={loading}>
               {loading ? "Creating..." : "Add Provider"}
             </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+          </SheetFooter>
+        </SheetContent>
+      </Sheet>
       
-      {/* Edit Provider Dialog */}
-      <Dialog open={isEditingProvider} onOpenChange={(open) => {
+      {/* Edit Provider Sheet */}
+      <Sheet open={isEditingProvider} onOpenChange={(open) => {
         if (!open) {
           resetProviderForm();
         }
         setIsEditingProvider(open);
       }}>
-        <DialogContent className="sm:max-w-[550px] max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Edit Provider</DialogTitle>
-          </DialogHeader>
+        <SheetContent className="sm:max-w-[550px] overflow-y-auto">
+          <SheetHeader>
+            <SheetTitle>Edit Provider</SheetTitle>
+            <SheetDescription>
+              Update the provider's account and business details.
+            </SheetDescription>
+          </SheetHeader>
           <div className="grid gap-4 py-4">
             {/* Account Information Section */}
             <div className="bg-muted/40 p-3 rounded-lg">
@@ -1621,19 +1643,16 @@ export default function ControlPanelPage() {
               </div>
             </div>
           </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => {
-              resetProviderForm();
-              setIsEditingProvider(false);
-            }}>
-              Cancel
-            </Button>
+          <SheetFooter>
+            <SheetClose asChild>
+              <Button variant="outline">Cancel</Button>
+            </SheetClose>
             <Button onClick={handleUpdateProvider} disabled={loading}>
               {loading ? "Updating..." : "Update Provider"}
             </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+          </SheetFooter>
+        </SheetContent>
+      </Sheet>
     </div>
   )
 }
