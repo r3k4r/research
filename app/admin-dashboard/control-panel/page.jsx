@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Button } from "@/components/ui/button"
@@ -70,6 +70,79 @@ const providerCreateSchema = providerSchema.extend({
     .regex(/[A-Z]/, { message: "Password must contain at least one uppercase letter" })
     .regex(/[!@#$%^&*(),.?":{}|<>]/, { message: "Password must contain at least one special character" })
 });
+
+// Create a new CustomDialog component that will properly handle cleanup
+const CustomDialog = ({ open, onOpenChange, title, description, children, footer }) => {
+  const dialogRef = useRef(null);
+
+  // Ensure proper cleanup when dialog closes
+  useEffect(() => {
+    if (!open && dialogRef.current) {
+      // Force any lingering portal elements to be removed
+      const portalRoot = document.querySelector('[data-portal-root="true"]');
+      if (portalRoot) {
+        portalRoot.innerHTML = '';
+      }
+      
+      // Ensure body style is reset
+      document.body.style.pointerEvents = '';
+      document.body.style.overflow = '';
+    }
+  }, [open]);
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent ref={dialogRef} className="overflow-hidden">
+        <DialogHeader>
+          <DialogTitle>{title}</DialogTitle>
+          {description && <p className="text-sm text-muted-foreground">{description}</p>}
+        </DialogHeader>
+        <div className="py-4">{children}</div>
+        {footer && <DialogFooter>{footer}</DialogFooter>}
+      </DialogContent>
+    </Dialog>
+  );
+};
+
+// Custom AlertDialog component for confirmation dialogs
+const CustomAlertDialog = ({ open, onOpenChange, title, description, onCancel, onAction, actionLabel, actionVariant = "default" }) => {
+  const dialogRef = useRef(null);
+
+  // Ensure proper cleanup when dialog closes
+  useEffect(() => {
+    if (!open && dialogRef.current) {
+      // Force any lingering portal elements to be removed
+      const portalRoot = document.querySelector('[data-portal-root="true"]');
+      if (portalRoot) {
+        portalRoot.innerHTML = '';
+      }
+      
+      // Ensure body style is reset
+      document.body.style.pointerEvents = '';
+      document.body.style.overflow = '';
+    }
+  }, [open]);
+
+  return (
+    <AlertDialog open={open} onOpenChange={onOpenChange}>
+      <AlertDialogContent ref={dialogRef}>
+        <AlertDialogHeader>
+          <AlertDialogTitle>{title}</AlertDialogTitle>
+          <AlertDialogDescription>{description}</AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel onClick={onCancel}>Cancel</AlertDialogCancel>
+          <AlertDialogAction 
+            className={actionVariant === "destructive" ? "bg-red-600 hover:bg-red-700 text-white" : ""}
+            onClick={onAction}
+          >
+            {actionLabel}
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+  );
+};
 
 export default function ControlPanelPage() {
   const { showToast, ToastComponent } = useToast()
@@ -144,7 +217,53 @@ export default function ControlPanelPage() {
     if (activeTab === "reviews") fetchReviews()
     if (activeTab === "settings") fetchSettings()
   }, [activeTab])
-  
+
+  // Add new useEffect for global overlay cleanup on tab change
+  useEffect(() => {
+    const cleanupOverlays = () => {
+      // Ensure all overlay states are reset
+      document.body.style.pointerEvents = '';
+      document.body.style.overflow = '';
+      
+      // Find any portal roots and clear them
+      const portalRoots = document.querySelectorAll('[data-portal-root="true"], [role="dialog"]');
+      portalRoots.forEach(root => {
+        if (!root.hasAttribute('data-state') || root.getAttribute('data-state') !== 'open') {
+          root.remove();
+        }
+      });
+      
+      // Force remove any orphaned overlays
+      const overlays = document.querySelectorAll('[role="presentation"]');
+      overlays.forEach(overlay => {
+        if (!overlay.parentElement || !overlay.parentElement.classList.contains('dialog-open')) {
+          overlay.remove();
+        }
+      });
+    };
+    
+    // Clean up overlays on tab change
+    cleanupOverlays();
+    
+    // Set up mutation observer to watch for orphaned overlays
+    const observer = new MutationObserver((mutations) => {
+      mutations.forEach((mutation) => {
+        if (mutation.type === 'childList' && mutation.removedNodes.length > 0) {
+          // Check if a dialog was removed but left orphaned overlays
+          cleanupOverlays();
+        }
+      });
+    });
+    
+    // Start observing document body for changes
+    observer.observe(document.body, { childList: true, subtree: true });
+    
+    return () => {
+      observer.disconnect();
+      cleanupOverlays();
+    };
+  }, [activeTab]);
+
   // Providers methods
   const fetchProviders = async () => {
     setLoading(true)
@@ -624,7 +743,7 @@ export default function ControlPanelPage() {
   )
   
   return (
-    <div className="space-y-6">
+    <div className="space-y-6" id="control-panel-root">
       {ToastComponent}
       
       <div className="flex items-center justify-between">
@@ -1120,40 +1239,40 @@ export default function ControlPanelPage() {
       </Tabs>
       
       {/* Provider Delete Confirmation */}
-      <AlertDialog open={isDeleteProviderDialogOpen} onOpenChange={(open) => {
-        if (!open) {
-          setSelectedProvider(null);
-        }
-        setIsDeleteProviderDialogOpen(open);
-      }}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-            <AlertDialogDescription>
-              This will permanently delete the provider "{selectedProvider?.businessName}" and all associated data.
-              This action cannot be undone.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              className="bg-red-600 hover:bg-red-700 text-white"
-              onClick={() => handleDeleteProvider(selectedProvider?.id)}
-            >
-              Delete Provider
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <CustomAlertDialog 
+        open={isDeleteProviderDialogOpen}
+        onOpenChange={(open) => {
+          setIsDeleteProviderDialogOpen(open);
+          if (!open) setSelectedProvider(null);
+        }}
+        title="Are you sure?"
+        description={`This will permanently delete the provider "${selectedProvider?.businessName}" and all associated data. This action cannot be undone.`}
+        onCancel={() => setIsDeleteProviderDialogOpen(false)}
+        onAction={() => handleDeleteProvider(selectedProvider?.id)}
+        actionLabel="Delete Provider"
+        actionVariant="destructive"
+      />
       
       {/* Category Add Sheet */}
-      <Sheet open={isAddingCategory} onOpenChange={(open) => {
-        if (!open) {
-          setCategoryFormData({ name: "" });
-        }
-        setIsAddingCategory(open);
-      }}>
-        <SheetContent>
+      <Sheet 
+        open={isAddingCategory} 
+        onOpenChange={(open) => {
+          setIsAddingCategory(open);
+          if (!open) {
+            setCategoryFormData({ name: "" });
+            // Force cleanup
+            document.body.style.pointerEvents = '';
+            document.body.style.overflow = '';
+          }
+        }}
+      >
+        <SheetContent
+          onCloseAutoFocus={(e) => {
+            // Prevent focus issues
+            e.preventDefault();
+            document.getElementById('control-panel-root').focus();
+          }}
+        >
           <SheetHeader>
             <SheetTitle>Add Category</SheetTitle>
             <SheetDescription>
@@ -1180,13 +1299,25 @@ export default function ControlPanelPage() {
       </Sheet>
       
       {/* Category Edit Sheet */}
-      <Sheet open={isEditingCategory} onOpenChange={(open) => {
-        if (!open) {
-          resetCategoryForm();
-        }
-        setIsEditingCategory(open);
-      }}>
-        <SheetContent>
+      <Sheet 
+        open={isEditingCategory} 
+        onOpenChange={(open) => {
+          setIsEditingCategory(open);
+          if (!open) {
+            resetCategoryForm();
+            // Force cleanup
+            document.body.style.pointerEvents = '';
+            document.body.style.overflow = '';
+          }
+        }}
+      >
+        <SheetContent
+          onCloseAutoFocus={(e) => {
+            // Prevent focus issues
+            e.preventDefault();
+            document.getElementById('control-panel-root').focus();
+          }}
+        >
           <SheetHeader>
             <SheetTitle>Edit Category</SheetTitle>
             <SheetDescription>
@@ -1213,68 +1344,58 @@ export default function ControlPanelPage() {
       </Sheet>
       
       {/* Category Delete Confirmation */}
-      <AlertDialog open={isDeleteCategoryDialogOpen} onOpenChange={(open) => {
-        if (!open) {
-          setSelectedCategory(null);
-        }
-        setIsDeleteCategoryDialogOpen(open);
-      }}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-            <AlertDialogDescription>
-              This will permanently delete the category "{selectedCategory?.name}".
-              {selectedCategory?.foodItemCount > 0 && 
-                ` This category is used by ${selectedCategory.foodItemCount} food items, which will also be affected.`}
-              This action cannot be undone.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              className="bg-red-600 hover:bg-red-700 text-white"
-              onClick={handleDeleteCategory}
-            >
-              Delete Category
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <CustomAlertDialog
+        open={isDeleteCategoryDialogOpen}
+        onOpenChange={(open) => {
+          setIsDeleteCategoryDialogOpen(open);
+          if (!open) setSelectedCategory(null);
+        }}
+        title="Are you sure?"
+        description={`This will permanently delete the category "${selectedCategory?.name}".
+          ${selectedCategory?.foodItemCount > 0 ? ` This category is used by ${selectedCategory.foodItemCount} food items, which will also be affected.` : ''}
+          This action cannot be undone.`}
+        onCancel={() => setIsDeleteCategoryDialogOpen(false)}
+        onAction={handleDeleteCategory}
+        actionLabel="Delete Category"
+        actionVariant="destructive"
+      />
       
       {/* Review Delete Confirmation */}
-      <AlertDialog open={isDeleteReviewDialogOpen} onOpenChange={(open) => {
-        if (!open) {
-          setSelectedReview(null);
-        }
-        setIsDeleteReviewDialogOpen(open);
-      }}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-            <AlertDialogDescription>
-              This will permanently delete this review. This action cannot be undone.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              className="bg-red-600 hover:bg-red-700 text-white"
-              onClick={handleDeleteReview}
-            >
-              Delete Review
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <CustomAlertDialog
+        open={isDeleteReviewDialogOpen}
+        onOpenChange={(open) => {
+          setIsDeleteReviewDialogOpen(open);
+          if (!open) setSelectedReview(null);
+        }}
+        title="Are you sure?"
+        description="This will permanently delete this review. This action cannot be undone."
+        onCancel={() => setIsDeleteReviewDialogOpen(false)}
+        onAction={handleDeleteReview}
+        actionLabel="Delete Review"
+        actionVariant="destructive"
+      />
       
       {/* Add Provider Sheet */}
-      <Sheet open={isAddingProvider} onOpenChange={(open) => {
-        if (!open) {
-          resetProviderForm();
-        }
-        setIsAddingProvider(open);
-      }}>
-        <SheetContent className="sm:max-w-[550px] overflow-y-auto">
+      <Sheet 
+        open={isAddingProvider} 
+        onOpenChange={(open) => {
+          setIsAddingProvider(open);
+          if (!open) {
+            resetProviderForm();
+            // Force cleanup
+            document.body.style.pointerEvents = '';
+            document.body.style.overflow = '';
+          }
+        }}
+      >
+        <SheetContent 
+          className="sm:max-w-[550px] overflow-y-auto" 
+          onCloseAutoFocus={(e) => {
+            // Prevent focus issues
+            e.preventDefault();
+            document.getElementById('control-panel-root').focus();
+          }}
+        >
           <SheetHeader>
             <SheetTitle>Add New Provider</SheetTitle>
             <SheetDescription>
@@ -1462,13 +1583,26 @@ export default function ControlPanelPage() {
       </Sheet>
       
       {/* Edit Provider Sheet */}
-      <Sheet open={isEditingProvider} onOpenChange={(open) => {
-        if (!open) {
-          resetProviderForm();
-        }
-        setIsEditingProvider(open);
-      }}>
-        <SheetContent className="sm:max-w-[550px] overflow-y-auto">
+      <Sheet 
+        open={isEditingProvider} 
+        onOpenChange={(open) => {
+          setIsEditingProvider(open);
+          if (!open) {
+            resetProviderForm();
+            // Force cleanup
+            document.body.style.pointerEvents = '';
+            document.body.style.overflow = '';
+          }
+        }}
+      >
+        <SheetContent 
+          className="sm:max-w-[550px] overflow-y-auto"
+          onCloseAutoFocus={(e) => {
+            // Prevent focus issues
+            e.preventDefault(); 
+            document.getElementById('control-panel-root').focus();
+          }}
+        >
           <SheetHeader>
             <SheetTitle>Edit Provider</SheetTitle>
             <SheetDescription>
