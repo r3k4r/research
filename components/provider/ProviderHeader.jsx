@@ -18,7 +18,7 @@ export default function ProviderHeader({ setIsSidebarOpen }) {
   const { data: session } = useSession();
   
   return (
-    <header className="sticky top-0 z-30 flex h-14 items-center gap-4 border-b bg-background px-6">
+    <header className="sticky top-0 z-30 flex h-14 items-center justify-between gap-4 border-b bg-background px-6">
       {/* Mobile menu button */}
       <Button 
         variant="ghost" 
@@ -34,18 +34,7 @@ export default function ProviderHeader({ setIsSidebarOpen }) {
       <div className="hidden text-lg md:flex">
         <p className="font-medium">{session?.user?.name || 'Provider'}</p>
       </div>
-      
-      {/* Search */}
-      <div className="flex flex-1 items-center gap-4 md:ml-4">
-        <div className="relative flex-1 max-w-sm">
-          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-          <Input
-            type="search"
-            placeholder="Search..."
-            className="pl-8 md:w-[300px] lg:w-[400px]"
-          />
-        </div>
-      </div>
+
       
       <div className="flex items-center gap-3">
         <Link href="/">

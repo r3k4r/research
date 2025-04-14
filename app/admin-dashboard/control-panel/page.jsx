@@ -45,12 +45,11 @@ import {
   AlertCircle
 } from "lucide-react"
 import { Textarea } from "@/components/ui/textarea"
-import { z } from "zod" // Import zod for validation
+import { z } from "zod" 
 
-// Define Zod schema for provider form validation
 const providerSchema = z.object({
   email: z.string().email({ message: "Invalid email address format" }),
-  password: z.string().optional(), // Password is optional when editing
+  password: z.string().optional(), 
   role: z.literal("PROVIDER"),
   profileData: z.object({
     name: z.string().min(3, { message: "Name must be at least 3 characters" }),
@@ -71,20 +70,16 @@ const providerCreateSchema = providerSchema.extend({
     .regex(/[!@#$%^&*(),.?":{}|<>]/, { message: "Password must contain at least one special character" })
 });
 
-// Create a new CustomDialog component that will properly handle cleanup
 const CustomDialog = ({ open, onOpenChange, title, description, children, footer }) => {
   const dialogRef = useRef(null);
 
-  // Ensure proper cleanup when dialog closes
   useEffect(() => {
     if (!open && dialogRef.current) {
-      // Force any lingering portal elements to be removed
       const portalRoot = document.querySelector('[data-portal-root="true"]');
       if (portalRoot) {
         portalRoot.innerHTML = '';
       }
       
-      // Ensure body style is reset
       document.body.style.pointerEvents = '';
       document.body.style.overflow = '';
     }
@@ -104,20 +99,16 @@ const CustomDialog = ({ open, onOpenChange, title, description, children, footer
   );
 };
 
-// Custom AlertDialog component for confirmation dialogs
 const CustomAlertDialog = ({ open, onOpenChange, title, description, onCancel, onAction, actionLabel, actionVariant = "default" }) => {
   const dialogRef = useRef(null);
 
-  // Ensure proper cleanup when dialog closes
   useEffect(() => {
     if (!open && dialogRef.current) {
-      // Force any lingering portal elements to be removed
       const portalRoot = document.querySelector('[data-portal-root="true"]');
       if (portalRoot) {
         portalRoot.innerHTML = '';
       }
       
-      // Ensure body style is reset
       document.body.style.pointerEvents = '';
       document.body.style.overflow = '';
     }
@@ -264,7 +255,6 @@ export default function ControlPanelPage() {
     };
   }, [activeTab]);
 
-  // Providers methods
   const fetchProviders = async () => {
     setLoading(true)
     try {
@@ -346,20 +336,16 @@ export default function ControlPanelPage() {
   
   const validateProviderForm = (isEditing = false) => {
     try {
-      // Use the appropriate schema based on whether we're editing or creating
       const schema = isEditing ? providerSchema : providerCreateSchema;
       
-      // If editing and password is empty, remove it from validation
       const dataToValidate = isEditing && !providerFormData.password 
         ? { ...providerFormData, password: undefined }
         : providerFormData;
       
-      // Validate with Zod schema
       schema.parse(dataToValidate);
       return true;
     } catch (error) {
       if (error instanceof z.ZodError) {
-        // Transform Zod errors into form errors
         const errors = {};
         error.errors.forEach(err => {
           const path = err.path.join('.');
@@ -372,14 +358,12 @@ export default function ControlPanelPage() {
   }
 
   const handleEditProvider = (provider) => {
-    // Set selected provider
     setSelectedProvider(provider);
     
-    // Populate the form with provider data
     setProviderFormData({
       id: provider.id,
       email: provider.email,
-      password: "", // Password is empty when editing
+      password: "",
       role: "PROVIDER",
       profileId: provider.profileId,
       profileData: {
@@ -393,10 +377,8 @@ export default function ControlPanelPage() {
       }
     });
     
-    // Clear any previous errors
     setFormErrors({});
     
-    // Open the editing dialog
     setIsEditingProvider(true);
   }
   
@@ -404,7 +386,6 @@ export default function ControlPanelPage() {
     try {
       setLoading(true);
       
-      // First validate the form with Zod (in edit mode)
       if (!validateProviderForm(true)) {
         setLoading(false);
         return;
@@ -460,7 +441,6 @@ export default function ControlPanelPage() {
     try {
       setLoading(true);
       
-      // First validate the form with Zod (in create mode)
       if (!validateProviderForm(false)) {
         setLoading(false);
         return;
@@ -489,7 +469,6 @@ export default function ControlPanelPage() {
       const data = await res.json();
       
       if (!res.ok) {
-        // Handle specific backend validation errors
         if (data.error) {
           if (data.error.includes("email already exists")) {
             setFormErrors(prev => ({...prev, email: "This email is already registered"}));
@@ -520,12 +499,10 @@ export default function ControlPanelPage() {
     }
   }
   
-  // Helper to get field error
   const getFieldError = (field, section = null) => {
     return section ? formErrors[`${section}.${field}`] : formErrors[field];
   }
   
-  // Categories methods
   const fetchCategories = async () => {
     setLoading(true)
     try {

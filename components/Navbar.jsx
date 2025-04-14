@@ -27,7 +27,6 @@ const Links = [
   { href: "/how-it-works", label: "How it works", visible: ["ADMIN", "PROVIDER", "USER"] },
   { href: "/admin-dashboard", label: "Admin Dashboard", visible: ["ADMIN"] },
   { href: "/provider-dashboard", label: "Provider Dashboard", visible: ["PROVIDER"] },
-  { href: "/orders", label: "My Orders", visible: ["USER"] },
 ]
 
 export default function Navbar() {

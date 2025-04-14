@@ -26,16 +26,7 @@ export default function Header() {
       <div className="container flex items-center justify-between h-full px-2 md:px-4">
         <div className="flex items-center">
           <h2 className="text-lg font-semibold ml-10 md:ml-0">Admin</h2>
-        </div>
-        
-        <div className="hidden md:flex relative max-w-md w-full mx-4">
-          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="Search..."
-            className="pl-8 h-9"
-          />
-        </div>
-        
+        </div>        
         <div className="flex items-center gap-1">
               <Link href="/">
                 <Button size="sm">
