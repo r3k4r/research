@@ -151,24 +151,54 @@ export async function DELETE(req) {
     const { searchParams } = new URL(req.url);
     const id = searchParams.get("id");
 
+    if (!id) {
+      return NextResponse.json({ error: 'Provider ID is required' }, { status: 400 });
+    }
+
     // Find the user to ensure they exist
     const user = await prisma.user.findUnique({
       where: { id: id },
-      include: { providerProfile: true }
+      include: { 
+        providerProfile: {
+          include: {
+            foodItems: true,
+            orders: true
+          }
+        }
+      }
     });
 
     if (!user) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
-    // Delete the provider
-    await prisma.user.delete({
-      where: { id: id }
+    await prisma.$transaction(async (prismaClient) => {
+      const { providerProfile } = user;
+      
+      if (providerProfile) {
+        if (providerProfile.foodItems && providerProfile.foodItems.length > 0) {
+          await prismaClient.foodItem.deleteMany({
+            where: { providerId: providerProfile.id }
+          });
+        }
+        
+        // Delete orders for this provider
+        if (providerProfile.orders && providerProfile.orders.length > 0) {
+          await prismaClient.purchasedOrder.deleteMany({
+            where: { providerId: providerProfile.id }
+          });
+        }
+      }
+
+      // Now delete the user (will cascade to provider profile)
+      await prismaClient.user.delete({
+        where: { id: id }
+      });
     });
 
     return NextResponse.json({ message: 'Provider deleted successfully' }, { status: 200 });
   } catch (error) {
     console.error("Error deleting provider:", error);
-    return NextResponse.json({ error: "Failed to delete provider" }, { status: 500 });
+    return NextResponse.json({ error: "Failed to delete provider", details: error.message }, { status: 500 });
   }
 }
