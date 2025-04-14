@@ -29,8 +29,7 @@ export async function PATCH(req, { params }) {
     try {
         const userId = params.id;
         const data = await req.json();
-        const { role, password, ...otherUpdateData } = data;
-        console.log(data);
+        const { role, password, profileData, ...otherUpdateData } = data;
         
         // First get the current user to check their role
         const currentUser = await prisma.user.findUnique({
@@ -57,59 +56,119 @@ export async function PATCH(req, { params }) {
             updateData.password = hashedPassword;
         }
 
-        // Update the user with new data
-        const user = await prisma.user.update({
-            where: { id: userId },
-            data: updateData
+        // If changing to PROVIDER role, check if the business name already exists
+        if (role === "PROVIDER" && profileData?.businessName && currentUser.role !== "PROVIDER") {
+            const existingBusinessName = await prisma.providerProfile.findFirst({
+                where: { 
+                    businessName: profileData.businessName,
+                    userId: { not: userId }
+                }
+            });
+            
+            if (existingBusinessName) {
+                return NextResponse.json({ error: 'Business name already exists' }, { status: 400 });
+            }
+        }
+
+        // Update the user within a transaction for consistency
+        await prisma.$transaction(async (tx) => {
+            // 1. Update the user basic data
+            await tx.user.update({
+                where: { id: userId },
+                data: updateData
+            });
+            
+            // 2. Handle role change to PROVIDER
+            if (role === "PROVIDER") {
+                // Delete user profile if exists
+                if (currentUser.profile) {
+                    await tx.userProfile.delete({
+                        where: { userId: userId }
+                    });
+                }
+                
+                // Create provider profile if doesn't exist
+                if (!currentUser.providerProfile) {
+                    // Use provided profile data or create sensible defaults
+                    await tx.providerProfile.create({
+                        data: {
+                            userId: userId,
+                            name: profileData?.name || currentUser.profile?.name || "New Provider",
+                            businessName: profileData?.businessName || "New Business",
+                            address: profileData?.address || "Enter address",
+                            phoneNumber: profileData?.phoneNumber || currentUser.profile?.phoneNumber || "Enter phone",
+                            description: profileData?.description || null,
+                            businessHours: profileData?.businessHours || null,
+                            logo: profileData?.logo || null,
+                        }
+                    });
+                } else if (profileData) {
+                    // Update existing provider profile with new data
+                    await tx.providerProfile.update({
+                        where: { userId: userId },
+                        data: {
+                            name: profileData.name || currentUser.providerProfile.name,
+                            businessName: profileData.businessName || currentUser.providerProfile.businessName,
+                            address: profileData.address || currentUser.providerProfile.address,
+                            phoneNumber: profileData.phoneNumber || currentUser.providerProfile.phoneNumber,
+                            description: profileData.description || currentUser.providerProfile.description,
+                            businessHours: profileData.businessHours || currentUser.providerProfile.businessHours,
+                            logo: profileData.logo || currentUser.providerProfile.logo,
+                        }
+                    });
+                }
+            }
+            
+            // 3. Handle role change to USER
+            if (role === "USER") {
+                // Delete provider profile if exists
+                if (currentUser.providerProfile) {
+                    await tx.providerProfile.delete({
+                        where: { userId: userId }
+                    });
+                }
+                
+                // Create user profile if doesn't exist
+                if (!currentUser.profile) {
+                    await tx.userProfile.create({
+                        data: {
+                            userId: userId,
+                            name: profileData?.name || currentUser.providerProfile?.name || "New User",
+                            location: profileData?.location || null,
+                            phoneNumber: profileData?.phoneNumber || currentUser.providerProfile?.phoneNumber || null,
+                            gender: profileData?.gender || null,
+                            image: profileData?.image || null
+                        }
+                    });
+                } else if (profileData) {
+                    // Update existing user profile
+                    await tx.userProfile.update({
+                        where: { userId: userId },
+                        data: {
+                            name: profileData.name || currentUser.profile.name,
+                            location: profileData.location || currentUser.profile.location,
+                            phoneNumber: profileData.phoneNumber || currentUser.profile.phoneNumber,
+                            gender: profileData.gender || currentUser.profile.gender,
+                            image: profileData.image || currentUser.profile.image,
+                        }
+                    });
+                }
+            }
         });
         
-        // Handle role change to PROVIDER
-        if (role === "PROVIDER") {
-            // Delete user profile if exists
-            if (currentUser.profile) {
-                await prisma.userProfile.delete({
-                    where: { userId: userId }
-                });
+        // Get updated user data for response
+        const updatedUser = await prisma.user.findUnique({
+            where: { id: userId },
+            include: {
+                profile: true, 
+                providerProfile: true
             }
-            
-            // Create provider profile if doesn't exist
-            if (!currentUser.providerProfile) {
-                await prisma.providerProfile.create({
-                    data: {
-                        userId: userId,
-                        name: currentUser.profile?.name || "New Provider",
-                        businessName: "New Business",
-                        address: "Address needed",
-                        phoneNumber: currentUser.profile?.phoneNumber || "Phone needed",
-                    }
-                });
-            }
-        }
+        });
         
-        // Handle role change to USER
-        if (role === "USER") {
-            // Delete provider profile if exists
-            if (currentUser.providerProfile) {
-                await prisma.providerProfile.delete({
-                    where: { userId: userId }
-                });
-            }
-            
-            // Create user profile if doesn't exist
-            if (!currentUser.profile) {
-                await prisma.userProfile.create({
-                    data: {
-                        userId: userId,
-                        name: currentUser.providerProfile?.name || "New User"
-                    }
-                });
-            }
-        }
-        
-        return NextResponse.json({ user }, { status: 200 });
+        return NextResponse.json({ user: updatedUser }, { status: 200 });
     } catch (err) {
-        console.log(err);
-        return NextResponse.json({ error: 'An error occurred during role update' }, { status: 500 });
+        console.error("Error updating user:", err);
+        return NextResponse.json({ error: `An error occurred during role update: ${err.message}` }, { status: 500 });
     }
 }
 

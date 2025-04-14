@@ -266,106 +266,61 @@ const SingleUser = ({ params }) => {
       throw new Error("User ID is missing");
     }
     
-    // Create update payload (similar to add but without password unless provided)
+    // Create update payload including all necessary data
     const payload = {
       email: formData.email,
-      role: formData.role
+      role: formData.role,
+      profileData: formData.profileData
     };
     
-    // Only include password if it's provided (for changing password)
+    // Only include password if it's provided
     if (formData.password) {
       payload.password = formData.password;
     }
     
-    // Call API to update user
-    const res = await fetch(`/api/admin/users/${id}`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload)
-    });
-    
-    const data = await res.json();
-    
-    if (!res.ok) {
-      throw new Error(data.error || "Failed to update user");
+    // Call API to update user with all data in one request
+    try {
+      const res = await fetch(`/api/admin/users/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      
+      // Handle non-JSON responses properly
+      const contentType = res.headers.get("content-type");
+      if (!contentType || !contentType.includes("application/json")) {
+        const errorText = await res.text();
+        console.error("Non-JSON response:", errorText);
+        throw new Error("Received invalid response from server. Please try again.");
+      }
+      
+      const data = await res.json();
+      
+      if (!res.ok) {
+        throw new Error(data.error || "Failed to update user");
+      }
+      
+      showToast("User updated successfully", "success");
+      
+      // Reset form and close dialog
+      resetForm();
+      setIsEditingUser(false);
+      
+      // Refresh data
+      refreshData();
+    } catch (error) {
+      if (error.message.includes("Unexpected token")) {
+        throw new Error("Server returned an invalid response. Please try again later.");
+      } else {
+        throw error;
+      }
     }
-    
-    // Update profile based on role
-    if (formData.role === "USER") {
-      await updateUserProfile(userId);
-    } else if (formData.role === "PROVIDER") {
-      await updateProviderProfile(userId);
-    }
-    
-    // Use your custom toast
-    showToast("User updated successfully", "success");
-    
-    // Reset form and close dialog
-    resetForm();
-    setIsEditingUser(false);
-    
-    // Refresh data
-    refreshData();
   } catch (err) {
     console.error(err);
-    // Use your custom toast
     showToast(err.message || "Failed to update user", "error");
   } finally {
     setLoading(false);
   }
-}
-
-const updateUserProfile = async (userId) => {
-  if (!userId) throw new Error("User ID is missing");
-  
-  const profileData = {
-    name: formData.profileData.name,
-    location: formData.profileData.location || null,
-    phoneNumber: formData.profileData.phoneNumber || null,
-    gender: formData.profileData.gender || null,
-  };
-  
-  const res = await fetch(`/api/admin/users/${userId}/profile`, {
-    method: 'PATCH',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(profileData)
-  });
-  
-  const data = await res.json();
-  
-  if (!res.ok) {
-    throw new Error(data.error || "Failed to update user profile");
-  }
-  
-  return data;
-}
-
-const updateProviderProfile = async (userId) => {
-  if (!userId) throw new Error("User ID is missing");
-  
-  const profileData = {
-    name: formData.profileData.name,
-    businessName: formData.profileData.businessName,
-    description: formData.profileData.description || null,
-    address: formData.profileData.address,
-    phoneNumber: formData.profileData.phoneNumber,
-    businessHours: formData.profileData.businessHours || null,
-    logo: formData.profileData.image || null
-  };
-  
-  const res = await fetch(`/api/admin/users/${userId}/provider-profile`, {
-    method: 'PATCH',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(profileData)
-  });
-  
-  const data = await res.json();
-  
-  if (!res.ok) {
-    throw new Error(data.error || "Failed to update provider profile");
-  }
-  
-  return data;
 }
 
   if (loading) {
