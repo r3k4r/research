@@ -7,9 +7,7 @@ import {
   DollarSign, 
   Users, 
   Clock, 
-  Leaf, 
-  TrendingUp,
-  AlertCircle
+  TrendingUp
 } from 'lucide-react';
 
 export function DashboardMetrics() {
@@ -18,9 +16,7 @@ export function DashboardMetrics() {
     totalOrders: 0,
     pendingOrders: 0,
     activeCustomers: 0,
-    wasteReduction: 0,
     averageOrder: 0,
-    expiringItems: 0,
     revenueChangePercentage: 0,
     averageOrderChangePercentage: 0,
     isLoading: true,
@@ -106,32 +102,6 @@ export function DashboardMetrics() {
           <div className="text-2xl font-bold">${metrics.isLoading ? '...' : metrics.averageOrder.toFixed(2)}</div>
           <p className="text-xs text-muted-foreground">
             {metrics.averageOrderChangePercentage > 0 ? '+' : ''}{metrics.averageOrderChangePercentage}% from last month
-          </p>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium">Waste Reduction</CardTitle>
-          <Leaf className="h-4 w-4 text-muted-foreground" />
-        </CardHeader>
-        <CardContent>
-          <div className="text-2xl font-bold">{metrics.isLoading ? '...' : metrics.wasteReduction}%</div>
-          <p className="text-xs text-muted-foreground">
-            Food waste saved this month
-          </p>
-        </CardContent>
-      </Card>
-      
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium">Expiring Items</CardTitle>
-          <AlertCircle className="h-4 w-4 text-muted-foreground" />
-        </CardHeader>
-        <CardContent>
-          <div className="text-2xl font-bold">{metrics.isLoading ? '...' : metrics.expiringItems}</div>
-          <p className="text-xs text-muted-foreground">
-            Items expiring within 7 days
           </p>
         </CardContent>
       </Card>

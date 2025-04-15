@@ -81,20 +81,6 @@ export async function GET() {
       }
     });
     
-    // Get expiring items
-    const nextWeek = new Date(now);
-    nextWeek.setDate(now.getDate() + 7);
-    
-    const expiringItems = await prisma.foodItem.count({
-      where: {
-        providerId: providerId,
-        expiresAt: {
-          gte: now,
-          lte: nextWeek
-        }
-      }
-    });
-    
     // Calculate average order value
     const averageOrder = recentOrders.length > 0 
       ? (recentOrders.reduce((sum, order) => sum + order.totalAmount, 0) / recentOrders.length)
@@ -108,26 +94,12 @@ export async function GET() {
       ? Math.round(((averageOrder - previousAverageOrder) / previousAverageOrder) * 100)
       : 0;
     
-    // Calculate waste reduction (using saved data from ProviderMonthlySummary)
-    const lastMonthSummary = await prisma.providerMonthlySummary.findFirst({
-      where: {
-        providerId: providerId,
-      },
-      orderBy: {
-        month: 'desc'
-      }
-    });
-    
-    const wasteReduction = lastMonthSummary?.wasteReduction || 0;
-    
     return NextResponse.json({
       totalRevenue,
       totalOrders: recentOrders.length,
       pendingOrders,
       activeCustomers: activeCustomers.length,
-      wasteReduction,
       averageOrder,
-      expiringItems,
       revenueChangePercentage,
       averageOrderChangePercentage
     }, { status: 200 });
