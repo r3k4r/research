@@ -7,14 +7,11 @@ import ProviderHeader from '@/components/provider/ProviderHeader';
 export default function ProviderDashboardLayout({ children }) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   
-  // Handle responsive behavior - auto-open on desktop, closed on mobile
   useEffect(() => {
     const handleResize = () => {
       setIsSidebarOpen(window.innerWidth >= 1024);
     };
-    
-    // Set initial state
-    handleResize();
+        handleResize();
     
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);

@@ -39,13 +39,11 @@ export default function UsersPage() {
     password: "",
     role: "USER",
     profileData: {
-      // User profile fields
       name: "",
       location: "",
       phoneNumber: "",
       gender: "",
       image: "",
-      // Provider profile fields
       name: "",
       businessName: "",
       description: "",
@@ -284,15 +282,21 @@ export default function UsersPage() {
       const payload = {
         email: formData.email,
         role: formData.role,
-        profileData: formData.profileData
+        profileData: {...formData.profileData}
       };
+      
+      // Map image field to logo for provider profiles
+      if (formData.role === "PROVIDER") {
+        payload.profileData.logo = formData.profileData.image;
+        // Optional: Remove the image property to avoid confusion
+        delete payload.profileData.image;
+      }
       
       // Only include password if it's provided (for changing password)
       if (formData.password) {
         payload.password = formData.password;
       }
       
-      // Call API to update user (including profile data in the same request)
       try {
         const res = await fetch(`/api/admin/users/${userId}`, {
           method: 'PATCH',
@@ -314,7 +318,6 @@ export default function UsersPage() {
           throw new Error(data.error || "Failed to update user");
         }
         
-        // Success - no need for separate profile updates anymore
         showToast("User updated successfully", "success");
         
         // Reset form and close dialog
