@@ -1,5 +1,6 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { 
   ShoppingBag, 
@@ -12,16 +13,45 @@ import {
 } from 'lucide-react';
 
 export function DashboardMetrics() {
-  // In a real app, these would come from an API call
-  const metrics = {
-    totalRevenue: 1824.50,
-    totalOrders: 42,
-    pendingOrders: 8,
-    activeCustomers: 65,
-    wasteReduction: 86,
-    averageOrder: 43.44,
-    expiringItems: 12
-  };
+  const [metrics, setMetrics] = useState({
+    totalRevenue: 0,
+    totalOrders: 0,
+    pendingOrders: 0,
+    activeCustomers: 0,
+    wasteReduction: 0,
+    averageOrder: 0,
+    expiringItems: 0,
+    revenueChangePercentage: 0,
+    averageOrderChangePercentage: 0,
+    isLoading: true,
+    error: null
+  });
+
+  useEffect(() => {
+    async function fetchDashboardMetrics() {
+      try {
+        const response = await fetch('/api/provider/dashboardmetrics');
+        if (!response.ok) {
+          throw new Error('Failed to fetch dashboard metrics');
+        }
+        const data = await response.json();
+        setMetrics({
+          ...data,
+          isLoading: false,
+          error: null
+        });
+      } catch (error) {
+        setMetrics(prev => ({
+          ...prev,
+          isLoading: false,
+          error: error.message
+        }));
+        console.error('Error fetching dashboard metrics:', error);
+      }
+    }
+
+    fetchDashboardMetrics();
+  }, []);
 
   return (
     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
@@ -31,9 +61,9 @@ export function DashboardMetrics() {
           <DollarSign className="h-4 w-4 text-muted-foreground" />
         </CardHeader>
         <CardContent>
-          <div className="text-2xl font-bold">${metrics.totalRevenue.toFixed(2)}</div>
+          <div className="text-2xl font-bold">${metrics.isLoading ? '...' : metrics.totalRevenue.toFixed(2)}</div>
           <p className="text-xs text-muted-foreground">
-            +18% from last month
+            {metrics.revenueChangePercentage > 0 ? '+' : ''}{metrics.revenueChangePercentage}% from last month
           </p>
         </CardContent>
       </Card>
@@ -44,11 +74,11 @@ export function DashboardMetrics() {
           <ShoppingBag className="h-4 w-4 text-muted-foreground" />
         </CardHeader>
         <CardContent>
-          <div className="text-2xl font-bold">{metrics.totalOrders}</div>
+          <div className="text-2xl font-bold">{metrics.isLoading ? '...' : metrics.totalOrders}</div>
           <div className="flex items-center space-x-2">
             <Clock className="h-4 w-4 text-amber-500" />
             <p className="text-xs text-muted-foreground">
-              {metrics.pendingOrders} orders pending
+              {metrics.isLoading ? '...' : metrics.pendingOrders} orders pending
             </p>
           </div>
         </CardContent>
@@ -60,7 +90,7 @@ export function DashboardMetrics() {
           <Users className="h-4 w-4 text-muted-foreground" />
         </CardHeader>
         <CardContent>
-          <div className="text-2xl font-bold">{metrics.activeCustomers}</div>
+          <div className="text-2xl font-bold">{metrics.isLoading ? '...' : metrics.activeCustomers}</div>
           <p className="text-xs text-muted-foreground">
             Active in the last 30 days
           </p>
@@ -73,35 +103,35 @@ export function DashboardMetrics() {
           <TrendingUp className="h-4 w-4 text-muted-foreground" />
         </CardHeader>
         <CardContent>
-          <div className="text-2xl font-bold">${metrics.averageOrder.toFixed(2)}</div>
+          <div className="text-2xl font-bold">${metrics.isLoading ? '...' : metrics.averageOrder.toFixed(2)}</div>
           <p className="text-xs text-muted-foreground">
-            +2% from last week
+            {metrics.averageOrderChangePercentage > 0 ? '+' : ''}{metrics.averageOrderChangePercentage}% from last month
           </p>
         </CardContent>
       </Card>
-      
+
       <Card>
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
           <CardTitle className="text-sm font-medium">Waste Reduction</CardTitle>
           <Leaf className="h-4 w-4 text-muted-foreground" />
         </CardHeader>
         <CardContent>
-          <div className="text-2xl font-bold">{metrics.wasteReduction} kg</div>
+          <div className="text-2xl font-bold">{metrics.isLoading ? '...' : metrics.wasteReduction}%</div>
           <p className="text-xs text-muted-foreground">
-            Food saved this month
+            Food waste saved this month
           </p>
         </CardContent>
       </Card>
       
       <Card>
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium">Expiring Soon</CardTitle>
+          <CardTitle className="text-sm font-medium">Expiring Items</CardTitle>
           <AlertCircle className="h-4 w-4 text-muted-foreground" />
         </CardHeader>
         <CardContent>
-          <div className="text-2xl font-bold">{metrics.expiringItems}</div>
+          <div className="text-2xl font-bold">{metrics.isLoading ? '...' : metrics.expiringItems}</div>
           <p className="text-xs text-muted-foreground">
-            Items expiring in 24 hours
+            Items expiring within 7 days
           </p>
         </CardContent>
       </Card>
