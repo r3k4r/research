@@ -851,7 +851,7 @@ export default function ControlPanelPage() {
         <TabsContent value="categories">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-xl font-bold">Categories Management</CardTitle>
+              <CardTitle className="text-lg md:text-xl font-bold">Categories Management</CardTitle>
               <div className="space-x-2">
                 <Button variant="outline" size="sm" onClick={fetchCategories}>
                   <RefreshCw className="h-4 w-4 mr-1" /> Refresh
