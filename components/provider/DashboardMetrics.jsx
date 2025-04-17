@@ -10,6 +10,11 @@ import {
   TrendingUp
 } from 'lucide-react';
 
+// Helper function to format IQD currency
+const formatIQD = (amount) => {
+  return new Intl.NumberFormat('ar-IQ').format(Math.round(amount));
+};
+
 export function DashboardMetrics() {
   const [metrics, setMetrics] = useState({
     totalRevenue: 0,
@@ -19,6 +24,7 @@ export function DashboardMetrics() {
     averageOrder: 0,
     revenueChangePercentage: 0,
     averageOrderChangePercentage: 0,
+    currency: 'IQD',
     isLoading: true,
     error: null
   });
@@ -57,7 +63,7 @@ export function DashboardMetrics() {
           <DollarSign className="h-4 w-4 text-muted-foreground" />
         </CardHeader>
         <CardContent>
-          <div className="text-2xl font-bold">${metrics.isLoading ? '...' : metrics.totalRevenue.toFixed(2)}</div>
+          <div className="text-2xl font-bold">{metrics.isLoading ? '...' : `${formatIQD(metrics.totalRevenue)} IQD`}</div>
           <p className="text-xs text-muted-foreground">
             {metrics.revenueChangePercentage > 0 ? '+' : ''}{metrics.revenueChangePercentage}% from last month
           </p>
@@ -99,7 +105,7 @@ export function DashboardMetrics() {
           <TrendingUp className="h-4 w-4 text-muted-foreground" />
         </CardHeader>
         <CardContent>
-          <div className="text-2xl font-bold">${metrics.isLoading ? '...' : metrics.averageOrder.toFixed(2)}</div>
+          <div className="text-2xl font-bold">{metrics.isLoading ? '...' : `${formatIQD(metrics.averageOrder)} IQD`}</div>
           <p className="text-xs text-muted-foreground">
             {metrics.averageOrderChangePercentage > 0 ? '+' : ''}{metrics.averageOrderChangePercentage}% from last month
           </p>

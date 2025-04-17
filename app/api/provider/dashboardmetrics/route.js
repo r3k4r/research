@@ -101,7 +101,8 @@ export async function GET() {
       activeCustomers: activeCustomers.length,
       averageOrder,
       revenueChangePercentage,
-      averageOrderChangePercentage
+      averageOrderChangePercentage,
+      currency: 'IQD'
     }, { status: 200 });
     
   } catch (error) {
