@@ -40,6 +40,7 @@ export async function GET(req) {
     // Define where clause based on filter type, keeping it simple
     let whereClause = {
       providerId: providerId,
+      status: { not: 'SOLD' } // Don't show items that are already sold
     };
     
     if (filterType === 'expired') {
@@ -73,6 +74,14 @@ export async function GET(req) {
     const formattedItems = expiringItems.map(item => {
       const isExpired = new Date(item.expiresAt) < now;
       
+      // For expired items, update their status to EXPIRED if not already
+      if (isExpired && item.status === 'ACTIVE') {
+        prisma.foodItem.update({
+          where: { id: item.id },
+          data: { status: 'EXPIRED' }
+        }).catch(err => console.error('Error updating expired item status:', err));
+      }
+      
       return {
         id: item.id,
         name: item.name,
@@ -84,6 +93,7 @@ export async function GET(req) {
         expiresAt: item.expiresAt.toISOString(),
         category: item.category.name,
         categoryId: item.categoryId,
+        status: item.status,
         isExpired: isExpired
       };
     });
@@ -96,7 +106,7 @@ export async function GET(req) {
   }
 }
 
-// POST handler for increasing discount
+// POST handler for increasing discount and marking as sold
 export async function POST(req) {
   try {
     const session = await getServerSession(authOptions);
@@ -137,32 +147,39 @@ export async function POST(req) {
     
     // Process based on action type
     switch (data.action) {
-      case 'increaseDiscount': {
-        // Increase discount by 10% (or custom percentage)
-        const discountPercentage = data.percentage || 10;
-        const newDiscountedPrice = Math.max(
-          foodItem.price * (1 - (discountPercentage / 100)),
-          0.01 // Minimum price
-        );
+      case 'updatePrice': {
+        // Update the price with the new values
+        const originalPrice = parseFloat(data.originalPrice);
+        const discountedPrice = parseFloat(data.discountedPrice);
+        
+        if (isNaN(originalPrice) || isNaN(discountedPrice)) {
+          return NextResponse.json({ error: 'Invalid price values' }, { status: 400 });
+        }
+        
+        if (discountedPrice > originalPrice) {
+          return NextResponse.json({ error: 'Discounted price cannot be higher than original price' }, { status: 400 });
+        }
         
         const updatedItem = await prisma.foodItem.update({
           where: { id: data.itemId },
           data: {
-            discountedPrice: parseFloat(newDiscountedPrice.toFixed(2))
+            price: originalPrice,
+            discountedPrice: discountedPrice
           }
         });
         
         return NextResponse.json({
-          message: 'Discount increased successfully',
+          message: 'Prices updated successfully',
           item: updatedItem
         });
       }
       
       case 'markAsSold': {
-        // Mark item as sold by setting quantity to 0
+        // Mark item as sold by setting its status to SOLD
         const updatedItem = await prisma.foodItem.update({
           where: { id: data.itemId },
           data: {
+            status: 'SOLD',
             quantity: 0
           }
         });
