@@ -30,42 +30,31 @@ export async function GET(req) {
     // Get current date
     const now = new Date();
     
-    // Get date for 1 hour from now
-    const oneHourFromNow = new Date();
-    oneHourFromNow.setHours(oneHourFromNow.getHours() + 1);
+    // Get date for one hour from now
+    const oneHourFromNow = new Date(now.getTime() + 60 * 60 * 1000);
 
     // Parse filters from query parameters
     const url = new URL(req.url);
     const filterType = url.searchParams.get('filter') || 'all'; // all, expired, expiring-soon
     
-    // Define where clause based on filter type
+    // Define where clause based on filter type, keeping it simple
     let whereClause = {
       providerId: providerId,
-      quantity: {
-        gt: 0
-      }
     };
     
     if (filterType === 'expired') {
+      // Items that have already expired (expiresAt < now)
       whereClause.expiresAt = {
         lt: now
       };
     } else if (filterType === 'expiring-soon') {
+      // Items that will expire within the next hour (now <= expiresAt < now + 1 hour)
       whereClause.expiresAt = {
         gte: now,
         lt: oneHourFromNow
       };
-    } else {
-      // For 'all', include both expired and those expiring within 1 hour
-      whereClause = {
-        providerId: providerId,
-        quantity: { gt: 0 },
-        OR: [
-          { expiresAt: { lt: now } },  // Expired
-          { expiresAt: { lt: oneHourFromNow } }  // Will expire in the next hour
-        ]
-      };
     }
+    // For 'all', we don't add any date filter - show all items
     
     // Find items that match the filter criteria
     const expiringItems = await prisma.foodItem.findMany({
@@ -78,18 +67,26 @@ export async function GET(req) {
       }
     });
     
+    console.log(`Found ${expiringItems.length} items for filter '${filterType}'`);
+    
     // Format the items for the frontend
-    const formattedItems = expiringItems.map(item => ({
-      id: item.id,
-      name: item.name,
-      image: item.image || '/images/placeholder-food.jpg',
-      currentPrice: item.discountedPrice,
-      originalPrice: item.price,
-      quantity: item.quantity,
-      expiresAt: item.expiresAt.toISOString(),
-      category: item.category.name,
-      isExpired: item.expiresAt < now
-    }));
+    const formattedItems = expiringItems.map(item => {
+      const isExpired = new Date(item.expiresAt) < now;
+      
+      return {
+        id: item.id,
+        name: item.name,
+        description: item.description,
+        image: item.image || '/images/placeholder-food.jpg',
+        currentPrice: item.discountedPrice,
+        originalPrice: item.price,
+        quantity: item.quantity,
+        expiresAt: item.expiresAt.toISOString(),
+        category: item.category.name,
+        categoryId: item.categoryId,
+        isExpired: isExpired
+      };
+    });
     
     return NextResponse.json(formattedItems);
     

@@ -30,20 +30,34 @@ import {
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
-import { Toast } from '../ui/toast';
-
+import { Textarea } from "@/components/ui/textarea";
+import { format } from "date-fns";
+import { useToast } from '../ui/toast';
 
 export function ExpiringItems() {
+  const { showToast, ToastComponent } = useToast();
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [filterType, setFilterType] = useState('all');
   const [actionInProgress, setActionInProgress] = useState(false);
   const [discountDialogOpen, setDiscountDialogOpen] = useState(false);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [discountPercentage, setDiscountPercentage] = useState(10);
   const [selectedItemId, setSelectedItemId] = useState(null);
+  const [selectedItem, setSelectedItem] = useState(null);
+  const [categories, setCategories] = useState([]);
+  const [editFormData, setEditFormData] = useState({
+    name: '',
+    description: '',
+    price: 0,
+    discountedPrice: 0,
+    quantity: 0,
+    categoryId: '',
+    expiresAt: ''
+  });
 
-  // Handle filter change separately from the useEffect dependency
+  // Handle filter change
   const handleFilterChange = (newFilter) => {
     setFilterType(newFilter);
     fetchExpiringItems(newFilter);
@@ -52,15 +66,33 @@ export function ExpiringItems() {
   // Initial data load
   useEffect(() => {
     fetchExpiringItems(filterType);
+    fetchCategories();
   }, []);
+
+  async function fetchCategories() {
+    try {
+      const response = await fetch('/api/categories');
+      if (response.ok) {
+        const data = await response.json();
+        setCategories(data);
+      }
+    } catch (error) {
+      console.error('Error fetching categories:', error);
+    }
+  }
 
   async function fetchExpiringItems(filter = filterType) {
     try {
       setLoading(true);
-      const response = await fetch(`/api/provider/expiringitems?filter=${filter}`, {
+      // Add timestamp to prevent caching and force a fresh fetch every time
+      const timestamp = Date.now();
+      const response = await fetch(`/api/provider/expiringitems?filter=${filter}&t=${timestamp}`, {
+        method: 'GET',
         cache: 'no-store',
         headers: {
-          'Cache-Control': 'no-cache'
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          'Pragma': 'no-cache',
+          'Expires': '0'
         }
       });
       
@@ -69,6 +101,7 @@ export function ExpiringItems() {
       }
       
       const data = await response.json();
+      console.log(`Fetched ${data.length} items for filter '${filter}'`);
       setItems(data);
     } catch (err) {
       console.error('Error fetching expiring items:', err);
@@ -90,8 +123,8 @@ export function ExpiringItems() {
   // Get urgency className based on hours remaining
   const getUrgencyClass = (hours, isExpired) => {
     if (isExpired || hours < 0) return "text-red-600";
-    if (hours < 6) return "text-red-600";
-    if (hours < 12) return "text-amber-600";
+    if (hours < 2) return "text-red-600";
+    if (hours < 4) return "text-amber-600";
     return "text-green-600";
   };
   
@@ -106,6 +139,56 @@ export function ExpiringItems() {
     }
     const days = Math.floor(hours / 24);
     return `${days} day${days !== 1 ? 's' : ''}`;
+  };
+
+  // Handler for editing item
+  const handleEditItem = (item) => {
+    setSelectedItem(item);
+    setEditFormData({
+      name: item.name,
+      description: item.description || '',
+      price: item.originalPrice,
+      discountedPrice: item.currentPrice,
+      quantity: item.quantity,
+      categoryId: item.categoryId,
+      expiresAt: format(new Date(item.expiresAt), "yyyy-MM-dd'T'HH:mm")
+    });
+    setEditDialogOpen(true);
+  };
+
+  // Submit edit form
+  const handleEditSubmit = async () => {
+    if (!selectedItem) return;
+    
+    try {
+      setActionInProgress(true);
+      const response = await fetch('/api/provider/expiringitems', {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          itemId: selectedItem.id,
+          ...editFormData,
+        })
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to update item');
+      }
+
+      showToast("Item updated successfully", "success");
+      
+      fetchExpiringItems(filterType);
+    } catch (err) {
+      console.error('Error updating item:', err);
+      showToast(err.message || "Failed to update item", "error");
+    } finally {
+      setEditDialogOpen(false);
+      setSelectedItem(null);
+      setActionInProgress(false);
+    }
   };
 
   // Handler for increasing discount
@@ -129,20 +212,12 @@ export function ExpiringItems() {
         throw new Error(error.error || 'Failed to increase discount');
       }
 
-      const result = await response.json();
-      toast({
-        title: "Success",
-        description: "Item discount increased successfully",
-      });
+      showToast("Item discount increased successfully", "success");
       
-      fetchExpiringItems();
+      fetchExpiringItems(filterType);
     } catch (err) {
       console.error('Error increasing discount:', err);
-      toast({
-        title: "Error",
-        description: err.message || "Failed to increase discount",
-        variant: "destructive",
-      });
+      showToast(err.message || "Failed to increase discount", "error");
     } finally {
       setDiscountDialogOpen(false);
       setSelectedItemId(null);
@@ -171,20 +246,12 @@ export function ExpiringItems() {
         throw new Error(error.error || 'Failed to mark item as sold');
       }
 
-      const result = await response.json();
-      toast({
-        title: "Success",
-        description: "Item marked as sold",
-      });
+      showToast("Item marked as sold", "success");
       
-      fetchExpiringItems();
+      fetchExpiringItems(filterType);
     } catch (err) {
       console.error('Error marking as sold:', err);
-      toast({
-        title: "Error",
-        description: err.message || "Failed to mark item as sold",
-        variant: "destructive",
-      });
+      showToast(err.message || "Failed to mark item as sold", "error");
     } finally {
       setActionInProgress(false);
     }
@@ -207,19 +274,12 @@ export function ExpiringItems() {
         throw new Error(error.error || 'Failed to delete item');
       }
 
-      toast({
-        title: "Success",
-        description: "Item deleted successfully",
-      });
+      showToast("Item deleted successfully", "success");
       
-      fetchExpiringItems();
+      fetchExpiringItems(filterType);
     } catch (err) {
       console.error('Error deleting item:', err);
-      toast({
-        title: "Error",
-        description: err.message || "Failed to delete item",
-        variant: "destructive",
-      });
+      showToast(err.message || "Failed to delete item", "error");
     } finally {
       setActionInProgress(false);
     }
@@ -342,7 +402,7 @@ export function ExpiringItems() {
                       <Button 
                         variant="ghost" 
                         size="icon"
-                        onClick={() => window.location.href = `/provider-dashboard/inventory/edit/${item.id}`}
+                        onClick={() => handleEditItem(item)}
                         disabled={actionInProgress}
                       >
                         <Pencil className="h-4 w-4" />
@@ -357,20 +417,32 @@ export function ExpiringItems() {
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
                           <DropdownMenuItem 
-                            onClick={() => {
+                            onClick={(e) => {
+                              e.preventDefault();
                               setSelectedItemId(item.id);
                               setDiscountDialogOpen(true);
                             }}
+                            onSelect={(e) => e.preventDefault()}
                           >
                             Increase discount
                           </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => handleMarkAsSold(item.id)}>
+                          <DropdownMenuItem 
+                            onClick={(e) => {
+                              e.preventDefault();
+                              handleMarkAsSold(item.id);
+                            }}
+                            onSelect={(e) => e.preventDefault()}
+                          >
                             Mark as sold
                           </DropdownMenuItem>
                           <DropdownMenuSeparator />
                           <DropdownMenuItem 
                             className="text-red-600"
-                            onClick={() => handleDeleteItem(item.id)}
+                            onClick={(e) => {
+                              e.preventDefault();
+                              handleDeleteItem(item.id);
+                            }}
+                            onSelect={(e) => e.preventDefault()}
                           >
                             <Trash className="h-4 w-4 mr-2" />
                             Remove item
@@ -393,7 +465,14 @@ export function ExpiringItems() {
       {renderFilter()}
       {renderContent()}
 
-      <Dialog open={discountDialogOpen} onOpenChange={setDiscountDialogOpen}>
+      {/* Discount dialog */}
+      <Dialog open={discountDialogOpen} onOpenChange={(open) => {
+        setDiscountDialogOpen(open);
+        if (!open) {
+          setSelectedItemId(null);
+          setDiscountPercentage(10);
+        }
+      }}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Increase Discount</DialogTitle>
@@ -436,6 +515,131 @@ export function ExpiringItems() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Edit item dialog */}
+      <Dialog open={editDialogOpen} onOpenChange={(open) => {
+        setEditDialogOpen(open);
+        if (!open) {
+          setSelectedItem(null);
+          setEditFormData({
+            name: '',
+            description: '',
+            price: 0,
+            discountedPrice: 0,
+            quantity: 0,
+            categoryId: '',
+            expiresAt: ''
+          });
+        }
+      }}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle>Edit Item</DialogTitle>
+            <DialogDescription>
+              Update the details of your item
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="name" className="text-right">
+                Name
+              </Label>
+              <Input
+                id="name"
+                value={editFormData.name}
+                onChange={(e) => setEditFormData({...editFormData, name: e.target.value})}
+                className="col-span-3"
+              />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="description" className="text-right">
+                Description
+              </Label>
+              <Textarea
+                id="description"
+                value={editFormData.description}
+                onChange={(e) => setEditFormData({...editFormData, description: e.target.value})}
+                className="col-span-3"
+                rows={3}
+              />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="price" className="text-right">
+                Price
+              </Label>
+              <Input
+                id="price"
+                type="number"
+                min="0.01"
+                step="0.01"
+                value={editFormData.price}
+                onChange={(e) => setEditFormData({...editFormData, price: parseFloat(e.target.value) || 0})}
+                className="col-span-3"
+              />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="discountedPrice" className="text-right">
+                Discounted Price
+              </Label>
+              <Input
+                id="discountedPrice"
+                type="number"
+                min="0.01"
+                step="0.01"
+                value={editFormData.discountedPrice}
+                onChange={(e) => setEditFormData({...editFormData, discountedPrice: parseFloat(e.target.value) || 0})}
+                className="col-span-3"
+              />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="quantity" className="text-right">
+                Quantity
+              </Label>
+              <Input
+                id="quantity"
+                type="number"
+                min="0"
+                value={editFormData.quantity}
+                onChange={(e) => setEditFormData({...editFormData, quantity: parseInt(e.target.value, 10) || 0})}
+                className="col-span-3"
+              />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="expiresAt" className="text-right">
+                Expires At
+              </Label>
+              <Input
+                id="expiresAt"
+                type="datetime-local"
+                value={editFormData.expiresAt}
+                onChange={(e) => setEditFormData({...editFormData, expiresAt: e.target.value})}
+                className="col-span-3"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button 
+              variant="outline" 
+              onClick={() => {
+                setEditDialogOpen(false);
+                setSelectedItem(null);
+              }}
+              disabled={actionInProgress}
+            >
+              Cancel
+            </Button>
+            <Button 
+              onClick={handleEditSubmit}
+              disabled={actionInProgress}
+            >
+              Save Changes
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      
+      {/* Toast component */}
+      {ToastComponent}
     </div>
   );
 }
