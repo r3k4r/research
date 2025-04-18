@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { formatDistance } from 'date-fns';
 import {
   Table,
@@ -15,62 +15,40 @@ import { OrderStatusBadge } from './OrderStatusBadge';
 import { Eye } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
-// Mock data for recent orders
-const mockOrders = [
-  {
-    id: 'ORD-5392',
-    customer: 'John Doe',
-    date: '2023-07-20T14:45:00',
-    status: 'DELIVERED',
-    amount: 29.99,
-  },
-  {
-    id: 'ORD-5391',
-    customer: 'Jane Smith',
-    date: '2023-07-20T13:30:00',
-    status: 'IN_TRANSIT',
-    amount: 42.50,
-  },
-  {
-    id: 'ORD-5390',
-    customer: 'Mike Johnson',
-    date: '2023-07-20T12:15:00',
-    status: 'READY_FOR_PICKUP',
-    amount: 18.75,
-  },
-  {
-    id: 'ORD-5389',
-    customer: 'Emily Wilson',
-    date: '2023-07-20T11:00:00',
-    status: 'PREPARING',
-    amount: 35.25,
-  },
-  {
-    id: 'ORD-5388',
-    customer: 'David Brown',
-    date: '2023-07-20T10:30:00',
-    status: 'ACCEPTED',
-    amount: 24.99,
-  },
-  {
-    id: 'ORD-5387',
-    customer: 'Sarah Miller',
-    date: '2023-07-20T09:45:00',
-    status: 'PENDING',
-    amount: 15.50,
-  },
-  {
-    id: 'ORD-5386',
-    customer: 'Michael Davis',
-    date: '2023-07-19T18:30:00',
-    status: 'CANCELLED',
-    amount: 27.75,
-  }
-];
-
 export function RecentOrdersTable({ extended = false }) {
-  const [orders] = useState(mockOrders);
+  const [orders, setOrders] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const router = useRouter();
+  
+  useEffect(() => {
+    async function fetchOrders() {
+      try {
+        // Set limit parameter based on whether it's extended view
+        const limit = extended ? 20 : 5;
+        const response = await fetch(`/api/provider/recentorders?limit=${limit}`, {
+          cache: 'no-store',
+          headers: {
+            'Cache-Control': 'no-cache'
+          }
+        });
+        
+        if (!response.ok) {
+          throw new Error('Failed to fetch orders');
+        }
+        
+        const data = await response.json();
+        setOrders(data);
+      } catch (err) {
+        console.error('Error fetching orders:', err);
+        setError(err.message);
+      } finally {
+        setLoading(false);
+      }
+    }
+    
+    fetchOrders();
+  }, [extended]);
   
   // For non-extended view, only show first 5 orders
   const displayedOrders = extended ? orders : orders.slice(0, 5);
@@ -81,6 +59,14 @@ export function RecentOrdersTable({ extended = false }) {
 
   const viewAllOrdersHandler = () => {
     router.push('/provider-dashboard/orders');
+  }
+
+  if (loading) {
+    return <div className="w-full py-4 text-center text-sm text-muted-foreground">Loading orders...</div>;
+  }
+
+  if (error) {
+    return <div className="w-full py-4 text-center text-sm text-red-500">Error loading orders: {error}</div>;
   }
 
   return (
@@ -107,7 +93,7 @@ export function RecentOrdersTable({ extended = false }) {
             ) : (
               displayedOrders.map((order) => (
                 <TableRow key={order.id}>
-                  <TableCell className="font-medium">{order.id}</TableCell>
+                  <TableCell className="font-medium">{order.id.substring(0, 8).toUpperCase()}</TableCell>
                   <TableCell>{order.customer}</TableCell>
                   {extended && (
                     <TableCell className="hidden md:table-cell">
@@ -120,7 +106,12 @@ export function RecentOrdersTable({ extended = false }) {
                   <TableCell className="text-right">${order.amount.toFixed(2)}</TableCell>
                   {extended && (
                     <TableCell className="text-right">
-                      <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        className="h-8 w-8 p-0"
+                        onClick={() => router.push(`/provider-dashboard/orders/${order.id}`)}
+                      >
                         <Eye className="h-4 w-4" />
                         <span className="sr-only">View order details</span>
                       </Button>
