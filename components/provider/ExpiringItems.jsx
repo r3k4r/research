@@ -27,10 +27,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
-
 
 export function ExpiringItems() {
   const [items, setItems] = useState([]);
@@ -42,14 +41,21 @@ export function ExpiringItems() {
   const [discountPercentage, setDiscountPercentage] = useState(10);
   const [selectedItemId, setSelectedItemId] = useState(null);
 
-  useEffect(() => {
-    fetchExpiringItems();
-  }, [filterType]);
+  // Handle filter change separately from the useEffect dependency
+  const handleFilterChange = (newFilter) => {
+    setFilterType(newFilter);
+    fetchExpiringItems(newFilter);
+  };
 
-  async function fetchExpiringItems() {
+  // Initial data load
+  useEffect(() => {
+    fetchExpiringItems(filterType);
+  }, []);
+
+  async function fetchExpiringItems(filter = filterType) {
     try {
       setLoading(true);
-      const response = await fetch(`/api/provider/expiringitems?filter=${filterType}`, {
+      const response = await fetch(`/api/provider/expiringitems?filter=${filter}`, {
         cache: 'no-store',
         headers: {
           'Cache-Control': 'no-cache'
@@ -217,30 +223,34 @@ export function ExpiringItems() {
     }
   };
   
-  if (loading) {
-    return <div className="text-center py-6 text-sm text-muted-foreground">Loading expiring items...</div>;
-  }
+  // Render the filter UI separately from the conditional content
+  const renderFilter = () => (
+    <div className="flex justify-end mb-4">
+      <Select value={filterType} onValueChange={handleFilterChange} disabled={actionInProgress}>
+        <SelectTrigger className="w-[180px]">
+          <SelectValue placeholder="Filter items" />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="all">All Items</SelectItem>
+          <SelectItem value="expired">Expired</SelectItem>
+          <SelectItem value="expiring-soon">Expiring Soon</SelectItem>
+        </SelectContent>
+      </Select>
+    </div>
+  );
   
-  if (error) {
-    return <div className="text-center py-6 text-sm text-red-500">Error loading expiring items: {error}</div>;
-  }
-  
-  return (
-    <div className="space-y-4">
-      <div className="flex justify-end mb-4">
-        <Select value={filterType} onValueChange={setFilterType}>
-          <SelectTrigger className="w-[180px]">
-            <SelectValue placeholder="Filter items" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Items</SelectItem>
-            <SelectItem value="expired">Expired</SelectItem>
-            <SelectItem value="expiring-soon">Expiring Soon</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
-
-      {items.length === 0 ? (
+  // Render the content based on loading and error states
+  const renderContent = () => {
+    if (loading) {
+      return <div className="text-center py-6 text-sm text-muted-foreground">Loading expiring items...</div>;
+    }
+    
+    if (error) {
+      return <div className="text-center py-6 text-sm text-red-500">Error loading expiring items: {error}</div>;
+    }
+    
+    if (items.length === 0) {
+      return (
         <div className="text-center py-6">
           <div className="flex justify-center mb-2">
             <div className="p-3 rounded-full bg-green-100">
@@ -265,112 +275,121 @@ export function ExpiringItems() {
             {filterType === 'all' ? 'Your inventory is in good condition' : 'Try changing the filter'}
           </p>
         </div>
-      ) : (
-        <div className="rounded-md border">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Item</TableHead>
-                <TableHead className="hidden md:table-cell">Category</TableHead>
-                <TableHead className="text-center">Expires in</TableHead>
-                <TableHead className="text-right">Price</TableHead>
-                <TableHead className="text-center">Quantity</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {items.map((item) => {
-                const hoursLeft = getHoursUntilExpiration(item.expiresAt);
-                const urgencyClass = getUrgencyClass(hoursLeft, item.isExpired);
-                
-                return (
-                  <TableRow key={item.id}>
-                    <TableCell>
-                      <div className="flex items-center gap-3">
-                        <div className="relative h-10 w-10 overflow-hidden rounded">
-                          <Image
-                            src={item.image}
-                            alt={item.name}
-                            width={40}
-                            height={40}
-                            className="object-cover"
-                          />
-                        </div>
-                        <div>
-                          <p className="font-medium">{item.name}</p>
-                          <p className="text-xs text-muted-foreground">{item.id.substring(0, 8).toUpperCase()}</p>
-                        </div>
+      );
+    }
+    
+    return (
+      <div className="rounded-md border">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Item</TableHead>
+              <TableHead className="hidden md:table-cell">Category</TableHead>
+              <TableHead className="text-center">Expires in</TableHead>
+              <TableHead className="text-right">Price</TableHead>
+              <TableHead className="text-center">Quantity</TableHead>
+              <TableHead className="text-right">Actions</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {items.map((item) => {
+              const hoursLeft = getHoursUntilExpiration(item.expiresAt);
+              const urgencyClass = getUrgencyClass(hoursLeft, item.isExpired);
+              
+              return (
+                <TableRow key={item.id}>
+                  <TableCell>
+                    <div className="flex items-center gap-3">
+                      <div className="relative h-10 w-10 overflow-hidden rounded">
+                        <Image
+                          src={item.image}
+                          alt={item.name}
+                          width={40}
+                          height={40}
+                          className="object-cover"
+                        />
                       </div>
-                    </TableCell>
-                    <TableCell className="hidden md:table-cell">
-                      <Badge variant="outline">{item.category}</Badge>
-                    </TableCell>
-                    <TableCell className="text-center">
-                      <div className={`flex items-center justify-center gap-1 ${urgencyClass}`}>
-                        <AlertCircle className="h-4 w-4" />
-                        <span>{formatExpiryTime(item.expiresAt)}</span>
-                      </div>
-                    </TableCell>
-                    <TableCell className="text-right">
                       <div>
-                        <p className="font-medium">${item.currentPrice.toFixed(2)}</p>
-                        <p className="text-xs text-muted-foreground line-through">
-                          ${item.originalPrice.toFixed(2)}
-                        </p>
+                        <p className="font-medium">{item.name}</p>
+                        <p className="text-xs text-muted-foreground">{item.id.substring(0, 8).toUpperCase()}</p>
                       </div>
-                    </TableCell>
-                    <TableCell className="text-center">
-                      {item.quantity}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex justify-end gap-2">
-                        <Button 
-                          variant="ghost" 
-                          size="icon"
-                          onClick={() => window.location.href = `/provider-dashboard/inventory/edit/${item.id}`}
-                          disabled={actionInProgress}
-                        >
-                          <Pencil className="h-4 w-4" />
-                          <span className="sr-only">Edit item</span>
-                        </Button>
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="icon" disabled={actionInProgress}>
-                              <MoreHorizontal className="h-4 w-4" />
-                              <span className="sr-only">More options</span>
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuItem 
-                              onClick={() => {
-                                setSelectedItemId(item.id);
-                                setDiscountDialogOpen(true);
-                              }}
-                            >
-                              Increase discount
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => handleMarkAsSold(item.id)}>
-                              Mark as sold
-                            </DropdownMenuItem>
-                            <DropdownMenuSeparator />
-                            <DropdownMenuItem 
-                              className="text-red-600"
-                              onClick={() => handleDeleteItem(item.id)}
-                            >
-                              <Trash className="h-4 w-4 mr-2" />
-                              Remove item
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                );
-              })}
-            </TableBody>
-          </Table>
-        </div>
-      )}
+                    </div>
+                  </TableCell>
+                  <TableCell className="hidden md:table-cell">
+                    <Badge variant="outline">{item.category}</Badge>
+                  </TableCell>
+                  <TableCell className="text-center">
+                    <div className={`flex items-center justify-center gap-1 ${urgencyClass}`}>
+                      <AlertCircle className="h-4 w-4" />
+                      <span>{formatExpiryTime(item.expiresAt)}</span>
+                    </div>
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <div>
+                      <p className="font-medium">${item.currentPrice.toFixed(2)}</p>
+                      <p className="text-xs text-muted-foreground line-through">
+                        ${item.originalPrice.toFixed(2)}
+                      </p>
+                    </div>
+                  </TableCell>
+                  <TableCell className="text-center">
+                    {item.quantity}
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <div className="flex justify-end gap-2">
+                      <Button 
+                        variant="ghost" 
+                        size="icon"
+                        onClick={() => window.location.href = `/provider-dashboard/inventory/edit/${item.id}`}
+                        disabled={actionInProgress}
+                      >
+                        <Pencil className="h-4 w-4" />
+                        <span className="sr-only">Edit item</span>
+                      </Button>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="icon" disabled={actionInProgress}>
+                            <MoreHorizontal className="h-4 w-4" />
+                            <span className="sr-only">More options</span>
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem 
+                            onClick={() => {
+                              setSelectedItemId(item.id);
+                              setDiscountDialogOpen(true);
+                            }}
+                          >
+                            Increase discount
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => handleMarkAsSold(item.id)}>
+                            Mark as sold
+                          </DropdownMenuItem>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem 
+                            className="text-red-600"
+                            onClick={() => handleDeleteItem(item.id)}
+                          >
+                            <Trash className="h-4 w-4 mr-2" />
+                            Remove item
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              );
+            })}
+          </TableBody>
+        </Table>
+      </div>
+    );
+  };
+  
+  return (
+    <div className="space-y-4">
+      {renderFilter()}
+      {renderContent()}
 
       <Dialog open={discountDialogOpen} onOpenChange={setDiscountDialogOpen}>
         <DialogContent>
