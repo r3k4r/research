@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import { 
   Table, 
@@ -20,72 +20,37 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 
-// Mock data for expiring items
-const mockExpiringItems = [
-  {
-    id: 'ITEM-1234',
-    name: 'Artisan Bread Bundle',
-    image: '/images/bread-bundle.jpg',
-    currentPrice: 7.99,
-    originalPrice: 12.99,
-    quantity: 8,
-    expiresAt: '2023-07-21T20:00:00',
-    category: 'Bakery'
-  },
-  {
-    id: 'ITEM-1235',
-    name: 'Organic Vegetable Box',
-    image: '/images/vegetable-box.jpg',
-    currentPrice: 10.99,
-    originalPrice: 17.99,
-    quantity: 5,
-    expiresAt: '2023-07-21T22:00:00',
-    category: 'Produce'
-  },
-  {
-    id: 'ITEM-1236',
-    name: 'Pasta Special',
-    image: '/images/pasta.jpg',
-    currentPrice: 8.49,
-    originalPrice: 13.99,
-    quantity: 12,
-    expiresAt: '2023-07-22T12:00:00',
-    category: 'Ready Meals'
-  },
-  {
-    id: 'ITEM-1237',
-    name: 'Cheese Selection',
-    image: '/images/cheese.jpg',
-    currentPrice: 9.99,
-    originalPrice: 14.99,
-    quantity: 3,
-    expiresAt: '2023-07-21T18:00:00',
-    category: 'Dairy'
-  },
-  {
-    id: 'ITEM-1238',
-    name: 'Fresh Fruit Bowl',
-    image: '/images/fruit-bowl.jpg',
-    currentPrice: 6.99,
-    originalPrice: 10.99,
-    quantity: 7,
-    expiresAt: '2023-07-21T16:00:00',
-    category: 'Fruits'
-  },
-  {
-    id: 'ITEM-1239',
-    name: 'Sandwich Pack',
-    image: '/images/sandwich-pack.jpg',
-    currentPrice: 5.99,
-    originalPrice: 8.99,
-    quantity: 4,
-    expiresAt: '2023-07-21T14:00:00',
-    category: 'Ready-to-eat'
-  }
-];
-
 export function ExpiringItems() {
-  const [items] = useState(mockExpiringItems);
+  const [items, setItems] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    async function fetchExpiringItems() {
+      try {
+        const response = await fetch('/api/provider/expiringitems', {
+          cache: 'no-store',
+          headers: {
+            'Cache-Control': 'no-cache'
+          }
+        });
+        
+        if (!response.ok) {
+          throw new Error('Failed to fetch expiring items');
+        }
+        
+        const data = await response.json();
+        setItems(data);
+      } catch (err) {
+        console.error('Error fetching expiring items:', err);
+        setError(err.message);
+      } finally {
+        setLoading(false);
+      }
+    }
+    
+    fetchExpiringItems();
+  }, []);
 
   // Calculate hours until expiration
   const getHoursUntilExpiration = (expiresAt) => {
@@ -112,6 +77,14 @@ export function ExpiringItems() {
     const days = Math.floor(hours / 24);
     return `${days} day${days !== 1 ? 's' : ''}`;
   };
+  
+  if (loading) {
+    return <div className="text-center py-6 text-sm text-muted-foreground">Loading expiring items...</div>;
+  }
+  
+  if (error) {
+    return <div className="text-center py-6 text-sm text-red-500">Error loading expiring items: {error}</div>;
+  }
   
   return (
     <div className="space-y-4">
@@ -166,13 +139,14 @@ export function ExpiringItems() {
                           <Image
                             src={item.image}
                             alt={item.name}
-                            fill
+                            width={40}
+                            height={40}
                             className="object-cover"
                           />
                         </div>
                         <div>
                           <p className="font-medium">{item.name}</p>
-                          <p className="text-xs text-muted-foreground">{item.id}</p>
+                          <p className="text-xs text-muted-foreground">{item.id.substring(0, 8).toUpperCase()}</p>
                         </div>
                       </div>
                     </TableCell>
@@ -198,7 +172,11 @@ export function ExpiringItems() {
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-2">
-                        <Button variant="ghost" size="icon">
+                        <Button 
+                          variant="ghost" 
+                          size="icon"
+                          onClick={() => window.location.href = `/provider-dashboard/inventory/edit/${item.id}`}
+                        >
                           <Pencil className="h-4 w-4" />
                           <span className="sr-only">Edit item</span>
                         </Button>
