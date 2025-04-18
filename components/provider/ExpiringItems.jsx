@@ -12,45 +12,63 @@ import {
 } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Pencil, MoreHorizontal, AlertCircle } from 'lucide-react';
+import { Pencil, MoreHorizontal, AlertCircle, Trash } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
+  DropdownMenuSeparator
 } from '@/components/ui/dropdown-menu';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
+
 
 export function ExpiringItems() {
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [filterType, setFilterType] = useState('all');
+  const [actionInProgress, setActionInProgress] = useState(false);
+  const [discountDialogOpen, setDiscountDialogOpen] = useState(false);
+  const [discountPercentage, setDiscountPercentage] = useState(10);
+  const [selectedItemId, setSelectedItemId] = useState(null);
 
   useEffect(() => {
-    async function fetchExpiringItems() {
-      try {
-        const response = await fetch('/api/provider/expiringitems', {
-          cache: 'no-store',
-          headers: {
-            'Cache-Control': 'no-cache'
-          }
-        });
-        
-        if (!response.ok) {
-          throw new Error('Failed to fetch expiring items');
-        }
-        
-        const data = await response.json();
-        setItems(data);
-      } catch (err) {
-        console.error('Error fetching expiring items:', err);
-        setError(err.message);
-      } finally {
-        setLoading(false);
-      }
-    }
-    
     fetchExpiringItems();
-  }, []);
+  }, [filterType]);
+
+  async function fetchExpiringItems() {
+    try {
+      setLoading(true);
+      const response = await fetch(`/api/provider/expiringitems?filter=${filterType}`, {
+        cache: 'no-store',
+        headers: {
+          'Cache-Control': 'no-cache'
+        }
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to fetch expiring items');
+      }
+      
+      const data = await response.json();
+      setItems(data);
+    } catch (err) {
+      console.error('Error fetching expiring items:', err);
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  }
 
   // Calculate hours until expiration
   const getHoursUntilExpiration = (expiresAt) => {
@@ -62,7 +80,8 @@ export function ExpiringItems() {
   };
   
   // Get urgency className based on hours remaining
-  const getUrgencyClass = (hours) => {
+  const getUrgencyClass = (hours, isExpired) => {
+    if (isExpired || hours < 0) return "text-red-600";
     if (hours < 6) return "text-red-600";
     if (hours < 12) return "text-amber-600";
     return "text-green-600";
@@ -71,11 +90,131 @@ export function ExpiringItems() {
   // Format expiry time as a readable string
   const formatExpiryTime = (expiresAt) => {
     const hours = getHoursUntilExpiration(expiresAt);
+    if (hours < 0) {
+      return 'Expired';
+    }
     if (hours < 24) {
       return `${hours} hour${hours !== 1 ? 's' : ''}`;
     }
     const days = Math.floor(hours / 24);
     return `${days} day${days !== 1 ? 's' : ''}`;
+  };
+
+  // Handler for increasing discount
+  const handleIncreaseDiscount = async (itemId, percentage = 10) => {
+    try {
+      setActionInProgress(true);
+      const response = await fetch('/api/provider/expiringitems', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          itemId,
+          action: 'increaseDiscount',
+          percentage
+        })
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to increase discount');
+      }
+
+      const result = await response.json();
+      toast({
+        title: "Success",
+        description: "Item discount increased successfully",
+      });
+      
+      fetchExpiringItems();
+    } catch (err) {
+      console.error('Error increasing discount:', err);
+      toast({
+        title: "Error",
+        description: err.message || "Failed to increase discount",
+        variant: "destructive",
+      });
+    } finally {
+      setDiscountDialogOpen(false);
+      setSelectedItemId(null);
+      setDiscountPercentage(10);
+      setActionInProgress(false);
+    }
+  };
+
+  // Handler for marking as sold
+  const handleMarkAsSold = async (itemId) => {
+    try {
+      setActionInProgress(true);
+      const response = await fetch('/api/provider/expiringitems', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          itemId,
+          action: 'markAsSold'
+        })
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to mark item as sold');
+      }
+
+      const result = await response.json();
+      toast({
+        title: "Success",
+        description: "Item marked as sold",
+      });
+      
+      fetchExpiringItems();
+    } catch (err) {
+      console.error('Error marking as sold:', err);
+      toast({
+        title: "Error",
+        description: err.message || "Failed to mark item as sold",
+        variant: "destructive",
+      });
+    } finally {
+      setActionInProgress(false);
+    }
+  };
+
+  // Handler for deleting an item
+  const handleDeleteItem = async (itemId) => {
+    if (!window.confirm("Are you sure you want to delete this item?")) {
+      return;
+    }
+    
+    try {
+      setActionInProgress(true);
+      const response = await fetch(`/api/provider/expiringitems?itemId=${itemId}`, {
+        method: 'DELETE'
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to delete item');
+      }
+
+      toast({
+        title: "Success",
+        description: "Item deleted successfully",
+      });
+      
+      fetchExpiringItems();
+    } catch (err) {
+      console.error('Error deleting item:', err);
+      toast({
+        title: "Error",
+        description: err.message || "Failed to delete item",
+        variant: "destructive",
+      });
+    } finally {
+      setActionInProgress(false);
+    }
   };
   
   if (loading) {
@@ -88,6 +227,19 @@ export function ExpiringItems() {
   
   return (
     <div className="space-y-4">
+      <div className="flex justify-end mb-4">
+        <Select value={filterType} onValueChange={setFilterType}>
+          <SelectTrigger className="w-[180px]">
+            <SelectValue placeholder="Filter items" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Items</SelectItem>
+            <SelectItem value="expired">Expired</SelectItem>
+            <SelectItem value="expiring-soon">Expiring Soon</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+
       {items.length === 0 ? (
         <div className="text-center py-6">
           <div className="flex justify-center mb-2">
@@ -108,9 +260,9 @@ export function ExpiringItems() {
               </svg>
             </div>
           </div>
-          <h3 className="text-lg font-medium">No items expiring soon</h3>
+          <h3 className="text-lg font-medium">No items {filterType === 'expired' ? 'expired' : filterType === 'expiring-soon' ? 'expiring soon' : 'to display'}</h3>
           <p className="text-muted-foreground mt-1">
-            Your inventory is in good condition
+            {filterType === 'all' ? 'Your inventory is in good condition' : 'Try changing the filter'}
           </p>
         </div>
       ) : (
@@ -129,7 +281,7 @@ export function ExpiringItems() {
             <TableBody>
               {items.map((item) => {
                 const hoursLeft = getHoursUntilExpiration(item.expiresAt);
-                const urgencyClass = getUrgencyClass(hoursLeft);
+                const urgencyClass = getUrgencyClass(hoursLeft, item.isExpired);
                 
                 return (
                   <TableRow key={item.id}>
@@ -176,21 +328,38 @@ export function ExpiringItems() {
                           variant="ghost" 
                           size="icon"
                           onClick={() => window.location.href = `/provider-dashboard/inventory/edit/${item.id}`}
+                          disabled={actionInProgress}
                         >
                           <Pencil className="h-4 w-4" />
                           <span className="sr-only">Edit item</span>
                         </Button>
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="icon">
+                            <Button variant="ghost" size="icon" disabled={actionInProgress}>
                               <MoreHorizontal className="h-4 w-4" />
                               <span className="sr-only">More options</span>
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
-                            <DropdownMenuItem>Increase discount</DropdownMenuItem>
-                            <DropdownMenuItem>Mark as sold</DropdownMenuItem>
-                            <DropdownMenuItem>Remove item</DropdownMenuItem>
+                            <DropdownMenuItem 
+                              onClick={() => {
+                                setSelectedItemId(item.id);
+                                setDiscountDialogOpen(true);
+                              }}
+                            >
+                              Increase discount
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => handleMarkAsSold(item.id)}>
+                              Mark as sold
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem 
+                              className="text-red-600"
+                              onClick={() => handleDeleteItem(item.id)}
+                            >
+                              <Trash className="h-4 w-4 mr-2" />
+                              Remove item
+                            </DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenu>
                       </div>
@@ -202,6 +371,50 @@ export function ExpiringItems() {
           </Table>
         </div>
       )}
+
+      <Dialog open={discountDialogOpen} onOpenChange={setDiscountDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Increase Discount</DialogTitle>
+            <DialogDescription>
+              Set the discount percentage you want to apply to this item
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4">
+            <Label htmlFor="discount-percentage">Discount Percentage</Label>
+            <div className="flex items-center mt-2">
+              <Input 
+                id="discount-percentage"
+                type="number" 
+                min="5"
+                max="90"
+                value={discountPercentage}
+                onChange={e => setDiscountPercentage(parseInt(e.target.value, 10) || 0)}
+                className="flex-1 mr-2"
+              />
+              <span>%</span>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button 
+              variant="outline" 
+              onClick={() => {
+                setDiscountDialogOpen(false);
+                setSelectedItemId(null);
+              }}
+              disabled={actionInProgress}
+            >
+              Cancel
+            </Button>
+            <Button 
+              onClick={() => handleIncreaseDiscount(selectedItemId, discountPercentage)}
+              disabled={actionInProgress || discountPercentage < 5 || discountPercentage > 90}
+            >
+              Apply Discount
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
