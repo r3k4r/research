@@ -42,7 +42,6 @@ export function ExpiringItems() {
   const [error, setError] = useState(null);
   const [filterType, setFilterType] = useState('all');
   const [actionInProgress, setActionInProgress] = useState(false);
-  const [discountDialogOpen, setDiscountDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [deleteAlertOpen, setDeleteAlertOpen] = useState(false);
   const [itemToDelete, setItemToDelete] = useState(null);
@@ -162,14 +161,124 @@ export function ExpiringItems() {
     setEditDialogOpen(true);
   };
 
-  // Open discount dialog with item's prices
+  // A simple solution - implement our own modal instead of using the Dialog component
+  const updatePrice = () => {
+    if (!selectedItemId) return;
+    
+    let dialog = document.createElement('dialog');
+    dialog.className = "p-6 rounded-lg shadow-lg bg-white max-w-md w-full";
+    
+    dialog.innerHTML = `
+      <h3 class="text-lg font-bold mb-4">Update Prices</h3>
+      <p class="text-sm text-gray-600 mb-4">Set the original and discounted prices for this item.</p>
+      
+      <div class="space-y-4">
+        <div>
+          <label class="block text-sm font-medium mb-1">Original Price</label>
+          <input id="original-price" type="number" min="0.01" step="0.01" value="${priceFormData.originalPrice}" 
+            class="w-full p-2 border rounded-md" />
+        </div>
+        
+        <div>
+          <label class="block text-sm font-medium mb-1">Discounted Price</label>
+          <input id="discounted-price" type="number" min="0.01" step="0.01" value="${priceFormData.discountedPrice}" 
+            class="w-full p-2 border rounded-md" />
+        </div>
+      </div>
+      
+      <div class="flex justify-end gap-2 mt-6">
+        <button id="cancel-btn" class="px-4 py-2 border rounded-md">Cancel</button>
+        <button id="update-btn" class="px-4 py-2 bg-blue-600 text-white rounded-md">Update</button>
+      </div>
+    `;
+    
+    document.body.appendChild(dialog);
+    dialog.showModal();
+    
+    // Get references to the elements
+    const originalPriceInput = dialog.querySelector('#original-price');
+    const discountedPriceInput = dialog.querySelector('#discounted-price');
+    const cancelBtn = dialog.querySelector('#cancel-btn');
+    const updateBtn = dialog.querySelector('#update-btn');
+    
+    // Set up event listeners
+    cancelBtn.addEventListener('click', () => {
+      dialog.close();
+      document.body.removeChild(dialog);
+    });
+    
+    updateBtn.addEventListener('click', async () => {
+      const originalPrice = parseFloat(originalPriceInput.value);
+      const discountedPrice = parseFloat(discountedPriceInput.value);
+      
+      if (isNaN(originalPrice) || isNaN(discountedPrice) || originalPrice <= 0 || discountedPrice <= 0) {
+        alert('Please enter valid prices');
+        return;
+      }
+      
+      if (discountedPrice > originalPrice) {
+        alert('Discounted price cannot be higher than original price');
+        return;
+      }
+      
+      try {
+        setActionInProgress(true);
+        dialog.close();
+        document.body.removeChild(dialog);
+        
+        const response = await fetch('/api/provider/expiringitems', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            itemId: selectedItemId,
+            action: 'updatePrice',
+            originalPrice,
+            discountedPrice
+          })
+        });
+
+        if (!response.ok) {
+          const error = await response.json();
+          throw new Error(error.error || 'Failed to update prices');
+        }
+
+        showToast("Prices updated successfully", "success");
+        fetchExpiringItems(filterType);
+        
+      } catch (err) {
+        console.error('Error updating prices:', err);
+        showToast(err.message || "Failed to update prices", "error");
+      } finally {
+        setActionInProgress(false);
+        setSelectedItemId(null);
+      }
+    });
+    
+    // Handle ESC key and clicking outside
+    dialog.addEventListener('cancel', (e) => {
+      e.preventDefault(); // Prevent the default esc key behavior
+      dialog.close();
+      document.body.removeChild(dialog);
+    });
+    
+    dialog.addEventListener('click', (e) => {
+      if (e.target === dialog) {
+        dialog.close();
+        document.body.removeChild(dialog);
+      }
+    });
+  };
+
+  // Replace the openDiscountDialog function with this:
   const openDiscountDialog = (item) => {
     setSelectedItemId(item.id);
     setPriceFormData({
       originalPrice: item.originalPrice,
       discountedPrice: item.currentPrice
     });
-    setDiscountDialogOpen(true);
+    updatePrice();
   };
 
   // Submit edit form
@@ -203,41 +312,6 @@ export function ExpiringItems() {
     } finally {
       setEditDialogOpen(false);
       setSelectedItem(null);
-      setActionInProgress(false);
-    }
-  };
-
-  // Handler for updating price
-  const handleUpdatePrice = async () => {
-    try {
-      setActionInProgress(true);
-      const response = await fetch('/api/provider/expiringitems', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          itemId: selectedItemId,
-          action: 'updatePrice',
-          originalPrice: priceFormData.originalPrice,
-          discountedPrice: priceFormData.discountedPrice
-        })
-      });
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || 'Failed to update prices');
-      }
-
-      showToast("Prices updated successfully", "success");
-      
-      fetchExpiringItems(filterType);
-    } catch (err) {
-      console.error('Error updating prices:', err);
-      showToast(err.message || "Failed to update prices", "error");
-    } finally {
-      setDiscountDialogOpen(false);
-      setSelectedItemId(null);
       setActionInProgress(false);
     }
   };
@@ -514,83 +588,6 @@ export function ExpiringItems() {
           </Table>
         </div>
       )}
-
-      {/* Update price dialog */}
-      <Dialog 
-        open={discountDialogOpen} 
-        onOpenChange={(open) => {
-          if (!open && !actionInProgress) {
-            setTimeout(() => {
-              setDiscountDialogOpen(false);
-              setSelectedItemId(null);
-            }, 10);
-          }
-        }}
-      >
-        <DialogContent onEscapeKeyDown={(e) => actionInProgress && e.preventDefault()}>
-          <DialogHeader>
-            <DialogTitle>Update Prices</DialogTitle>
-            <DialogDescription>
-              Set the original and discounted prices for this item
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4 py-4">
-            <div className="grid items-center gap-2">
-              <Label htmlFor="original-price">Original Price</Label>
-              <Input 
-                id="original-price"
-                type="number" 
-                min="0.01"
-                step="0.01"
-                value={priceFormData.originalPrice}
-                onChange={e => setPriceFormData({
-                  ...priceFormData, 
-                  originalPrice: parseFloat(e.target.value) || 0
-                })}
-              />
-            </div>
-            <div className="grid items-center gap-2">
-              <Label htmlFor="discounted-price">Discounted Price</Label>
-              <Input 
-                id="discounted-price"
-                type="number" 
-                min="0.01"
-                step="0.01"
-                value={priceFormData.discountedPrice}
-                onChange={e => setPriceFormData({
-                  ...priceFormData, 
-                  discountedPrice: parseFloat(e.target.value) || 0
-                })}
-              />
-            </div>
-          </div>
-          <DialogFooter>
-            <Button 
-              variant="outline" 
-              onClick={() => {
-                if (!actionInProgress) {
-                  setDiscountDialogOpen(false);
-                  setSelectedItemId(null);
-                }
-              }}
-              disabled={actionInProgress}
-            >
-              Cancel
-            </Button>
-            <Button 
-              onClick={handleUpdatePrice}
-              disabled={
-                actionInProgress || 
-                priceFormData.originalPrice <= 0 || 
-                priceFormData.discountedPrice <= 0 ||
-                priceFormData.discountedPrice > priceFormData.originalPrice
-              }
-            >
-              Update Prices
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
 
       {/* Edit item dialog */}
       <Dialog 
