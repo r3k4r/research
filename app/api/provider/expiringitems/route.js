@@ -15,7 +15,6 @@ export async function GET(req) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
     
-    // Get the current user and verify provider status
     const user = await prisma.user.findUnique({
       where: { email: session.user.email },
       include: { providerProfile: true }
@@ -44,7 +43,7 @@ export async function GET(req) {
     };
     
     if (filterType === 'expired') {
-      // Items that have already expired (expiresAt < now)
+      // Items that have already expired 
       whereClause.expiresAt = {
         lt: now
       };

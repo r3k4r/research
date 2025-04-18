@@ -62,13 +62,11 @@ export function ExpiringItems() {
     expiresAt: ''
   });
 
-  // Handle filter change
   const handleFilterChange = (newFilter) => {
     setFilterType(newFilter);
     fetchExpiringItems(newFilter);
   };
 
-  // Initial data load
   useEffect(() => {
     fetchExpiringItems(filterType);
     fetchCategories();
@@ -89,7 +87,7 @@ export function ExpiringItems() {
   async function fetchExpiringItems(filter = filterType) {
     try {
       setLoading(true);
-      // Add timestamp to prevent caching
+      //timestamp, so data is not gonna cache
       const timestamp = Date.now();
       const response = await fetch(`/api/provider/expiringitems?filter=${filter}&t=${timestamp}`, {
         method: 'GET',
@@ -116,7 +114,6 @@ export function ExpiringItems() {
     }
   }
 
-  // Calculate hours until expiration
   const getHoursUntilExpiration = (expiresAt) => {
     const now = new Date();
     const expiryDate = new Date(expiresAt);
@@ -125,7 +122,6 @@ export function ExpiringItems() {
     return diffInHours;
   };
   
-  // Get urgency className based on hours remaining
   const getUrgencyClass = (hours, isExpired) => {
     if (isExpired || hours < 0) return "text-red-600";
     if (hours < 2) return "text-red-600";
@@ -133,7 +129,6 @@ export function ExpiringItems() {
     return "text-green-600";
   };
   
-  // Format expiry time as a readable string
   const formatExpiryTime = (expiresAt) => {
     const hours = getHoursUntilExpiration(expiresAt);
     if (hours < 0) {
@@ -146,7 +141,6 @@ export function ExpiringItems() {
     return `${days} day${days !== 1 ? 's' : ''}`;
   };
 
-  // Handler for editing item
   const handleEditItem = (item) => {
     setSelectedItem(item);
     setEditFormData({
@@ -161,7 +155,6 @@ export function ExpiringItems() {
     setEditDialogOpen(true);
   };
 
-  // A simple solution - implement our own modal instead of using the Dialog component
   const updatePrice = () => {
     if (!selectedItemId) return;
     
@@ -195,13 +188,11 @@ export function ExpiringItems() {
     document.body.appendChild(dialog);
     dialog.showModal();
     
-    // Get references to the elements
     const originalPriceInput = dialog.querySelector('#original-price');
     const discountedPriceInput = dialog.querySelector('#discounted-price');
     const cancelBtn = dialog.querySelector('#cancel-btn');
     const updateBtn = dialog.querySelector('#update-btn');
     
-    // Set up event listeners
     cancelBtn.addEventListener('click', () => {
       dialog.close();
       document.body.removeChild(dialog);
@@ -258,7 +249,7 @@ export function ExpiringItems() {
     
     // Handle ESC key and clicking outside
     dialog.addEventListener('cancel', (e) => {
-      e.preventDefault(); // Prevent the default esc key behavior
+      e.preventDefault(); 
       dialog.close();
       document.body.removeChild(dialog);
     });
@@ -271,7 +262,6 @@ export function ExpiringItems() {
     });
   };
 
-  // Replace the openDiscountDialog function with this:
   const openDiscountDialog = (item) => {
     setSelectedItemId(item.id);
     setPriceFormData({
@@ -281,7 +271,6 @@ export function ExpiringItems() {
     updatePrice();
   };
 
-  // Submit edit form
   const handleEditSubmit = async () => {
     if (!selectedItem) return;
     
@@ -316,7 +305,6 @@ export function ExpiringItems() {
     }
   };
 
-  // Handler for marking as sold
   const handleMarkAsSold = async (itemId) => {
     try {
       setActionInProgress(true);
@@ -347,13 +335,12 @@ export function ExpiringItems() {
     }
   };
 
-  // Open delete confirmation
+  
   const openDeleteConfirmation = (item) => {
     setItemToDelete(item);
     setDeleteAlertOpen(true);
   };
 
-  // Handler for deleting an item
   const handleDeleteItem = async () => {
     if (!itemToDelete) return;
     
