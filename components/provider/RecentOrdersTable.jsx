@@ -124,13 +124,12 @@ export function RecentOrdersTable({ extended = false }) {
         </Table>
       </div>
       
-      {!extended && orders.length > 5 && (
-        <div className="mt-4 text-center">
+        <div className="mt-4 text-left">
           <Button variant="outline" size="sm" onClick={viewAllOrdersHandler}>
             View All Orders
           </Button>
         </div>
-      )}
+
     </div>
   );
 }

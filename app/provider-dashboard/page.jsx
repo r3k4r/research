@@ -35,9 +35,9 @@ export default function ProviderDashboard() {
             </Card>
             <Card className="col-span-3">
               <CardHeader>
-                <CardTitle>Recent Sales</CardTitle>
+                <CardTitle>Recent Orders</CardTitle>
                 <CardDescription>
-                  You sold 15 products today
+                  Manage and track your recent orders
                 </CardDescription>
               </CardHeader>
               <CardContent>
