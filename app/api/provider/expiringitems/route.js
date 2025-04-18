@@ -30,9 +30,9 @@ export async function GET(req) {
     // Get current date
     const now = new Date();
     
-    // Get date for 3 days from now (items expiring within 3 days)
-    const threeDaysFromNow = new Date();
-    threeDaysFromNow.setDate(threeDaysFromNow.getDate() + 3);
+    // Get date for 1 hour from now
+    const oneHourFromNow = new Date();
+    oneHourFromNow.setHours(oneHourFromNow.getHours() + 1);
 
     // Parse filters from query parameters
     const url = new URL(req.url);
@@ -53,12 +53,17 @@ export async function GET(req) {
     } else if (filterType === 'expiring-soon') {
       whereClause.expiresAt = {
         gte: now,
-        lte: threeDaysFromNow
+        lt: oneHourFromNow
       };
     } else {
-      // For 'all', include both expired and expiring soon
-      whereClause.expiresAt = {
-        lte: threeDaysFromNow
+      // For 'all', include both expired and those expiring within 1 hour
+      whereClause = {
+        providerId: providerId,
+        quantity: { gt: 0 },
+        OR: [
+          { expiresAt: { lt: now } },  // Expired
+          { expiresAt: { lt: oneHourFromNow } }  // Will expire in the next hour
+        ]
       };
     }
     

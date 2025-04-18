@@ -30,6 +30,8 @@ import {
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
+import { Toast } from '../ui/toast';
+
 
 export function ExpiringItems() {
   const [items, setItems] = useState([]);
