@@ -131,7 +131,7 @@ export function OrderDetails({ order, onStatusUpdate }) {
                       <span className="font-medium">{item.quantity}x </span>
                       <span>{item.name}</span>
                     </div>
-                    <span>${(item.price * item.quantity).toFixed(2)}</span>
+                    <span>{(item.price * item.quantity).toFixed(2)} IQD</span>
                   </div>
                 ))}
               </div>
@@ -143,15 +143,15 @@ export function OrderDetails({ order, onStatusUpdate }) {
               <div className="text-sm space-y-1">
                 <div className="flex justify-between">
                   <span>Subtotal:</span>
-                  <span>${order.totalAmount.toFixed(2)}</span>
+                  <span>{order.totalAmount.toFixed(2)} IQD</span>
                 </div>
                 <div className="flex justify-between">
                   <span>Delivery Fee:</span>
-                  <span>$2.00</span>
+                  <span>2000 IQD</span>
                 </div>
                 <div className="flex justify-between font-medium pt-1 border-t">
                   <span>Total:</span>
-                  <span>${(order.totalAmount + 2).toFixed(2)}</span>
+                  <span>{(order.totalAmount + 2).toFixed(2)} IQD</span>
                 </div>
               </div>
             </div>
