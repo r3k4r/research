@@ -68,26 +68,39 @@ export async function GET(req) {
     });
     
     // Format the response
-    const formattedOrders = orders.map(order => ({
-      id: order.id,
-      customerName: order.userProfile.name,
-      date: order.createdAt.toISOString(),
-      status: order.status,
-      totalAmount: order.totalAmount,
-      items: order.items.map(item => ({
-        name: item.foodItem.name,
-        quantity: item.quantity,
-        price: item.price
-      })),
-      address: order.deliveryAddress,
-      phone: order.userProfile.phoneNumber || 'Not provided',
-      deliveryNotes: order.deliveryNotes,
-      statusLogs: order.statusLogs.map(log => ({
-        status: log.status,
-        notes: log.notes,
-        date: log.createdAt.toISOString()
-      }))
-    }));
+    const formattedOrders = orders.map(order => {
+      // Calculate all price components in the backend
+      const deliveryFee = 2000; // standard delivery fee in IQD
+      
+      // Calculate subtotal from actual items
+      const subtotal = order.items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+      
+      // Calculate total with the delivery fee
+      const total = subtotal + deliveryFee;
+
+      return {
+        id: order.id,
+        customerName: order.userProfile.name,
+        date: order.createdAt.toISOString(),
+        status: order.status,
+        subtotal, // Item sum
+        deliveryFee, // Fixed delivery fee
+        totalAmount: total, // Total with delivery
+        items: order.items.map(item => ({
+          name: item.foodItem.name,
+          quantity: item.quantity,
+          price: item.price
+        })),
+        address: order.deliveryAddress,
+        phone: order.userProfile.phoneNumber || 'Not provided',
+        deliveryNotes: order.deliveryNotes,
+        statusLogs: order.statusLogs.map(log => ({
+          status: log.status,
+          notes: log.notes,
+          date: log.createdAt.toISOString()
+        }))
+      };
+    });
     
     return NextResponse.json(formattedOrders);
     
@@ -120,15 +133,16 @@ export async function POST(req) {
     
     // Parse request body
     const data = await req.json();
-    const { orderId, status, notes } = data;
+    const { orderId, status, notes, action } = data;
     
-    if (!orderId || !status) {
-      return NextResponse.json({ error: 'Order ID and status are required' }, { status: 400 });
+    if (!orderId) {
+      return NextResponse.json({ error: 'Order ID is required' }, { status: 400 });
     }
     
     // Get the order and verify ownership
     const order = await prisma.purchasedOrder.findUnique({
-      where: { id: orderId }
+      where: { id: orderId },
+      include: { statusLogs: { orderBy: { createdAt: 'desc' } } }
     });
     
     if (!order) {
@@ -138,43 +152,87 @@ export async function POST(req) {
     if (order.providerId !== providerId) {
       return NextResponse.json({ error: 'You do not own this order' }, { status: 403 });
     }
-    
-    // Check if the status transition is valid
-    const validTransitions = {
-      'PENDING': ['ACCEPTED', 'CANCELLED'],
-      'ACCEPTED': ['PREPARING', 'CANCELLED'],
-      'PREPARING': ['READY_FOR_PICKUP', 'CANCELLED'],
-      'READY_FOR_PICKUP': ['IN_TRANSIT', 'CANCELLED'],
-      'IN_TRANSIT': ['DELIVERED', 'CANCELLED'],
-      'DELIVERED': [],
-      'CANCELLED': []
-    };
-    
-    if (!validTransitions[order.status].includes(status)) {
-      return NextResponse.json({ 
-        error: `Invalid status transition from ${order.status} to ${status}` 
-      }, { status: 400 });
-    }
-    
-    // Update the order status
-    const updatedOrder = await prisma.purchasedOrder.update({
-      where: { id: orderId },
-      data: { status }
-    });
-    
-    // Create a status log entry
-    await prisma.orderStatusLog.create({
-      data: {
-        orderId,
-        status,
-        notes: notes || null
+
+    // Handle different actions
+    if (action === 'go-back') {
+      // Get previous status from logs, excluding the current status
+      const statusHistory = order.statusLogs
+        .filter(log => log.status !== order.status)
+        .map(log => log.status);
+      
+      // If there's no previous status, can't go back
+      if (statusHistory.length === 0) {
+        return NextResponse.json({ 
+          error: 'Cannot go back - this is the initial status' 
+        }, { status: 400 });
       }
-    });
-    
-    return NextResponse.json({
-      message: `Order ${orderId} status updated to ${status}`,
-      order: updatedOrder
-    });
+      
+      // Get the most recent previous status
+      const previousStatus = statusHistory[0];
+      
+      // Update order to the previous status
+      const updatedOrder = await prisma.purchasedOrder.update({
+        where: { id: orderId },
+        data: { status: previousStatus }
+      });
+      
+      // Create a status log entry for going back
+      await prisma.orderStatusLog.create({
+        data: {
+          orderId,
+          status: previousStatus,
+          notes: notes || `Status reverted to ${previousStatus}`
+        }
+      });
+      
+      return NextResponse.json({
+        message: `Order ${orderId} status reverted to ${previousStatus}`,
+        order: updatedOrder
+      });
+    } 
+    else {
+      // Regular status update flow
+      if (!status) {
+        return NextResponse.json({ error: 'Status is required for regular updates' }, { status: 400 });
+      }
+      
+      // Check if the status transition is valid
+      const validTransitions = {
+        'PENDING': ['ACCEPTED', 'CANCELLED'],
+        'ACCEPTED': ['PREPARING', 'CANCELLED'],
+        'PREPARING': ['READY_FOR_PICKUP', 'CANCELLED'],
+        'READY_FOR_PICKUP': ['IN_TRANSIT', 'CANCELLED'],
+        'IN_TRANSIT': ['DELIVERED', 'CANCELLED'],
+        'DELIVERED': [],
+        'CANCELLED': []
+      };
+      
+      if (!validTransitions[order.status].includes(status)) {
+        return NextResponse.json({ 
+          error: `Invalid status transition from ${order.status} to ${status}` 
+        }, { status: 400 });
+      }
+      
+      // Update the order status
+      const updatedOrder = await prisma.purchasedOrder.update({
+        where: { id: orderId },
+        data: { status }
+      });
+      
+      // Create a status log entry
+      await prisma.orderStatusLog.create({
+        data: {
+          orderId,
+          status,
+          notes: notes || null
+        }
+      });
+      
+      return NextResponse.json({
+        message: `Order ${orderId} status updated to ${status}`,
+        order: updatedOrder
+      });
+    }
     
   } catch (error) {
     console.error('Error updating order status:', error);

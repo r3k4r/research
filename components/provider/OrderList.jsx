@@ -44,7 +44,7 @@ export function OrderList({ orders, selectedOrderId, onOrderSelect, loading }) {
             <div className="text-sm">
               {order.items.reduce((sum, item) => sum + item.quantity, 0)} items
             </div>
-            <div className="text-sm font-medium">${order.totalAmount.toFixed(2)}</div>
+            <div className="text-sm font-medium">{order.totalAmount.toFixed(2)} IQD</div>
           </div>
         </div>
       ))}

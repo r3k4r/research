@@ -99,18 +99,19 @@ export default function OrdersPage() {
   };
   
   // Handle status update
-  const handleStatusUpdate = async (orderId, newStatus, notes) => {
+  const handleStatusUpdate = async (orderId, newStatus, notes, action = 'update') => {
     try {
+      // Prepare request body based on action type
+      const requestBody = action === 'go-back' 
+        ? { orderId, notes, action: 'go-back' }
+        : { orderId, status: newStatus, notes };
+      
       const response = await fetch('/api/provider/orders', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          orderId,
-          status: newStatus,
-          notes
-        })
+        body: JSON.stringify(requestBody)
       });
       
       if (!response.ok) {
@@ -119,7 +120,13 @@ export default function OrdersPage() {
       }
       
       // Show success message
-      showToast(`Order status updated to ${newStatus.replace('_', ' ')}`, 'success');
+      const responseData = await response.json();
+      showToast(
+        action === 'go-back' 
+          ? `Order status reverted successfully` 
+          : `Order status updated to ${newStatus.replace('_', ' ')}`, 
+        'success'
+      );
       
       // Refresh the orders list
       fetchOrders();

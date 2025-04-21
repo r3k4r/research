@@ -11,11 +11,12 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
-import { AlertCircle, Clock, MapPin, Phone, User } from 'lucide-react';
+import { AlertCircle, Clock, MapPin, Phone, User, ArrowLeft } from 'lucide-react';
 
 export function OrderDetails({ order, onStatusUpdate }) {
   const [isUpdateDialogOpen, setIsUpdateDialogOpen] = useState(false);
   const [selectedStatus, setSelectedStatus] = useState('');
+  const [actionType, setActionType] = useState('update'); // 'update' or 'go-back'
   const [statusNote, setStatusNote] = useState('');
   
   const formatDate = (dateString) => {
@@ -52,11 +53,22 @@ export function OrderDetails({ order, onStatusUpdate }) {
   
   const handleStatusUpdateClick = (status) => {
     setSelectedStatus(status);
+    setActionType('update');
+    setIsUpdateDialogOpen(true);
+  };
+  
+  const handleGoBackClick = () => {
+    setActionType('go-back');
     setIsUpdateDialogOpen(true);
   };
   
   const confirmStatusUpdate = () => {
-    onStatusUpdate(order.id, selectedStatus, statusNote);
+    if (actionType === 'update') {
+      onStatusUpdate(order.id, selectedStatus, statusNote);
+    } else {
+      // Call onStatusUpdate with the go-back action
+      onStatusUpdate(order.id, null, statusNote, 'go-back');
+    }
     setStatusNote('');
     setIsUpdateDialogOpen(false);
   };
@@ -81,6 +93,12 @@ export function OrderDetails({ order, onStatusUpdate }) {
   
   const getStatusButtonVariant = (status) => {
     return status === 'CANCELLED' ? 'destructive' : 'default';
+  };
+  
+  // Function to determine if Go Back button should be shown
+  const canGoBack = () => {
+    // Don't show for PENDING (first status) or terminal statuses
+    return !['PENDING', 'DELIVERED', 'CANCELLED'].includes(order.status);
   };
   
   if (!order) return null;
@@ -143,20 +161,18 @@ export function OrderDetails({ order, onStatusUpdate }) {
               <div className="text-sm space-y-1">
                 <div className="flex justify-between">
                   <span>Subtotal:</span>
-                  <span>{order.totalAmount.toFixed(2)} IQD</span>
+                  <span>{order.subtotal.toFixed(2)} IQD</span>
                 </div>
                 <div className="flex justify-between">
                   <span>Delivery Fee:</span>
-                  <span>2000 IQD</span>
+                  <span>{order.deliveryFee.toFixed(2)} IQD</span>
                 </div>
                 <div className="flex justify-between font-medium pt-1 border-t">
                   <span>Total:</span>
-                  <span>{(order.totalAmount + 2).toFixed(2)} IQD</span>
+                  <span>{order.totalAmount.toFixed(2)} IQD</span>
                 </div>
               </div>
             </div>
-            
-            {/* Order Timeline/History could be added here */}
             
             {order.status === 'CANCELLED' && (
               <div className="bg-red-50 border border-red-200 rounded-md p-3 flex items-start gap-2">
@@ -180,19 +196,30 @@ export function OrderDetails({ order, onStatusUpdate }) {
           </div>
         </CardContent>
         
-        {nextStatuses.length > 0 && (
-          <CardFooter className="border-t pt-4 flex flex-wrap gap-2">
-            {nextStatuses.map((status) => (
-              <Button
-                key={status}
-                onClick={() => handleStatusUpdateClick(status)}
-                variant={getStatusButtonVariant(status)}
-              >
-                {getStatusText(status)}
-              </Button>
-            ))}
-          </CardFooter>
-        )}
+        <CardFooter className="border-t pt-4 flex flex-wrap gap-2">
+          {/* Go Back button */}
+          {canGoBack() && (
+            <Button
+              variant="outline"
+              onClick={handleGoBackClick}
+              className="flex items-center mr-auto"
+            >
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Go Back
+            </Button>
+          )}
+          
+          {/* Next status buttons */}
+          {nextStatuses.length > 0 && nextStatuses.map((status) => (
+            <Button
+              key={status}
+              onClick={() => handleStatusUpdateClick(status)}
+              variant={getStatusButtonVariant(status)}
+            >
+              {getStatusText(status)}
+            </Button>
+          ))}
+        </CardFooter>
       </Card>
       
       {/* Status Update Dialog */}
@@ -200,14 +227,18 @@ export function OrderDetails({ order, onStatusUpdate }) {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>
-              {selectedStatus === 'CANCELLED'
-                ? 'Cancel Order'
-                : `Update Order to ${selectedStatus.replace('_', ' ')}`}
+              {actionType === 'go-back'
+                ? 'Revert Order Status'
+                : selectedStatus === 'CANCELLED'
+                  ? 'Cancel Order'
+                  : `Update Order to ${selectedStatus.replace('_', ' ')}`}
             </DialogTitle>
             <DialogDescription>
-              {selectedStatus === 'CANCELLED'
-                ? 'Are you sure you want to cancel this order? This action cannot be undone.'
-                : `Change the status of order ${order?.id} to ${selectedStatus.replace('_', ' ')}.`}
+              {actionType === 'go-back'
+                ? 'This will revert the order to its previous status.'
+                : selectedStatus === 'CANCELLED'
+                  ? 'Are you sure you want to cancel this order? This action cannot be undone.'
+                  : `Change the status of order ${order?.id} to ${selectedStatus.replace('_', ' ')}.`}
             </DialogDescription>
           </DialogHeader>
           
@@ -230,10 +261,14 @@ export function OrderDetails({ order, onStatusUpdate }) {
               Cancel
             </Button>
             <Button 
-              variant={selectedStatus === 'CANCELLED' ? 'destructive' : 'default'}
+              variant={actionType === 'go-back' ? 'secondary' : selectedStatus === 'CANCELLED' ? 'destructive' : 'default'}
               onClick={confirmStatusUpdate}
             >
-              {selectedStatus === 'CANCELLED' ? 'Yes, Cancel Order' : 'Update Status'}
+              {actionType === 'go-back' 
+                ? 'Revert Status' 
+                : selectedStatus === 'CANCELLED' 
+                  ? 'Yes, Cancel Order' 
+                  : 'Update Status'}
             </Button>
           </DialogFooter>
         </DialogContent>
