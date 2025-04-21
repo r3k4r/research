@@ -67,16 +67,14 @@ export async function GET(req) {
       }
     });
     
-    // Format the response
+
     const formattedOrders = orders.map(order => {
-      // Calculate all price components in the backend
-      const deliveryFee = 2500; // standard delivery fee in IQD
-      const serviceFee = 500;   // service fee in IQD
+
+      const deliveryFee = 2500; 
+      const serviceFee = 500;   
       
-      // Calculate subtotal from actual items
       const subtotal = order.items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
       
-      // Calculate total with fees
       const total = subtotal + deliveryFee + serviceFee;
 
       return {
@@ -84,10 +82,10 @@ export async function GET(req) {
         customerName: order.userProfile.name,
         date: order.createdAt.toISOString(),
         status: order.status,
-        subtotal, // Item sum
-        deliveryFee, // Fixed delivery fee
-        serviceFee, // Service fee
-        totalAmount: total, // Total with fees
+        subtotal, 
+        deliveryFee, 
+        serviceFee, 
+        totalAmount: total,
         items: order.items.map(item => ({
           name: item.foodItem.name,
           quantity: item.quantity,
