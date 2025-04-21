@@ -70,13 +70,14 @@ export async function GET(req) {
     // Format the response
     const formattedOrders = orders.map(order => {
       // Calculate all price components in the backend
-      const deliveryFee = 2000; // standard delivery fee in IQD
+      const deliveryFee = 2500; // standard delivery fee in IQD
+      const serviceFee = 500;   // service fee in IQD
       
       // Calculate subtotal from actual items
       const subtotal = order.items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
       
-      // Calculate total with the delivery fee
-      const total = subtotal + deliveryFee;
+      // Calculate total with fees
+      const total = subtotal + deliveryFee + serviceFee;
 
       return {
         id: order.id,
@@ -85,7 +86,8 @@ export async function GET(req) {
         status: order.status,
         subtotal, // Item sum
         deliveryFee, // Fixed delivery fee
-        totalAmount: total, // Total with delivery
+        serviceFee, // Service fee
+        totalAmount: total, // Total with fees
         items: order.items.map(item => ({
           name: item.foodItem.name,
           quantity: item.quantity,

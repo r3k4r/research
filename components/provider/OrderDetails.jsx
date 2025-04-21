@@ -167,6 +167,10 @@ export function OrderDetails({ order, onStatusUpdate }) {
                   <span>Delivery Fee:</span>
                   <span>{order.deliveryFee.toFixed(2)} IQD</span>
                 </div>
+                <div className="flex justify-between">
+                  <span>Service Fee:</span>
+                  <span>{order.serviceFee.toFixed(2)} IQD</span>
+                </div>
                 <div className="flex justify-between font-medium pt-1 border-t">
                   <span>Total:</span>
                   <span>{order.totalAmount.toFixed(2)} IQD</span>
