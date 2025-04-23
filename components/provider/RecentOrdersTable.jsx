@@ -24,7 +24,6 @@ export function RecentOrdersTable({ extended = false }) {
   useEffect(() => {
     async function fetchOrders() {
       try {
-        // Set limit parameter based on whether it's extended view
         const limit = extended ? 20 : 5;
         const response = await fetch(`/api/provider/recentorders?limit=${limit}`, {
           cache: 'no-store',
