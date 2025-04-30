@@ -69,11 +69,11 @@ export default function ProductsPage() {
       
       const params = new URLSearchParams()
       params.append("page", currentPage)
-      params.append("limit", 10)
+      params.append("limit", 12)
       if (searchTerm) params.append("search", searchTerm)
       if (selectedCategory && selectedCategory !== "all") params.append("category", selectedCategory)
       params.append("status", expirationFilter)
-      params.append("t", Date.now()) // Cache busting
+      params.append("t", Date.now()) 
       
       const response = await fetch(`/api/provider/products?${params.toString()}`, { 
         cache: 'no-store'
@@ -86,7 +86,12 @@ export default function ProductsPage() {
       if (reset) {
         setProducts(data.products)
       } else {
-        setProducts(prev => [...prev, ...data.products])
+        // Make sure we're not adding duplicate products by checking IDs
+        setProducts(prev => {
+          const existingIds = new Set(prev.map(product => product.id))
+          const newProducts = data.products.filter(product => !existingIds.has(product.id))
+          return [...prev, ...newProducts]
+        })
       }
       
       setCategories(data.categories)
