@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useCallback } from "react"
+import { useState, useEffect, useCallback, useRef } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -60,31 +60,61 @@ export default function FoodItemsPage() {
     image: ""
   })
 
-  const fetchFoodItems = useCallback(async (searchQuery = searchTerm, categoryFilter = selectedCategory) => {
-    setLoading(true)
-    
+  // Pagination
+  const [page, setPage] = useState(1)
+  const [hasMore, setHasMore] = useState(true)
+  const observer = useRef()
+
+  const fetchFoodItems = useCallback(async (reset = false, searchQuery = searchTerm, categoryFilter = selectedCategory) => {
     try {
+      const currentPage = reset ? 1 : page
+      if (reset) {
+        setFoodItems([])
+        setPage(1)
+      }
+      
+      setLoading(true)
+      
       const params = new URLSearchParams()
+      params.append("page", currentPage)
+      params.append("limit", 12)
       if (searchQuery) params.append("search", searchQuery)
       if (categoryFilter && categoryFilter !== "all") params.append("category", categoryFilter) 
+      params.append("t", Date.now()) // Cache busting
       
-      params.append("t", Date.now())
+      const response = await fetch(`/api/admin/food?${params.toString()}`, { 
+        cache: 'no-store'
+      })
       
-      const response = await fetch(`/api/admin/food?${params.toString()}`, { cache: 'no-store' })
       if (!response.ok) throw new Error("Failed to fetch food items")
       
       const data = await response.json()
       
-      setFoodItems(data?.foodItems)
-      setCategories(data?.categories)
-      setTotalItems(data?.totalItems)
+      if (reset) {
+        setFoodItems(data.foodItems)
+      } else {
+        // Make sure we're not adding duplicate items by checking IDs
+        setFoodItems(prev => {
+          const existingIds = new Set(prev.map(item => item.id))
+          const newItems = data.foodItems.filter(item => !existingIds.has(item.id))
+          return [...prev, ...newItems]
+        })
+      }
+      
+      setCategories(data.categories)
+      setTotalItems(data.totalItems)
+      setHasMore(data.hasMore || false)
+      
+      if (!reset && data.foodItems.length > 0) {
+        setPage(prev => prev + 1)
+      }
     } catch (error) {
       console.error("Error fetching food items:", error)
       showToast("Failed to load food items", "error")
     } finally {
       setLoading(false)
     }
-  }, [searchTerm, selectedCategory])
+  }, [page, searchTerm, selectedCategory, showToast])
 
   const fetchProviders = useCallback(async () => {
     try {
@@ -108,17 +138,51 @@ export default function FoodItemsPage() {
   }, [])
 
   useEffect(() => {
-    fetchFoodItems()
+    // Only fetch on initial mount, with empty array dependencies
+    fetchFoodItems(true)
     fetchProviders()
-  }, [fetchFoodItems, fetchProviders])
-  
+  }, []) // Empty dependency array is key here
+
   useEffect(() => {
     const timer = setTimeout(() => {
-      fetchFoodItems(searchTerm, selectedCategory)
+      if (searchTerm !== '' || selectedCategory !== 'all') {
+        fetchFoodItems(true, searchTerm, selectedCategory)
+      }
     }, 300)
     
     return () => clearTimeout(timer)
-  }, [searchTerm, selectedCategory, fetchFoodItems])
+  }, [searchTerm, selectedCategory]) // fetchFoodItems explicitly removed to prevent circular dependency
+
+  const lastItemRef = useCallback(node => {
+    if (loading) return
+    
+    // Always clean up old observer first
+    if (observer.current) {
+      observer.current.disconnect()
+      observer.current = null
+    }
+    
+    // Only attach new observer if there's more data
+    if (node && hasMore) {
+      observer.current = new IntersectionObserver(entries => {
+        if (entries[0].isIntersecting) {
+          // Manually call with current state to avoid dependency issue
+          fetchFoodItems(false)
+        }
+      })
+      
+      observer.current.observe(node)
+    }
+  }, [loading, hasMore]) // fetchFoodItems excluded to prevent infinite loop
+
+  useEffect(() => {
+    return () => {
+      if (observer.current) {
+        observer.current.disconnect()
+        observer.current = null
+      }
+    }
+  }, [])
 
   const resetForm = () => {
     setFormData({
@@ -223,7 +287,7 @@ export default function FoodItemsPage() {
             await fetch(`/api/admin/food/${result.id}`, { method: 'DELETE' });
           }
           
-          await fetchFoodItems();
+          await fetchFoodItems(true);
           showToast(`New category "${categoryName}" created`, "success");
         } else {
           const error = await response.json();
@@ -272,7 +336,7 @@ export default function FoodItemsPage() {
         "success"
       )
       
-      await fetchFoodItems()
+      await fetchFoodItems(true)
       setIsDialogOpen(false)
       resetForm()
     } catch (error) {
@@ -297,7 +361,7 @@ export default function FoodItemsPage() {
       
       showToast("Food item deleted successfully", "success")
       
-      await fetchFoodItems()
+      await fetchFoodItems(true)
     } catch (error) {
       console.error("Error deleting item:", error)
       showToast(`Error: ${error.message}`, "error")
@@ -361,7 +425,7 @@ export default function FoodItemsPage() {
           </div>
         </CardHeader>
         <CardContent>
-          {loading ? (
+          {loading && foodItems.length === 0 ? (
             <div className="flex justify-center p-8">Loading...</div>
           ) : foodItems?.length === 0 ? (
             <div className="text-center p-8 text-muted-foreground">
@@ -369,39 +433,54 @@ export default function FoodItemsPage() {
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {foodItems?.map((item) => (
-                <div key={item.id} className="relative">
-                  <FoodCard 
-                    id={item?.id}
-                    name={item?.name}
-                    description={item?.description}
-                    image={item?.image || "/default-food.jpg"}
-                    originalPrice={item?.price}
-                    discountedPrice={item?.discountedPrice}
-                    provider={item?.provider.businessName}
-                    providerId={item?.providerId}
-                    providerLogo={item?.provider.logo || "/default-logo.png"}
-                    category={item?.category.name}
-                    expiresIn={getExpiresInText(item?.expiresAt)}
-                  />
-                  <div className="absolute top-2 right-2 space-x-2">
-                    <Button 
-                      variant="outline" 
-                      size="sm"
-                      onClick={() => handleEdit(item?.id)}
-                    >
-                      Edit
-                    </Button>
-                    <Button 
-                      variant="destructive" 
-                      size="sm" 
-                      onClick={() => confirmDelete(item?.id)}
-                    >
-                      Delete
-                    </Button>
+              {foodItems?.map((item, index) => {
+                const isLastItem = index === foodItems.length - 1;
+                return (
+                  <div 
+                    key={item.id} 
+                    className="relative"
+                    ref={isLastItem ? lastItemRef : null}
+                  >
+                    <FoodCard 
+                      id={item?.id}
+                      name={item?.name}
+                      description={item?.description}
+                      image={item?.image || "/default-food.jpg"}
+                      originalPrice={item?.price}
+                      discountedPrice={item?.discountedPrice}
+                      provider={item?.provider.businessName}
+                      providerId={item?.providerId}
+                      providerLogo={item?.provider.logo || "/default-logo.png"}
+                      category={item?.category.name}
+                      expiresIn={getExpiresInText(item?.expiresAt)}
+                    />
+                    <div className="absolute top-2 right-2 space-x-2">
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => handleEdit(item?.id)}
+                      >
+                        Edit
+                      </Button>
+                      <Button 
+                        variant="destructive" 
+                        size="sm" 
+                        onClick={() => confirmDelete(item?.id)}
+                      >
+                        Delete
+                      </Button>
+                    </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
+            </div>
+          )}
+          
+          {hasMore && foodItems.length > 0 && loading && (
+            <div className="flex justify-center p-4">
+              <div className="text-muted-foreground text-sm">
+                Loading more...
+              </div>
             </div>
           )}
         </CardContent>

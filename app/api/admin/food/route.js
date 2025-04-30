@@ -6,6 +6,9 @@ export async function GET(request) {
   const searchParams = request.nextUrl.searchParams;
   const search = searchParams.get('search') || '';
   const categoryId = searchParams.get('category');
+  const page = parseInt(searchParams.get('page') || '1');
+  const limit = parseInt(searchParams.get('limit') || '12');
+  const skip = (page - 1) * limit;
   
   try {
     // Build filter conditions
@@ -23,7 +26,10 @@ export async function GET(request) {
       where.categoryId = categoryId;
     }
     
-    // Fetch food items with filter
+    // Get total count for pagination
+    const totalItems = await prisma.foodItem.count({ where });
+    
+    // Fetch paginated food items with filter
     const foodItems = await prisma.foodItem.findMany({
       where,
       include: {
@@ -32,7 +38,9 @@ export async function GET(request) {
       },
       orderBy: {
         createdAt: 'desc'
-      }
+      },
+      skip,
+      take: limit
     });
     
     // Fetch all categories for the dropdown
@@ -42,13 +50,14 @@ export async function GET(request) {
       }
     });
     
-    // Count total items (without pagination)
-    const totalItems = foodItems.length;
+    // Calculate whether there are more items to fetch
+    const hasMore = skip + foodItems.length < totalItems;
     
     return NextResponse.json({
       foodItems,
       categories,
-      totalItems
+      totalItems,
+      hasMore
     });
   } catch (error) {
     console.error("Error fetching food items:", error);

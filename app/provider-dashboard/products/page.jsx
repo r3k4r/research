@@ -57,7 +57,8 @@ export default function ProductsPage() {
     image: ""
   })
 
-  const fetchProducts = useCallback(async (reset = false) => {
+  // Fix the fetch products function to avoid creating dependency cycles
+  const fetchProducts = useCallback(async (reset = false, searchQuery = searchTerm, categoryFilter = selectedCategory, statusFilter = expirationFilter) => {
     try {
       const currentPage = reset ? 1 : page
       if (reset) {
@@ -70,9 +71,9 @@ export default function ProductsPage() {
       const params = new URLSearchParams()
       params.append("page", currentPage)
       params.append("limit", 12)
-      if (searchTerm) params.append("search", searchTerm)
-      if (selectedCategory && selectedCategory !== "all") params.append("category", selectedCategory)
-      params.append("status", expirationFilter)
+      if (searchQuery) params.append("search", searchQuery)
+      if (categoryFilter && categoryFilter !== "all") params.append("category", categoryFilter)
+      params.append("status", statusFilter)
       params.append("t", Date.now()) 
       
       const response = await fetch(`/api/provider/products?${params.toString()}`, { 
@@ -107,33 +108,53 @@ export default function ProductsPage() {
     } finally {
       setLoading(false)
     }
-  }, [page, searchTerm, selectedCategory, expirationFilter, showToast])
+  }, [page])  // Only depend on page to avoid dependency cycles
 
-  // For infinite scrolling
-  const lastProductRef = useCallback(node => {
-    if (loading) return
-    
-    if (observer.current) observer.current.disconnect()
-    
-    observer.current = new IntersectionObserver(entries => {
-      if (entries[0].isIntersecting && hasMore) {
-        fetchProducts()
-      }
-    })
-    
-    if (node) observer.current.observe(node)
-  }, [loading, hasMore, fetchProducts])
-
+  // Fix: Split into separate effects - initial load
+  useEffect(() => {
+    fetchProducts(true)
+  }, []) // Empty dependency array to only run on mount
+  
+  // Fix: Filter/search effect
   useEffect(() => {
     const timer = setTimeout(() => {
-      fetchProducts(true)
+      if (searchTerm !== '' || selectedCategory !== 'all' || expirationFilter !== 'all') {
+        fetchProducts(true, searchTerm, selectedCategory, expirationFilter)
+      }
     }, 300)
     
     return () => clearTimeout(timer)
-  }, [searchTerm, selectedCategory, expirationFilter])
+  }, [searchTerm, selectedCategory, expirationFilter]) // fetchProducts removed from deps
+  
+  // Fix: Observer implementation
+  const lastProductRef = useCallback(node => {
+    if (loading) return
+    
+    if (observer.current) {
+      observer.current.disconnect()
+      observer.current = null
+    }
+    
+    if (node && hasMore) {
+      observer.current = new IntersectionObserver(entries => {
+        if (entries[0].isIntersecting) {
+          // Call with current state values
+          fetchProducts(false)
+        }
+      })
+      
+      observer.current.observe(node)
+    }
+  }, [loading, hasMore]) // Remove fetchProducts to avoid infinite loop
 
+  // Fix: Add cleanup function
   useEffect(() => {
-    fetchProducts(true)
+    return () => {
+      if (observer.current) {
+        observer.current.disconnect()
+        observer.current = null
+      }
+    }
   }, [])
 
   const resetForm = () => {
@@ -323,50 +344,53 @@ export default function ProductsPage() {
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {products.map((item, index) => (
-                <div 
-                  key={item.id} 
-                  className="relative"
-                  ref={index === products.length - 1 ? lastProductRef : null}
-                >
-                  <FoodCard 
-                    id={item.id}
-                    name={item.name}
-                    description={item.description}
-                    image={item.image || "/default-food.jpg"}
-                    originalPrice={item.price}
-                    discountedPrice={item.discountedPrice}
-                    provider={item.provider.businessName}
-                    providerId={item.providerId}
-                    providerLogo={item.provider.logo || "/default-logo.png"}
-                    category={item.category.name}
-                    expiresIn={getExpiresInText(item.expiresAt)}
-                  />
-                  <div className="absolute top-2 right-2 space-x-2">
-                    <Button 
-                      variant="outline" 
-                      size="sm"
-                      onClick={() => handleEdit(item.id)}
-                    >
-                      Edit
-                    </Button>
-                    <Button 
-                      variant="destructive" 
-                      size="sm" 
-                      onClick={() => confirmDelete(item.id)}
-                    >
-                      Delete
-                    </Button>
+              {products.map((item, index) => {
+                const isLastItem = index === products.length - 1;
+                return (
+                  <div 
+                    key={item.id} 
+                    className="relative"
+                    ref={isLastItem ? lastProductRef : null}
+                  >
+                    <FoodCard 
+                      id={item.id}
+                      name={item.name}
+                      description={item.description}
+                      image={item.image || "/default-food.jpg"}
+                      originalPrice={item.price}
+                      discountedPrice={item.discountedPrice}
+                      provider={item.provider.businessName}
+                      providerId={item.providerId}
+                      providerLogo={item.provider.logo || "/default-logo.png"}
+                      category={item.category.name}
+                      expiresIn={getExpiresInText(item.expiresAt)}
+                    />
+                    <div className="absolute top-2 right-2 space-x-2">
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => handleEdit(item.id)}
+                      >
+                        Edit
+                      </Button>
+                      <Button 
+                        variant="destructive" 
+                        size="sm" 
+                        onClick={() => confirmDelete(item.id)}
+                      >
+                        Delete
+                      </Button>
+                    </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
           
-          {hasMore && products.length > 0 && (
+          {hasMore && products.length > 0 && loading && (
             <div className="flex justify-center p-4">
-              <div ref={lastProductRef} className="text-muted-foreground text-sm">
-                {loading ? 'Loading more...' : ''}
+              <div className="text-muted-foreground text-sm">
+                Loading more...
               </div>
             </div>
           )}
