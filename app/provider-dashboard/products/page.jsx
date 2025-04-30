@@ -57,7 +57,6 @@ export default function ProductsPage() {
     image: ""
   })
 
-  // Fix the fetch products function to avoid creating dependency cycles
   const fetchProducts = useCallback(async (reset = false, searchQuery = searchTerm, categoryFilter = selectedCategory, statusFilter = expirationFilter) => {
     try {
       const currentPage = reset ? 1 : page
@@ -87,7 +86,6 @@ export default function ProductsPage() {
       if (reset) {
         setProducts(data.products)
       } else {
-        // Make sure we're not adding duplicate products by checking IDs
         setProducts(prev => {
           const existingIds = new Set(prev.map(product => product.id))
           const newProducts = data.products.filter(product => !existingIds.has(product.id))
@@ -108,14 +106,13 @@ export default function ProductsPage() {
     } finally {
       setLoading(false)
     }
-  }, [page])  // Only depend on page to avoid dependency cycles
+  }, [page])
 
-  // Fix: Split into separate effects - initial load
   useEffect(() => {
     fetchProducts(true)
-  }, []) // Empty dependency array to only run on mount
+  }, []) 
   
-  // Fix: Filter/search effect
+
   useEffect(() => {
     const timer = setTimeout(() => {
       if (searchTerm !== '' || selectedCategory !== 'all' || expirationFilter !== 'all') {
@@ -124,9 +121,9 @@ export default function ProductsPage() {
     }, 300)
     
     return () => clearTimeout(timer)
-  }, [searchTerm, selectedCategory, expirationFilter]) // fetchProducts removed from deps
+  }, [searchTerm, selectedCategory, expirationFilter]) 
   
-  // Fix: Observer implementation
+  
   const lastProductRef = useCallback(node => {
     if (loading) return
     
@@ -138,16 +135,15 @@ export default function ProductsPage() {
     if (node && hasMore) {
       observer.current = new IntersectionObserver(entries => {
         if (entries[0].isIntersecting) {
-          // Call with current state values
           fetchProducts(false)
         }
       })
       
       observer.current.observe(node)
     }
-  }, [loading, hasMore]) // Remove fetchProducts to avoid infinite loop
+  }, [loading, hasMore]) 
 
-  // Fix: Add cleanup function
+  
   useEffect(() => {
     return () => {
       if (observer.current) {
