@@ -37,6 +37,7 @@ export default function ProductsPage() {
   const [editingItem, setEditingItem] = useState(null)
   const [deleteItemId, setDeleteItemId] = useState(null)
   const [isDeleteAlertOpen, setIsDeleteAlertOpen] = useState(false)
+  const [expirationFilter, setExpirationFilter] = useState("active")
   const { showToast, ToastComponent } = useToast()
   
   // Pagination
@@ -71,6 +72,7 @@ export default function ProductsPage() {
       params.append("limit", 10)
       if (searchTerm) params.append("search", searchTerm)
       if (selectedCategory && selectedCategory !== "all") params.append("category", selectedCategory)
+      params.append("status", expirationFilter)
       params.append("t", Date.now()) // Cache busting
       
       const response = await fetch(`/api/provider/products?${params.toString()}`, { 
@@ -100,7 +102,7 @@ export default function ProductsPage() {
     } finally {
       setLoading(false)
     }
-  }, [page, searchTerm, selectedCategory, showToast])
+  }, [page, searchTerm, selectedCategory, expirationFilter, showToast])
 
   // For infinite scrolling
   const lastProductRef = useCallback(node => {
@@ -123,7 +125,7 @@ export default function ProductsPage() {
     }, 300)
     
     return () => clearTimeout(timer)
-  }, [searchTerm, selectedCategory])
+  }, [searchTerm, selectedCategory, expirationFilter])
 
   useEffect(() => {
     fetchProducts(true)
@@ -287,6 +289,19 @@ export default function ProductsPage() {
                   ))}
                 </SelectContent>
               </Select>
+              <Select 
+                value={expirationFilter} 
+                onValueChange={setExpirationFilter}
+              >
+                <SelectTrigger className="w-full sm:w-[150px]">
+                  <SelectValue placeholder="Status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="active">Active Products</SelectItem>
+                  <SelectItem value="expired">Expired Products</SelectItem>
+                  <SelectItem value="all">All Products</SelectItem>
+                </SelectContent>
+              </Select>
               <Button onClick={handleAddNew}>
                 <PlusCircle className="mr-2 h-4 w-4" />
                 Add Product
@@ -299,7 +314,7 @@ export default function ProductsPage() {
             <div className="flex justify-center p-8">Loading...</div>
           ) : products.length === 0 ? (
             <div className="text-center p-8 text-muted-foreground">
-              No products found. {searchTerm || selectedCategory !== "all" ? "Try changing your search or filter." : "Add your first product!"}
+              No products found. {searchTerm || selectedCategory !== "all" || expirationFilter !== "all" ? "Try changing your search or filters." : "Add your first product!"}
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
