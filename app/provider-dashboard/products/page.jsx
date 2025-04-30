@@ -263,8 +263,8 @@ export default function ProductsPage() {
         <CardHeader>
           <div className="flex flex-col md:flex-row justify-between gap-4">
             <CardTitle>Product List</CardTitle>
-            <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2">
-              <div className="relative w-full sm:w-[220px]">
+            <div className="flex flex-col sm:flex-row flex-wrap gap-2">
+              <div className="relative w-full sm:w-[220px] md:w-[180px] lg:w-[220px] mb-2 sm:mb-0">
                 <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                 <Input
                   placeholder="Search products..."
@@ -277,7 +277,7 @@ export default function ProductsPage() {
                 value={selectedCategory} 
                 onValueChange={setSelectedCategory}
               >
-                <SelectTrigger className="w-full sm:w-[180px]">
+                <SelectTrigger className="w-full sm:w-[180px] md:w-[140px] lg:w-[180px]">
                   <SelectValue placeholder="All Categories" />
                 </SelectTrigger>
                 <SelectContent>
@@ -293,7 +293,7 @@ export default function ProductsPage() {
                 value={expirationFilter} 
                 onValueChange={setExpirationFilter}
               >
-                <SelectTrigger className="w-full sm:w-[150px]">
+                <SelectTrigger className="w-full sm:w-[150px] md:w-[130px] lg:w-[150px]">
                   <SelectValue placeholder="Status" />
                 </SelectTrigger>
                 <SelectContent>
@@ -302,7 +302,7 @@ export default function ProductsPage() {
                   <SelectItem value="all">All Products</SelectItem>
                 </SelectContent>
               </Select>
-              <Button onClick={handleAddNew}>
+              <Button onClick={handleAddNew} className="sm:whitespace-nowrap">
                 <PlusCircle className="mr-2 h-4 w-4" />
                 Add Product
               </Button>
