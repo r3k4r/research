@@ -6,6 +6,7 @@ export async function GET(request) {
   const searchParams = request.nextUrl.searchParams;
   const search = searchParams.get('search') || '';
   const categoryId = searchParams.get('category');
+  const status = searchParams.get('status') || 'active'; // Get status param with default 'active'
   const page = parseInt(searchParams.get('page') || '1');
   const limit = parseInt(searchParams.get('limit') || '12');
   const skip = (page - 1) * limit;
@@ -13,6 +14,7 @@ export async function GET(request) {
   try {
     // Build filter conditions
     const where = {};
+    const now = new Date(); // Get current time for expiration filtering
     
     if (search) {
       where.OR = [
@@ -24,6 +26,13 @@ export async function GET(request) {
     
     if (categoryId && categoryId !== 'all') {
       where.categoryId = categoryId;
+    }
+    
+    // Add expiration filter based on status
+    if (status === 'active') {
+      where.expiresAt = { gt: now };
+    } else if (status === 'expired') {
+      where.expiresAt = { lt: now };
     }
     
     // Get total count for pagination

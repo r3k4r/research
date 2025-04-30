@@ -36,6 +36,7 @@ export default function FoodItemsPage() {
   const [totalItems, setTotalItems] = useState(0)
   const [selectedCategory, setSelectedCategory] = useState("all") 
   const [searchTerm, setSearchTerm] = useState("")
+  const [expirationFilter, setExpirationFilter] = useState("active")
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [editingItem, setEditingItem] = useState(null)
   const [providers, setProviders] = useState([])
@@ -65,7 +66,7 @@ export default function FoodItemsPage() {
   const [hasMore, setHasMore] = useState(true)
   const observer = useRef()
 
-  const fetchFoodItems = useCallback(async (reset = false, searchQuery = searchTerm, categoryFilter = selectedCategory) => {
+  const fetchFoodItems = useCallback(async (reset = false, searchQuery = searchTerm, categoryFilter = selectedCategory, statusFilter = expirationFilter) => {
     try {
       const currentPage = reset ? 1 : page
       if (reset) {
@@ -80,6 +81,7 @@ export default function FoodItemsPage() {
       params.append("limit", 12)
       if (searchQuery) params.append("search", searchQuery)
       if (categoryFilter && categoryFilter !== "all") params.append("category", categoryFilter) 
+      params.append("status", statusFilter)
       params.append("t", Date.now()) // Cache busting
       
       const response = await fetch(`/api/admin/food?${params.toString()}`, { 
@@ -114,7 +116,7 @@ export default function FoodItemsPage() {
     } finally {
       setLoading(false)
     }
-  }, [page, searchTerm, selectedCategory, showToast])
+  }, [page])
 
   const fetchProviders = useCallback(async () => {
     try {
@@ -145,13 +147,13 @@ export default function FoodItemsPage() {
 
   useEffect(() => {
     const timer = setTimeout(() => {
-      if (searchTerm !== '' || selectedCategory !== 'all') {
-        fetchFoodItems(true, searchTerm, selectedCategory)
+      if (searchTerm !== '' || selectedCategory !== 'all' || expirationFilter !== 'all') {
+        fetchFoodItems(true, searchTerm, selectedCategory, expirationFilter)
       }
     }, 300)
     
     return () => clearTimeout(timer)
-  }, [searchTerm, selectedCategory]) // fetchFoodItems explicitly removed to prevent circular dependency
+  }, [searchTerm, selectedCategory, expirationFilter])
 
   const lastItemRef = useCallback(node => {
     if (loading) return
@@ -397,7 +399,7 @@ export default function FoodItemsPage() {
         <CardHeader>
           <div className="flex flex-col md:flex-row justify-between gap-4">
             <CardTitle>Food Items List</CardTitle>
-            <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2">
+            <div className="flex flex-col sm:flex-row flex-wrap gap-2">
               <Input
                 placeholder="Search by name or provider..."
                 className="w-full sm:w-[220px]"
@@ -420,6 +422,20 @@ export default function FoodItemsPage() {
                   ))}
                 </SelectContent>
               </Select>
+              
+              <Select 
+                value={expirationFilter} 
+                onValueChange={setExpirationFilter}
+              >
+                <SelectTrigger className="w-full sm:w-[150px]">
+                  <SelectValue placeholder="Status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="active">Active Items</SelectItem>
+                  <SelectItem value="expired">Expired Items</SelectItem>
+                  <SelectItem value="all">All Items</SelectItem>
+                </SelectContent>
+              </Select>
               <Button onClick={handleAddNew}>Add New Food Item</Button>
             </div>
           </div>
@@ -429,7 +445,7 @@ export default function FoodItemsPage() {
             <div className="flex justify-center p-8">Loading...</div>
           ) : foodItems?.length === 0 ? (
             <div className="text-center p-8 text-muted-foreground">
-              No items found. {searchTerm || selectedCategory ? "Try changing your search or filter." : "Add your first item!"}
+              No items found. {searchTerm || selectedCategory !== "all" || expirationFilter !== "all" ? "Try changing your search or filters." : "Add your first item!"}
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
