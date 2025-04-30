@@ -84,7 +84,10 @@ export function FoodCard({
             <p className="text-lg font-semibold text-primary">${discountedPrice.toFixed(2)}</p>
           </div>
           <Badge variant="outline" className="text-orange-600">
-            Expires in {expiresIn}
+            {
+              expiresIn === 'Expired' ? 'Expired' : `Expires in ${expiresIn}`
+            }
+        
           </Badge>
         </div>
       </CardContent>
