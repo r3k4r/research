@@ -147,9 +147,8 @@ export default function FoodItemsPage() {
 
   useEffect(() => {
     const timer = setTimeout(() => {
-      if (searchTerm !== '' || selectedCategory !== 'all' || expirationFilter !== 'all') {
-        fetchFoodItems(true, searchTerm, selectedCategory, expirationFilter)
-      }
+      // Always fetch when any filter changes, including when expirationFilter is "all"
+      fetchFoodItems(true, searchTerm, selectedCategory, expirationFilter)
     }, 300)
     
     return () => clearTimeout(timer)
