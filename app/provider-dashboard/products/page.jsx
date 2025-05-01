@@ -72,7 +72,9 @@ export default function ProductsPage() {
       if (searchQuery) params.append("search", searchQuery)
       if (categoryFilter && categoryFilter !== "all") params.append("category", categoryFilter)
       params.append("status", statusFilter)
-      params.append("t", Date.now()) 
+      params.append("t", Date.now())
+      
+      console.log(`Fetching products with status: ${statusFilter}`)
       
       const response = await fetch(`/api/provider/products?${params.toString()}`, { 
         cache: 'no-store'
@@ -84,6 +86,7 @@ export default function ProductsPage() {
       
       if (reset) {
         setProducts(data.products)
+        setTotalItems(data.totalItems || 0)
       } else {
         setProducts(prev => {
           const existingIds = new Set(prev.map(product => product.id))
@@ -93,10 +96,9 @@ export default function ProductsPage() {
       }
       
       setCategories(data.categories)
-      setTotalItems(data.totalItems)
       setHasMore(data.hasMore)
       
-      if (!reset) {
+      if (!reset && data.products.length > 0) {
         setPage(prev => prev + 1)
       }
     } catch (error) {
@@ -114,9 +116,7 @@ export default function ProductsPage() {
 
   useEffect(() => {
     const timer = setTimeout(() => {
-      if (searchTerm !== '' || selectedCategory !== 'all' || expirationFilter !== 'all') {
-        fetchProducts(true, searchTerm, selectedCategory, expirationFilter)
-      }
+      fetchProducts(true, searchTerm, selectedCategory, expirationFilter)
     }, 300)
     
     return () => clearTimeout(timer)
@@ -133,9 +133,11 @@ export default function ProductsPage() {
     
     if (node && hasMore) {
       observer.current = new IntersectionObserver(entries => {
-        if (entries[0].isIntersecting) {
+        if (entries[0].isIntersecting && !loading) {
           fetchProducts(false)
         }
+      }, {
+        rootMargin: '100px'
       })
       
       observer.current.observe(node)
@@ -338,48 +340,62 @@ export default function ProductsPage() {
               No products found. {searchTerm || selectedCategory !== "all" || expirationFilter !== "all" ? "Try changing your search or filters." : "Add your first product!"}
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {products.map((item, index) => {
-                const isLastItem = index === products.length - 1;
-                return (
-                  <div 
-                    key={item.id} 
-                    className="relative"
-                    ref={isLastItem ? lastProductRef : null}
-                  >
-                    <FoodCard 
-                      id={item.id}
-                      name={item.name}
-                      description={item.description}
-                      image={item.image || "/default-food.jpg"}
-                      originalPrice={item.price}
-                      discountedPrice={item.discountedPrice}
-                      provider={item.provider.businessName}
-                      providerId={item.providerId}
-                      providerLogo={item.provider.logo || "/default-logo.png"}
-                      category={item.category.name}
-                      expiresIn={getExpiresInText(item.expiresAt)}
-                    />
-                    <div className="absolute top-2 right-2 space-x-2">
-                      <Button 
-                        variant="outline" 
-                        size="sm"
-                        onClick={() => handleEdit(item.id)}
-                      >
-                        Edit
-                      </Button>
-                      <Button 
-                        variant="destructive" 
-                        size="sm" 
-                        onClick={() => confirmDelete(item.id)}
-                      >
-                        Delete
-                      </Button>
+            <>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {products.map((item, index) => {
+                  const isLastItem = index === products.length - 1;
+                  return (
+                    <div 
+                      key={item.id} 
+                      className="relative"
+                      ref={isLastItem && hasMore ? lastProductRef : null}
+                    >
+                      <FoodCard 
+                        id={item.id}
+                        name={item.name}
+                        description={item.description}
+                        image={item.image || "/default-food.jpg"}
+                        originalPrice={item.price}
+                        discountedPrice={item.discountedPrice}
+                        provider={item.provider.businessName}
+                        providerId={item.providerId}
+                        providerLogo={item.provider.logo || "/default-logo.png"}
+                        category={item.category.name}
+                        expiresIn={getExpiresInText(item.expiresAt)}
+                      />
+                      <div className="absolute top-2 right-2 space-x-2">
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => handleEdit(item.id)}
+                        >
+                          Edit
+                        </Button>
+                        <Button 
+                          variant="destructive" 
+                          size="sm" 
+                          onClick={() => confirmDelete(item.id)}
+                        >
+                          Delete
+                        </Button>
+                      </div>
                     </div>
-                  </div>
-                );
-              })}
-            </div>
+                  );
+                })}
+              </div>
+              
+              {hasMore && (
+                <div className="flex justify-center mt-8 mb-4">
+                  <Button 
+                    variant="outline" 
+                    onClick={() => fetchProducts(false)}
+                    disabled={loading}
+                  >
+                    {loading ? "Loading more..." : "Load more products"}
+                  </Button>
+                </div>
+              )}
+            </>
           )}
           
           {hasMore && products.length > 0 && loading && (

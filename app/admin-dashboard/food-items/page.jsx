@@ -84,6 +84,8 @@ export default function FoodItemsPage() {
       params.append("status", statusFilter)
       params.append("t", Date.now()) // Cache busting
       
+      console.log(`Fetching food items with status: ${statusFilter}`)
+      
       const response = await fetch(`/api/admin/food?${params.toString()}`, { 
         cache: 'no-store'
       })
@@ -94,6 +96,7 @@ export default function FoodItemsPage() {
       
       if (reset) {
         setFoodItems(data.foodItems)
+        setTotalItems(data.totalItems || 0) // Update total count only on reset
       } else {
         // Make sure we're not adding duplicate items by checking IDs
         setFoodItems(prev => {
@@ -101,10 +104,10 @@ export default function FoodItemsPage() {
           const newItems = data.foodItems.filter(item => !existingIds.has(item.id))
           return [...prev, ...newItems]
         })
+        // Don't update totalItems on pagination to avoid the count becoming zero
       }
       
       setCategories(data.categories)
-      setTotalItems(data.totalItems)
       setHasMore(data.hasMore || false)
       
       if (!reset && data.foodItems.length > 0) {
@@ -147,7 +150,7 @@ export default function FoodItemsPage() {
 
   useEffect(() => {
     const timer = setTimeout(() => {
-      // Always fetch when any filter changes, including when expirationFilter is "all"
+      // Always fetch when any filter changes, regardless of filter value
       fetchFoodItems(true, searchTerm, selectedCategory, expirationFilter)
     }, 300)
     
@@ -166,15 +169,17 @@ export default function FoodItemsPage() {
     // Only attach new observer if there's more data
     if (node && hasMore) {
       observer.current = new IntersectionObserver(entries => {
-        if (entries[0].isIntersecting) {
-          // Manually call with current state to avoid dependency issue
+        if (entries[0].isIntersecting && !loading) {
+          console.log("Loading more items...")
           fetchFoodItems(false)
         }
+      }, {
+        rootMargin: '100px' // Trigger earlier before the element comes into view
       })
       
       observer.current.observe(node)
     }
-  }, [loading, hasMore]) // fetchFoodItems excluded to prevent infinite loop
+  }, [loading, hasMore])
 
   useEffect(() => {
     return () => {
@@ -447,48 +452,62 @@ export default function FoodItemsPage() {
               No items found. {searchTerm || selectedCategory !== "all" || expirationFilter !== "all" ? "Try changing your search or filters." : "Add your first item!"}
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {foodItems?.map((item, index) => {
-                const isLastItem = index === foodItems.length - 1;
-                return (
-                  <div 
-                    key={item.id} 
-                    className="relative"
-                    ref={isLastItem ? lastItemRef : null}
-                  >
-                    <FoodCard 
-                      id={item?.id}
-                      name={item?.name}
-                      description={item?.description}
-                      image={item?.image || "/default-food.jpg"}
-                      originalPrice={item?.price}
-                      discountedPrice={item?.discountedPrice}
-                      provider={item?.provider.businessName}
-                      providerId={item?.providerId}
-                      providerLogo={item?.provider.logo || "/default-logo.png"}
-                      category={item?.category.name}
-                      expiresIn={getExpiresInText(item?.expiresAt)}
-                    />
-                    <div className="absolute top-2 right-2 space-x-2">
-                      <Button 
-                        variant="outline" 
-                        size="sm"
-                        onClick={() => handleEdit(item?.id)}
-                      >
-                        Edit
-                      </Button>
-                      <Button 
-                        variant="destructive" 
-                        size="sm" 
-                        onClick={() => confirmDelete(item?.id)}
-                      >
-                        Delete
-                      </Button>
+            <>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {foodItems?.map((item, index) => {
+                  const isLastItem = index === foodItems.length - 1;
+                  return (
+                    <div 
+                      key={item.id} 
+                      className="relative"
+                      ref={isLastItem && hasMore ? lastItemRef : null}
+                    >
+                      <FoodCard 
+                        id={item?.id}
+                        name={item?.name}
+                        description={item?.description}
+                        image={item?.image || "/default-food.jpg"}
+                        originalPrice={item?.price}
+                        discountedPrice={item?.discountedPrice}
+                        provider={item?.provider.businessName}
+                        providerId={item?.providerId}
+                        providerLogo={item?.provider.logo || "/default-logo.png"}
+                        category={item?.category.name}
+                        expiresIn={getExpiresInText(item?.expiresAt)}
+                      />
+                      <div className="absolute top-2 right-2 space-x-2">
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => handleEdit(item?.id)}
+                        >
+                          Edit
+                        </Button>
+                        <Button 
+                          variant="destructive" 
+                          size="sm" 
+                          onClick={() => confirmDelete(item?.id)}
+                        >
+                          Delete
+                        </Button>
+                      </div>
                     </div>
-                  </div>
-                );
-              })}
-            </div>
+                  );
+                })}
+              </div>
+              
+              {hasMore && (
+                <div className="flex justify-center mt-8 mb-4">
+                  <Button 
+                    variant="outline" 
+                    onClick={() => fetchFoodItems(false)}
+                    disabled={loading}
+                  >
+                    {loading ? "Loading more..." : "Load more items"}
+                  </Button>
+                </div>
+              )}
+            </>
           )}
           
           {hasMore && foodItems.length > 0 && loading && (
