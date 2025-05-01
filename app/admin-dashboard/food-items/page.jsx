@@ -15,7 +15,7 @@ import {
   SelectGroup,
   SelectLabel
 } from "@/components/ui/select"
-import { Plus, Check, X, Search } from "lucide-react"
+import { Plus, Check, X, Search, RefreshCw } from "lucide-react"
 import Image from "next/image"
 import { useToast } from "@/components/ui/toast"
 import { 
@@ -400,8 +400,23 @@ export default function FoodItemsPage() {
     <div>
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-3xl font-semibold">Food Items Management</h1>
-        <div className="text-sm text-muted-foreground">
-          Total items: <span className="font-medium">{totalItems}</span>
+        <div className="flex items-center gap-2">
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={() => {
+              setPage(1);
+              fetchFoodItems(true);
+            }}
+            disabled={loading}
+            className="flex items-center gap-1"
+          >
+            <RefreshCw className={`h-3 w-3 ${loading ? 'animate-spin' : ''}`} />
+            <span>Refresh</span>
+          </Button>
+          <div className="text-sm text-muted-foreground">
+            Total items: <span className="font-medium">{totalItems}</span>
+          </div>
         </div>
       </div>
       

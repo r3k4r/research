@@ -13,7 +13,7 @@ import {
   SelectTrigger, 
   SelectValue,
 } from "@/components/ui/select"
-import { PlusCircle, Search } from "lucide-react"
+import { PlusCircle, Search, RefreshCw } from "lucide-react"
 import { useToast } from "@/components/ui/toast"
 import { 
   AlertDialog,
@@ -280,8 +280,23 @@ export default function ProductsPage() {
     <div>
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-3xl font-semibold">My Products</h1>
-        <div className="text-sm text-muted-foreground">
-          Total products: <span className="font-medium">{totalItems}</span>
+        <div className="flex items-center gap-2">
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={() => {
+              setPage(1);
+              fetchProducts(true);
+            }}
+            disabled={loading}
+            className="flex items-center gap-1"
+          >
+            <RefreshCw className={`h-3 w-3 ${loading ? 'animate-spin' : ''}`} />
+            <span>Refresh</span>
+          </Button>
+          <div className="text-sm text-muted-foreground">
+            Total products: <span className="font-medium">{totalItems}</span>
+          </div>
         </div>
       </div>
       
