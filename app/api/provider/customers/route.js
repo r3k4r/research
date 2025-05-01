@@ -6,14 +6,12 @@ import { prisma } from "@/lib/db";
 
 export async function GET(req) {
   try {
-    // Get the authenticated user's session
     const session = await getServerSession(authOptions);
     
     if (!session || session.user.role !== "PROVIDER") {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
     
-    // Get the provider profile ID
     const provider = await prisma.providerProfile.findUnique({
       where: {
         userId: session.user.id
@@ -24,11 +22,9 @@ export async function GET(req) {
       return NextResponse.json({ error: "Provider profile not found" }, { status: 404 });
     }
 
-    // Get search term from URL query parameter
     const url = new URL(req.url);
     const search = url.searchParams.get('search') || '';
     
-    // Get unique customers who have ordered from this provider
     const customers = await prisma.purchasedOrder.findMany({
       where: {
         providerId: provider.id,
@@ -68,7 +64,7 @@ export async function GET(req) {
       },
     });
     
-    // Transform the data to prepare a list of unique customers with order history
+    // Transform the data to  a list of unique customers with order history
     const uniqueCustomers = [];
     const customerMap = new Map();
     

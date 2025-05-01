@@ -1,6 +1,12 @@
+import { useEffect, useState } from "react"
 
 
-const SingleCustomer = () => {
+const SingleCustomer = ({ params }) => {
+    const { id } = params
+    console.log('FrontEnd ID:', id);
+    
+
+    
   return (
     <div className=''>SingleCustomer</div>
   )
