@@ -11,6 +11,8 @@ export async function GET(request) {
   const limit = parseInt(searchParams.get('limit') || '12');
   const skip = (page - 1) * limit;
   
+  console.log(`Admin food request - Page: ${page}, Skip: ${skip}, Limit: ${limit}, Status: ${status}`);
+  
   try {
     // Build filter conditions
     const where = {};
@@ -61,6 +63,8 @@ export async function GET(request) {
     
     // Calculate whether there are more items to fetch
     const hasMore = skip + foodItems.length < totalItems;
+    
+    console.log(`Admin food response - Retrieved: ${foodItems.length}, Total: ${totalItems}, HasMore: ${hasMore}`);
     
     return NextResponse.json({
       foodItems,

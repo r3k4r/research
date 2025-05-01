@@ -84,7 +84,7 @@ export default function FoodItemsPage() {
       params.append("status", statusFilter)
       params.append("t", Date.now()) // Cache busting
       
-      console.log(`Fetching food items with status: ${statusFilter}`)
+      console.log(`Fetching food items with status: ${statusFilter}, page: ${currentPage}`)
       
       const response = await fetch(`/api/admin/food?${params.toString()}`, { 
         cache: 'no-store'
@@ -93,6 +93,7 @@ export default function FoodItemsPage() {
       if (!response.ok) throw new Error("Failed to fetch food items")
       
       const data = await response.json()
+      console.log(`Received ${data.foodItems.length} items, total: ${data.totalItems}, hasMore: ${data.hasMore}`)
       
       if (reset) {
         setFoodItems(data.foodItems)
@@ -102,6 +103,7 @@ export default function FoodItemsPage() {
         setFoodItems(prev => {
           const existingIds = new Set(prev.map(item => item.id))
           const newItems = data.foodItems.filter(item => !existingIds.has(item.id))
+          console.log(`Adding ${newItems.length} new items to existing ${prev.length} items`)
           return [...prev, ...newItems]
         })
         // Don't update totalItems on pagination to avoid the count becoming zero
@@ -111,7 +113,10 @@ export default function FoodItemsPage() {
       setHasMore(data.hasMore || false)
       
       if (!reset && data.foodItems.length > 0) {
-        setPage(prev => prev + 1)
+        setPage(prev => {
+          console.log(`Incrementing page from ${prev} to ${prev + 1}`)
+          return prev + 1
+        })
       }
     } catch (error) {
       console.error("Error fetching food items:", error)
@@ -119,7 +124,7 @@ export default function FoodItemsPage() {
     } finally {
       setLoading(false)
     }
-  }, [page])
+  }, [page, searchTerm, selectedCategory, expirationFilter])
 
   const fetchProviders = useCallback(async () => {
     try {
@@ -158,7 +163,7 @@ export default function FoodItemsPage() {
   }, [searchTerm, selectedCategory, expirationFilter])
 
   const lastItemRef = useCallback(node => {
-    if (loading) return
+    if (loading || !hasMore) return
     
     // Always clean up old observer first
     if (observer.current) {
@@ -167,19 +172,20 @@ export default function FoodItemsPage() {
     }
     
     // Only attach new observer if there's more data
-    if (node && hasMore) {
+    if (node) {
       observer.current = new IntersectionObserver(entries => {
         if (entries[0].isIntersecting && !loading) {
-          console.log("Loading more items...")
+          console.log("Last item is visible, loading more items...")
           fetchFoodItems(false)
         }
       }, {
-        rootMargin: '100px' // Trigger earlier before the element comes into view
+        rootMargin: '200px', // Increased margin to trigger earlier
+        threshold: 0.1
       })
       
       observer.current.observe(node)
     }
-  }, [loading, hasMore])
+  }, [loading, hasMore, fetchFoodItems])
 
   useEffect(() => {
     return () => {
@@ -460,7 +466,7 @@ export default function FoodItemsPage() {
                     <div 
                       key={item.id} 
                       className="relative"
-                      ref={isLastItem && hasMore ? lastItemRef : null}
+                      ref={isLastItem ? lastItemRef : null}
                     >
                       <FoodCard 
                         id={item?.id}
@@ -500,7 +506,10 @@ export default function FoodItemsPage() {
                 <div className="flex justify-center mt-8 mb-4">
                   <Button 
                     variant="outline" 
-                    onClick={() => fetchFoodItems(false)}
+                    onClick={() => {
+                      console.log('Manual load more clicked, current page:', page)
+                      fetchFoodItems(false)
+                    }}
                     disabled={loading}
                   >
                     {loading ? "Loading more..." : "Load more items"}
@@ -510,10 +519,11 @@ export default function FoodItemsPage() {
             </>
           )}
           
-          {hasMore && foodItems.length > 0 && loading && (
-            <div className="flex justify-center p-4">
-              <div className="text-muted-foreground text-sm">
-                Loading more...
+          {hasMore && loading && (
+            <div className="flex justify-center p-4 mt-4">
+              <div className="flex items-center gap-2">
+                <div className="h-4 w-4 rounded-full border-2 border-t-transparent border-blue-500 animate-spin"></div>
+                <span className="text-muted-foreground text-sm">Loading more...</span>
               </div>
             </div>
           )}

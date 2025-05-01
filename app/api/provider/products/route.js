@@ -3,7 +3,6 @@ import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 
-
 // GET - Fetch provider's food items
 export async function GET(request) {
   try {
@@ -24,6 +23,8 @@ export async function GET(request) {
     const page = parseInt(searchParams.get("page") || "1");
     const limit = parseInt(searchParams.get("limit") || "10");
     const skip = (page - 1) * limit;
+    
+    console.log(`Provider products request - Page: ${page}, Skip: ${skip}, Limit: ${limit}, Status: ${status}`);
     
     // Find provider profile
     const user = await prisma.user.findUnique({
@@ -93,6 +94,8 @@ export async function GET(request) {
     
     // Calculate whether there are more items to fetch
     const hasMore = skip + foodItems.length < totalItems;
+    
+    console.log(`Provider products response - Retrieved: ${foodItems.length}, Total: ${totalItems}, HasMore: ${hasMore}`);
     
     return NextResponse.json({
       products: foodItems,

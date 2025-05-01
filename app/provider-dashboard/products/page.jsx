@@ -74,7 +74,7 @@ export default function ProductsPage() {
       params.append("status", statusFilter)
       params.append("t", Date.now())
       
-      console.log(`Fetching products with status: ${statusFilter}`)
+      console.log(`Fetching products with status: ${statusFilter}, page: ${currentPage}`)
       
       const response = await fetch(`/api/provider/products?${params.toString()}`, { 
         cache: 'no-store'
@@ -83,6 +83,7 @@ export default function ProductsPage() {
       if (!response.ok) throw new Error("Failed to fetch products")
       
       const data = await response.json()
+      console.log(`Received ${data.products.length} products, total: ${data.totalItems}, hasMore: ${data.hasMore}`)
       
       if (reset) {
         setProducts(data.products)
@@ -98,7 +99,7 @@ export default function ProductsPage() {
       setCategories(data.categories)
       setHasMore(data.hasMore)
       
-      if (!reset && data.products.length > 0) {
+      if (!reset) {
         setPage(prev => prev + 1)
       }
     } catch (error) {
@@ -107,7 +108,7 @@ export default function ProductsPage() {
     } finally {
       setLoading(false)
     }
-  }, [page])
+  }, [page, searchTerm, selectedCategory, expirationFilter])
 
   useEffect(() => {
     fetchProducts(true)
@@ -124,25 +125,27 @@ export default function ProductsPage() {
   
   
   const lastProductRef = useCallback(node => {
-    if (loading) return
+    if (loading || !hasMore) return
     
     if (observer.current) {
       observer.current.disconnect()
       observer.current = null
     }
     
-    if (node && hasMore) {
+    if (node) {
       observer.current = new IntersectionObserver(entries => {
         if (entries[0].isIntersecting && !loading) {
+          console.log('Last product is visible, loading more...')
           fetchProducts(false)
         }
       }, {
-        rootMargin: '100px'
+        rootMargin: '100px',
+        threshold: 0.1
       })
       
       observer.current.observe(node)
     }
-  }, [loading, hasMore]) 
+  }, [loading, hasMore, fetchProducts]) 
 
   
   useEffect(() => {
@@ -348,7 +351,7 @@ export default function ProductsPage() {
                     <div 
                       key={item.id} 
                       className="relative"
-                      ref={isLastItem && hasMore ? lastProductRef : null}
+                      ref={isLastItem ? lastProductRef : null}
                     >
                       <FoodCard 
                         id={item.id}
@@ -388,7 +391,10 @@ export default function ProductsPage() {
                 <div className="flex justify-center mt-8 mb-4">
                   <Button 
                     variant="outline" 
-                    onClick={() => fetchProducts(false)}
+                    onClick={() => {
+                      console.log('Manual load more clicked, current page:', page)
+                      fetchProducts(false)
+                    }}
                     disabled={loading}
                   >
                     {loading ? "Loading more..." : "Load more products"}
@@ -398,10 +404,11 @@ export default function ProductsPage() {
             </>
           )}
           
-          {hasMore && products.length > 0 && loading && (
-            <div className="flex justify-center p-4">
-              <div className="text-muted-foreground text-sm">
-                Loading more...
+          {hasMore && loading && (
+            <div className="flex justify-center p-4 mt-4">
+              <div className="flex items-center gap-2">
+                <div className="h-4 w-4 rounded-full border-2 border-t-transparent border-blue-500 animate-spin"></div>
+                <span className="text-muted-foreground text-sm">Loading more...</span>
               </div>
             </div>
           )}
