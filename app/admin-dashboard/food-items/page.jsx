@@ -67,9 +67,6 @@ export default function FoodItemsPage() {
   const [hasMore, setHasMore] = useState(true)
   const observer = useRef()
 
-  const pollingIntervalRef = useRef(null);
-  const [autoRefreshEnabled, setAutoRefreshEnabled] = useState(true);
-
   const fetchFoodItems = useCallback(async (reset = false, searchQuery = searchTerm, categoryFilter = selectedCategory, statusFilter = expirationFilter) => {
     try {
       const currentPage = reset ? 1 : page
@@ -199,35 +196,6 @@ export default function FoodItemsPage() {
       }
     }
   }, [])
-
-  const startPolling = useCallback(() => {
-    // Clear any existing interval first
-    if (pollingIntervalRef.current) {
-      clearInterval(pollingIntervalRef.current);
-    }
-    
-    // Set new interval if auto-refresh is enabled
-    if (autoRefreshEnabled) {
-      pollingIntervalRef.current = setInterval(() => {
-        console.log("Auto-refreshing food items data...");
-        // Only refresh if the user isn't actively loading more items
-        if (!loading) {
-          fetchFoodItems(true);
-        }
-      }, 30000); // Check every 30 seconds
-    }
-  }, [autoRefreshEnabled, loading, fetchFoodItems]);
-
-  useEffect(() => {
-    startPolling();
-    
-    // Clean up interval when component unmounts
-    return () => {
-      if (pollingIntervalRef.current) {
-        clearInterval(pollingIntervalRef.current);
-      }
-    };
-  }, [startPolling]);
 
   const resetForm = () => {
     setFormData({
@@ -438,18 +406,6 @@ export default function FoodItemsPage() {
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-3xl font-semibold">Food Items Management</h1>
         <div className="flex items-center gap-2">
-          <div className="flex items-center mr-3">
-            <input
-              type="checkbox"
-              id="autoRefresh"
-              className="mr-2 h-4 w-4"
-              checked={autoRefreshEnabled}
-              onChange={(e) => setAutoRefreshEnabled(e.target.checked)}
-            />
-            <label htmlFor="autoRefresh" className="text-sm text-muted-foreground cursor-pointer">
-              Auto refresh
-            </label>
-          </div>
           <Button 
             variant="outline" 
             size="sm" 
