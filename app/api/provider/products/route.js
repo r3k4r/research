@@ -6,7 +6,6 @@ import { prisma } from "@/lib/db";
 // GET - Fetch provider's food items
 export async function GET(request) {
   try {
-    // Get authenticated provider session
     const session = await getServerSession(authOptions);
     if (!session || session.user.role !== "PROVIDER") {
       return NextResponse.json(
@@ -15,7 +14,6 @@ export async function GET(request) {
       );
     }
     
-    // Get query parameters
     const { searchParams } = new URL(request.url);
     const searchTerm = searchParams.get("search") || "";
     const categoryId = searchParams.get("category") || "";
@@ -26,7 +24,6 @@ export async function GET(request) {
     
     console.log(`Provider products request - Page: ${page}, Skip: ${skip}, Limit: ${limit}, Status: ${status}`);
     
-    // Find provider profile
     const user = await prisma.user.findUnique({
       where: { email: session.user.email },
       include: { providerProfile: true },
@@ -115,7 +112,6 @@ export async function GET(request) {
 // POST - Create a new food item
 export async function POST(request) {
   try {
-    // Get authenticated provider session
     const session = await getServerSession(authOptions);
     if (!session || session.user.role !== "PROVIDER") {
       return NextResponse.json(
@@ -124,7 +120,6 @@ export async function POST(request) {
       );
     }
     
-    // Parse request body
     const data = await request.json();
     const { 
       name, 
@@ -137,7 +132,6 @@ export async function POST(request) {
       image 
     } = data;
     
-    // Validate required fields
     if (!name || !description || !originalPrice || !discountedPrice || !category || !quantity || !expiresIn) {
       return NextResponse.json(
         { error: "Missing required fields" },
@@ -145,7 +139,6 @@ export async function POST(request) {
       );
     }
     
-    // Find provider profile
     const user = await prisma.user.findUnique({
       where: { email: session.user.email },
       include: { providerProfile: true },
@@ -160,7 +153,6 @@ export async function POST(request) {
     
     const providerId = user.providerProfile.id;
     
-    // Find or create the category
     const categoryRecord = await prisma.category.findUnique({
       where: { name: category },
     });
@@ -172,11 +164,9 @@ export async function POST(request) {
       );
     }
 
-    // Create expiry time
     const now = new Date();
     const expiresAt = new Date(now.getTime() + parseInt(expiresIn) * 60 * 60 * 1000);
 
-    // Create the food item
     const foodItem = await prisma.foodItem.create({
       data: {
         name,

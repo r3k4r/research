@@ -83,7 +83,7 @@ export default function FoodItemsPage() {
       if (searchQuery) params.append("search", searchQuery)
       if (categoryFilter && categoryFilter !== "all") params.append("category", categoryFilter) 
       params.append("status", statusFilter)
-      params.append("t", Date.now()) // Cache busting
+      params.append("t", Date.now()) 
       
       console.log(`Fetching food items with status: ${statusFilter}, page: ${currentPage}`)
       
@@ -98,16 +98,15 @@ export default function FoodItemsPage() {
       
       if (reset) {
         setFoodItems(data.foodItems)
-        setTotalItems(data.totalItems || 0) // Update total count only on reset
+        setTotalItems(data.totalItems || 0) 
       } else {
-        // Make sure we're not adding duplicate items by checking IDs
         setFoodItems(prev => {
           const existingIds = new Set(prev.map(item => item.id))
           const newItems = data.foodItems.filter(item => !existingIds.has(item.id))
           console.log(`Adding ${newItems.length} new items to existing ${prev.length} items`)
           return [...prev, ...newItems]
         })
-        // Don't update totalItems on pagination to avoid the count becoming zero
+       
       }
       
       setCategories(data.categories)
@@ -149,14 +148,12 @@ export default function FoodItemsPage() {
   }, [])
 
   useEffect(() => {
-    // Only fetch on initial mount, with empty array dependencies
     fetchFoodItems(true)
     fetchProviders()
-  }, []) // Empty dependency array is key here
+  }, [])
 
   useEffect(() => {
     const timer = setTimeout(() => {
-      // Always fetch when any filter changes, regardless of filter value
       fetchFoodItems(true, searchTerm, selectedCategory, expirationFilter)
     }, 300)
     
@@ -166,13 +163,11 @@ export default function FoodItemsPage() {
   const lastItemRef = useCallback(node => {
     if (loading || !hasMore) return
     
-    // Always clean up old observer first
     if (observer.current) {
       observer.current.disconnect()
       observer.current = null
     }
     
-    // Only attach new observer if there's more data
     if (node) {
       observer.current = new IntersectionObserver(entries => {
         if (entries[0].isIntersecting && !loading) {
@@ -180,7 +175,7 @@ export default function FoodItemsPage() {
           fetchFoodItems(false)
         }
       }, {
-        rootMargin: '200px', // Increased margin to trigger earlier
+        rootMargin: '200px', 
         threshold: 0.1
       })
       

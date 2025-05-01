@@ -6,7 +6,7 @@ export async function GET(request) {
   const searchParams = request.nextUrl.searchParams;
   const search = searchParams.get('search') || '';
   const categoryId = searchParams.get('category');
-  const status = searchParams.get('status') || 'active'; // Get status param with default 'active'
+  const status = searchParams.get('status') || 'active'; 
   const page = parseInt(searchParams.get('page') || '1');
   const limit = parseInt(searchParams.get('limit') || '12');
   const skip = (page - 1) * limit;
@@ -14,9 +14,8 @@ export async function GET(request) {
   console.log(`Admin food request - Page: ${page}, Skip: ${skip}, Limit: ${limit}, Status: ${status}`);
   
   try {
-    // Build filter conditions
     const where = {};
-    const now = new Date(); // Get current time for expiration filtering
+    const now = new Date();
     
     if (search) {
       where.OR = [
@@ -30,17 +29,14 @@ export async function GET(request) {
       where.categoryId = categoryId;
     }
     
-    // Add expiration filter based on status
     if (status === 'active') {
       where.expiresAt = { gt: now };
     } else if (status === 'expired') {
       where.expiresAt = { lt: now };
     }
     
-    // Get total count for pagination
     const totalItems = await prisma.foodItem.count({ where });
     
-    // Fetch paginated food items with filter
     const foodItems = await prisma.foodItem.findMany({
       where,
       include: {
@@ -54,14 +50,12 @@ export async function GET(request) {
       take: limit
     });
     
-    // Fetch all categories for the dropdown
     const categories = await prisma.category.findMany({
       orderBy: {
         name: 'asc'
       }
     });
     
-    // Calculate whether there are more items to fetch
     const hasMore = skip + foodItems.length < totalItems;
     
     console.log(`Admin food response - Retrieved: ${foodItems.length}, Total: ${totalItems}, HasMore: ${hasMore}`);
@@ -86,11 +80,9 @@ export async function POST(request) {
   try {
     const body = await request.json();
     
-    // Calculate expiry date from expiresIn hours
     const expiresAt = new Date();
     expiresAt.setHours(expiresAt.getHours() + parseInt(body.expiresIn));
     
-    // Ensure we have a category name
     const categoryName = body.category?.trim();
     if (!categoryName) {
       return NextResponse.json(
@@ -99,7 +91,6 @@ export async function POST(request) {
       );
     }
     
-    // First check if this is a new category that needs to be created
     let category = await prisma.category.findFirst({
       where: { 
         name: { 
@@ -109,7 +100,6 @@ export async function POST(request) {
       }
     });
     
-    // If category doesn't exist, create it in the Category table
     if (!category) {
       try {
         console.log(`Creating new category: ${categoryName}`);
@@ -135,7 +125,7 @@ export async function POST(request) {
         discountedPrice: parseFloat(body.discountedPrice),
         quantity: parseInt(body.quantity || 1),
         image: body.image || "/default-food.jpg",
-        categoryId: category.id,  // Use the Category table ID
+        categoryId: category.id, 
         providerId: body.providerId,
         expiresAt: expiresAt
       },
