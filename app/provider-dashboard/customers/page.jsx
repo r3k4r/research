@@ -23,6 +23,7 @@ import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/toast';
 import { Search, RefreshCw, User, ChevronLeft, ChevronRight, Loader2 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import { useRouter } from 'next/navigation';
 
 export default function CustomersPage() {
   const [customers, setCustomers] = useState([]);
@@ -38,6 +39,8 @@ export default function CustomersPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(10);
   
+  const router = useRouter();
+
   const fetchCustomers = async (search = '') => {
     try {
       if (search) {
@@ -162,6 +165,10 @@ export default function CustomersPage() {
     }).format(amount);
   };
 
+  const handleRowClick = (customerId) => {
+    router.push(`/provider-dashboard/customers/${customerId}`);
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex flex-row items-center justify-between gap-4">
@@ -270,7 +277,11 @@ export default function CustomersPage() {
                   </TableHeader>
                   <TableBody>
                     {displayedCustomers.map((customer) => (
-                      <TableRow key={customer.id}>
+                      <TableRow 
+                        key={customer.id} 
+                        className="cursor-pointer hover:bg-secondary/30 transition-colors"
+                        onClick={() => handleRowClick(customer.id)}
+                      >
                         <TableCell>
                           <div className="flex items-center gap-3">
                             <Avatar>
