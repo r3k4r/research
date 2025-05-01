@@ -47,6 +47,7 @@ export default function FoodItemsPage() {
   const [deleteItemId, setDeleteItemId] = useState(null)
   const [isDeleteAlertOpen, setIsDeleteAlertOpen] = useState(false)
   const { showToast, ToastComponent } = useToast()
+  const [isSubmitting, setIsSubmitting] = useState(false)
   
   const [formData, setFormData] = useState({
     name: "",
@@ -325,6 +326,8 @@ export default function FoodItemsPage() {
     const method = editingItem ? "PUT" : "POST"
     
     try {
+      setIsSubmitting(true)
+      
       const response = await fetch(url, {
         method,
         headers: {
@@ -348,12 +351,14 @@ export default function FoodItemsPage() {
         "success"
       )
       
-      await fetchFoodItems(true)
       setIsDialogOpen(false)
       resetForm()
+      await fetchFoodItems(true)
     } catch (error) {
       console.error("Error saving food item:", error)
       showToast(`Error: ${error.message}`, "error")
+    } finally {
+      setIsSubmitting(false)
     }
   }
 
@@ -583,6 +588,7 @@ export default function FoodItemsPage() {
                   value={formData?.name}
                   onChange={handleInputChange}
                   required
+                  disabled={isSubmitting}
                 />
               </div>
               <div className="grid grid-cols-1 gap-2">
@@ -593,6 +599,7 @@ export default function FoodItemsPage() {
                   value={formData?.description}
                   onChange={handleInputChange}
                   required
+                  disabled={isSubmitting}
                 />
               </div>
               <div className="grid grid-cols-2 gap-4">
@@ -606,6 +613,7 @@ export default function FoodItemsPage() {
                     value={formData?.originalPrice}
                     onChange={handleInputChange}
                     required
+                    disabled={isSubmitting}
                   />
                 </div>
                 <div className="grid gap-2">
@@ -618,6 +626,7 @@ export default function FoodItemsPage() {
                     value={formData?.discountedPrice}
                     onChange={handleInputChange}
                     required
+                    disabled={isSubmitting}
                   />
                 </div>
               </div>
@@ -632,12 +641,14 @@ export default function FoodItemsPage() {
                       onChange={(e) => setNewCategoryName(e.target.value)}
                       placeholder="New category name"
                       autoFocus
+                      disabled={isSubmitting}
                     />
                     <Button 
                       type="button" 
                       size="icon" 
                       variant="ghost" 
                       onClick={() => setShowNewCategoryInput(false)}
+                      disabled={isSubmitting}
                     >
                       <X size={16} />
                     </Button>
@@ -645,6 +656,7 @@ export default function FoodItemsPage() {
                       type="button" 
                       size="icon" 
                       onClick={handleAddNewCategory}
+                      disabled={isSubmitting}
                     >
                       <Check size={16} />
                     </Button>
@@ -654,6 +666,7 @@ export default function FoodItemsPage() {
                     <Select
                       value={formData.category}
                       onValueChange={(value) => setFormData({ ...formData, category: value })}
+                      disabled={isSubmitting}
                     >
                       <SelectTrigger className="w-full">
                         <SelectValue placeholder="Select a category" />
@@ -674,6 +687,7 @@ export default function FoodItemsPage() {
                       size="icon" 
                       variant="outline"
                       onClick={() => setShowNewCategoryInput(true)}
+                      disabled={isSubmitting}
                     >
                       <Plus size={16} />
                     </Button>
@@ -690,6 +704,7 @@ export default function FoodItemsPage() {
                       variant="outline"
                       className="w-full justify-between"
                       onClick={() => setProviderSearchOpen(!providerSearchOpen)}
+                      disabled={isSubmitting}
                     >
                       {formData.providerId ? (
                         <div className="flex items-center gap-2">
@@ -807,6 +822,7 @@ export default function FoodItemsPage() {
                     value={formData?.expiresIn}
                     onChange={handleInputChange}
                     required
+                    disabled={isSubmitting}
                   />
                 </div>
                 <div className="grid gap-2">
@@ -818,6 +834,7 @@ export default function FoodItemsPage() {
                     value={formData?.quantity}
                     onChange={handleInputChange}
                     required
+                    disabled={isSubmitting}
                   />
                 </div>
               </div>
@@ -829,6 +846,7 @@ export default function FoodItemsPage() {
                   name="image"
                   value={formData?.image}
                   onChange={handleInputChange}
+                  disabled={isSubmitting}
                 />
               </div>
             </div>
@@ -840,11 +858,22 @@ export default function FoodItemsPage() {
                   setIsDialogOpen(false)
                   resetForm()
                 }}
+                disabled={isSubmitting}
               >
                 Cancel
               </Button>
-              <Button type="submit">
-                {editingItem ? "Update" : "Add"} Food Item
+              <Button 
+                type="submit"
+                disabled={isSubmitting}
+              >
+                {isSubmitting ? (
+                  <>
+                    <div className="h-4 w-4 mr-2 rounded-full border-2 border-t-transparent border-current animate-spin"></div>
+                    {editingItem ? "Updating..." : "Adding..."}
+                  </>
+                ) : (
+                  editingItem ? "Update" : "Add"
+                )} Food Item
               </Button>
             </div>
           </form>

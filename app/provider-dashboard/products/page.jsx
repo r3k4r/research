@@ -39,6 +39,7 @@ export default function ProductsPage() {
   const [isDeleteAlertOpen, setIsDeleteAlertOpen] = useState(false)
   const [expirationFilter, setExpirationFilter] = useState("active")
   const { showToast, ToastComponent } = useToast()
+  const [isSubmitting, setIsSubmitting] = useState(false)
   
   // Pagination
   const [page, setPage] = useState(1)
@@ -220,6 +221,8 @@ export default function ProductsPage() {
     const method = editingItem ? "PUT" : "POST"
     
     try {
+      setIsSubmitting(true)
+      
       const response = await fetch(url, {
         method,
         headers: {
@@ -241,12 +244,14 @@ export default function ProductsPage() {
         "success"
       )
       
-      await fetchProducts(true)
       setIsDialogOpen(false)
       resetForm()
+      await fetchProducts(true)
     } catch (error) {
       console.error("Error saving product:", error)
       showToast(`Error: ${error.message}`, "error")
+    } finally {
+      setIsSubmitting(false)
     }
   }
 
@@ -468,6 +473,7 @@ export default function ProductsPage() {
                   value={formData.name}
                   onChange={handleInputChange}
                   required
+                  disabled={isSubmitting}
                 />
               </div>
               <div className="grid grid-cols-1 gap-2">
@@ -478,6 +484,7 @@ export default function ProductsPage() {
                   value={formData.description}
                   onChange={handleInputChange}
                   required
+                  disabled={isSubmitting}
                 />
               </div>
               <div className="grid grid-cols-2 gap-4">
@@ -491,6 +498,7 @@ export default function ProductsPage() {
                     value={formData.originalPrice}
                     onChange={handleInputChange}
                     required
+                    disabled={isSubmitting}
                   />
                 </div>
                 <div className="grid gap-2">
@@ -503,6 +511,7 @@ export default function ProductsPage() {
                     value={formData.discountedPrice}
                     onChange={handleInputChange}
                     required
+                    disabled={isSubmitting}
                   />
                 </div>
               </div>
@@ -513,6 +522,7 @@ export default function ProductsPage() {
                   value={formData.category}
                   onValueChange={(value) => setFormData({ ...formData, category: value })}
                   required
+                  disabled={isSubmitting}
                 >
                   <SelectTrigger className="w-full">
                     <SelectValue placeholder="Select a category" />
@@ -537,6 +547,7 @@ export default function ProductsPage() {
                     value={formData.expiresIn}
                     onChange={handleInputChange}
                     required
+                    disabled={isSubmitting}
                   />
                 </div>
                 <div className="grid gap-2">
@@ -548,6 +559,7 @@ export default function ProductsPage() {
                     value={formData.quantity}
                     onChange={handleInputChange}
                     required
+                    disabled={isSubmitting}
                   />
                 </div>
               </div>
@@ -559,6 +571,7 @@ export default function ProductsPage() {
                   name="image"
                   value={formData.image}
                   onChange={handleInputChange}
+                  disabled={isSubmitting}
                 />
               </div>
             </div>
@@ -570,11 +583,22 @@ export default function ProductsPage() {
                   setIsDialogOpen(false)
                   resetForm()
                 }}
+                disabled={isSubmitting}
               >
                 Cancel
               </Button>
-              <Button type="submit">
-                {editingItem ? "Update" : "Add"} Product
+              <Button 
+                type="submit"
+                disabled={isSubmitting}
+              >
+                {isSubmitting ? (
+                  <>
+                    <div className="h-4 w-4 mr-2 rounded-full border-2 border-t-transparent border-current animate-spin"></div>
+                    {editingItem ? "Updating..." : "Adding..."}
+                  </>
+                ) : (
+                  editingItem ? "Update Product" : "Add Product"
+                )}
               </Button>
             </div>
           </form>
