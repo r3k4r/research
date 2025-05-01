@@ -57,6 +57,9 @@ export default function ProductsPage() {
     image: ""
   })
 
+  const pollingIntervalRef = useRef(null);
+  const [autoRefreshEnabled, setAutoRefreshEnabled] = useState(true);
+
   const fetchProducts = useCallback(async (reset = false, searchQuery = searchTerm, categoryFilter = selectedCategory, statusFilter = expirationFilter) => {
     try {
       const currentPage = reset ? 1 : page
@@ -110,6 +113,31 @@ export default function ProductsPage() {
       setLoading(false)
     }
   }, [page, searchTerm, selectedCategory, expirationFilter])
+
+  const startPolling = useCallback(() => {
+    if (pollingIntervalRef.current) {
+      clearInterval(pollingIntervalRef.current);
+    }
+    
+    if (autoRefreshEnabled) {
+      pollingIntervalRef.current = setInterval(() => {
+        console.log("Auto-refreshing products data...");
+        if (!loading) {
+          fetchProducts(true);
+        }
+      }, 30000);
+    }
+  }, [autoRefreshEnabled, loading, fetchProducts]);
+
+  useEffect(() => {
+    startPolling();
+    
+    return () => {
+      if (pollingIntervalRef.current) {
+        clearInterval(pollingIntervalRef.current);
+      }
+    };
+  }, [startPolling]);
 
   useEffect(() => {
     fetchProducts(true)
@@ -286,6 +314,18 @@ export default function ProductsPage() {
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-3xl font-semibold">My Products</h1>
         <div className="flex items-center gap-2">
+          <div className="flex items-center mr-3">
+            <input
+              type="checkbox"
+              id="autoRefresh"
+              className="mr-2 h-4 w-4"
+              checked={autoRefreshEnabled}
+              onChange={(e) => setAutoRefreshEnabled(e.target.checked)}
+            />
+            <label htmlFor="autoRefresh" className="text-sm text-muted-foreground cursor-pointer">
+              Auto refresh
+            </label>
+          </div>
           <Button 
             variant="outline" 
             size="sm" 
