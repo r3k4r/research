@@ -136,7 +136,6 @@ export default function ProductsPage() {
     if (node) {
       observer.current = new IntersectionObserver(entries => {
         if (entries[0].isIntersecting && !loading) {
-          console.log('Last product is visible, loading more...')
           fetchProducts(false)
         }
       }, {
