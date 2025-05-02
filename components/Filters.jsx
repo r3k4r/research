@@ -66,25 +66,6 @@ export function Filters() {
         </div>
       </div>
 
-      {/* Types Section */}
-      <div>
-        <h3 className="font-medium mb-4">Types</h3>
-        <div className="flex flex-wrap gap-2">
-          {types.map((type) => (
-            <button
-              key={type}
-              onClick={() => toggleType(type)}
-              className={`px-4 py-2 rounded-md text-sm border transition-all
-                ${selectedTypes.includes(type)
-                  ? 'bg-primary text-white border-primary'
-                  : 'bg-white text-gray-600 border-gray-200 hover:border-primary'
-                }`}
-            >
-              {type}
-            </button>
-          ))}
-        </div>
-      </div>
     </div>
   );
 }

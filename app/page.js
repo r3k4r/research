@@ -1,11 +1,10 @@
 'use client';
 
 import { useState } from 'react';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import Navbar from '@/components/Navbar';
 import { Filters } from '@/components/Filters';
 import { FoodCard } from '@/components/Food-Card';
-import { X, SlidersHorizontal } from 'lucide-react'; // Import icons
+import { X, SlidersHorizontal } from 'lucide-react'; 
 
 const foods = [
   {
