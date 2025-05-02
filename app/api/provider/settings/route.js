@@ -1,10 +1,11 @@
 import { getServerSession } from "next-auth";
 import { NextResponse } from "next/server";
 import { authOptions } from "@/lib/auth";
-
 import { randomUUID } from "crypto";
 import { prisma } from "@/lib/db";
+import { sendVerificationCode } from "@/lib/email";
 
+//Getting Provider Data
 export async function GET() {
   try {
     const session = await getServerSession(authOptions);
@@ -123,5 +124,56 @@ export async function PUT(req) {
   } catch (error) {
     console.error("Error updating provider settings:", error);
     return NextResponse.json({ error: "Failed to update settings" }, { status: 500 });
+  }
+}
+
+// POST: Send verification email
+export async function POST(req) {
+  try {
+    const session = await getServerSession(authOptions);
+    
+    if (!session || !session.user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+    
+    const userId = session.user.id;
+    
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { email: true }
+    });
+    
+    if (!user) {
+      return NextResponse.json({ error: "User not found" }, { status: 404 });
+    }
+    
+    await prisma.emailVerification.deleteMany({
+      where: { userId }
+    });
+    
+    const verificationCode = Math.floor(100000 + Math.random() * 900000).toString()
+    
+    const expires = new Date(Date.now() + 24 * 60 * 60 * 1000);
+    
+    await prisma.emailVerification.create({
+      data: {
+        userId,
+        token: verificationCode,
+        expires
+      }
+    });
+    
+    await sendVerificationCode(user.email, verificationCode, 'email');
+    
+    return NextResponse.json({ 
+      message: "Verification email sent successfully",
+      email: user.email,
+      maskedEmail: user.email.replace(/(.{2})(.*)(?=@)/, 
+        function(_, a, b) { return a + b.replace(/./g, '*'); })
+    });
+    
+  } catch (error) {
+    console.error("Error sending verification email:", error);
+    return NextResponse.json({ error: "Failed to send verification email" }, { status: 500 });
   }
 }

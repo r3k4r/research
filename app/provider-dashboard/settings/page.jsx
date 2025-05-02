@@ -23,11 +23,13 @@ import { Label } from '@/components/ui/label';
 import { useToast } from '@/components/ui/toast';
 
 const Settings = () => {
+  const router = useRouter();
   const { data: session, update } = useSession();
   const { showToast, ToastComponent } = useToast();
   
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [sendingVerification, setSendingVerification] = useState(false);
   const [emailVerificationNeeded, setEmailVerificationNeeded] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
@@ -40,50 +42,49 @@ const Settings = () => {
     logo: '',
   });
   
-  // Track if initial fetch is complete to prevent re-fetching
-  const initialFetchComplete = useRef(false);
+  const dataFetched = useRef(false);
 
-  // Fetch provider profile data
   useEffect(() => {
-    // Only fetch if we haven't already and session exists
-    if (!initialFetchComplete.current && session?.user) {
-      const fetchSettings = async () => {
-        try {
-          setLoading(true);
-          const response = await fetch('/api/provider/settings');
-          
-          if (!response.ok) {
-            throw new Error('Failed to fetch settings');
-          }
-          
-          const data = await response.json();
-          
-          setFormData({
-            name: data.name || '',
-            email: data.user.email || '',
-            businessName: data.businessName || '',
-            description: data.description || '',
-            address: data.address || '',
-            phoneNumber: data.phoneNumber || '',
-            businessHours: data.businessHours || '',
-            logo: data.logo || '',
-          });
-          
-          setEmailVerificationNeeded(!data.user.emailVerified);
-          initialFetchComplete.current = true;
-        } catch (error) {
-          console.error('Error fetching settings:', error);
-          showToast('Failed to load settings. Please try again.', 'error');
-        } finally {
-          setLoading(false);
-        }
-      };
+    const fetchSettings = async () => {
+      if (dataFetched.current || !session?.user) {
+        return;
+      }
       
-      fetchSettings();
-    }
+      try {
+        setLoading(true);
+        const response = await fetch('/api/provider/settings');
+        
+        if (!response.ok) {
+          throw new Error('Failed to fetch settings');
+        }
+        
+        const data = await response.json();
+        
+        setFormData({
+          name: data.name || '',
+          email: data.user.email || '',
+          businessName: data.businessName || '',
+          description: data.description || '',
+          address: data.address || '',
+          phoneNumber: data.phoneNumber || '',
+          businessHours: data.businessHours || '',
+          logo: data.logo || '',
+        });
+        
+        setEmailVerificationNeeded(!data.user.emailVerified);
+        
+        dataFetched.current = true;
+      } catch (error) {
+        console.error('Error fetching settings:', error);
+        showToast('Failed to load settings. Please try again.', 'error');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchSettings();
   }, [session, showToast]);
 
-  // Handle input changes
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({
@@ -92,7 +93,6 @@ const Settings = () => {
     }));
   };
 
-  // Handle form submission
   const handleSubmit = async (e) => {
     e.preventDefault();
     
@@ -121,16 +121,14 @@ const Settings = () => {
         throw new Error(result.error || 'Failed to update settings');
       }
       
-      // If email was updated and needs verification
       if (result.emailUpdated && result.verificationNeeded) {
         setEmailVerificationNeeded(true);
       }
       
       showToast('Settings updated successfully', 'success');
       
-      // Just update the user info in the session without triggering a reload
       if (session) {
-        await update({
+        update({
           ...session,
           user: {
             ...session.user,
@@ -148,10 +146,10 @@ const Settings = () => {
     }
   };
 
-  // Send email verification
   const handleSendVerification = async () => {
     try {
-      const response = await fetch('/api/auth/send-verification', {
+      setSendingVerification(true);
+      const response = await fetch('/api/provider/settings', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -165,9 +163,14 @@ const Settings = () => {
       }
       
       showToast('Verification email sent. Please check your inbox.', 'success');
+      
+      router.push(`/verify-email?email=${encodeURIComponent(data.email)}`);
+      
     } catch (error) {
       console.error('Error sending verification:', error);
       showToast(error.message || 'Failed to send verification email', 'error');
+    } finally {
+      setSendingVerification(false);
     }
   };
 
@@ -203,9 +206,17 @@ const Settings = () => {
                     variant="outline"
                     size="sm"
                     onClick={handleSendVerification}
+                    disabled={sendingVerification}
                     className="text-yellow-700 border-yellow-300 hover:bg-yellow-100"
                   >
-                    Send verification email
+                    {sendingVerification ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Sending...
+                      </>
+                    ) : (
+                      'Send verification email'
+                    )}
                   </Button>
                 </div>
               </div>
