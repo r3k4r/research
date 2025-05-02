@@ -19,10 +19,29 @@ import {
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Phone, MapPin, Clock, Package, Calendar, Loader2 } from 'lucide-react';
+import { 
+  ArrowLeft, 
+  Phone, 
+  MapPin, 
+  Clock, 
+  Package, 
+  Calendar, 
+  Loader2, 
+  CreditCard,
+  X
+} from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { Separator } from '@/components/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import PurchasedItem from '@/components/PurchasedItem';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogClose
+} from '@/components/ui/dialog';
 
 const SingleCustomer = ({ params }) => {
   const { id } = params;
@@ -31,6 +50,9 @@ const SingleCustomer = ({ params }) => {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [selectedItem, setSelectedItem] = useState(null);
+  const [selectedOrder, setSelectedOrder] = useState(null);
+  const [dialogOpen, setDialogOpen] = useState(false);
 
   useEffect(() => {
     const fetchCustomerData = async () => {
@@ -80,6 +102,14 @@ const SingleCustomer = ({ params }) => {
     router.push('/provider-dashboard/customers');
   };
 
+  const openItemDialog = (item, order) => {
+    setSelectedItem(item);
+    setSelectedOrder(order);
+    setDialogOpen(true);
+  };
+
+ 
+
   if (loading) {
     return (
       <div className="flex justify-center items-center min-h-[50vh]">
@@ -108,24 +138,6 @@ const SingleCustomer = ({ params }) => {
       </div>
     );
   }
-
-  const getOrderStatusBadge = (status) => {
-    const statusStyles = {
-      'PENDING': 'bg-yellow-100 text-yellow-800 border-yellow-300',
-      'ACCEPTED': 'bg-blue-100 text-blue-800 border-blue-300',
-      'PREPARING': 'bg-indigo-100 text-indigo-800 border-indigo-300',
-      'READY_FOR_PICKUP': 'bg-purple-100 text-purple-800 border-purple-300',
-      'IN_TRANSIT': 'bg-orange-100 text-orange-800 border-orange-300',
-      'DELIVERED': 'bg-green-100 text-green-800 border-green-300',
-      'CANCELLED': 'bg-red-100 text-red-800 border-red-300',
-    };
-    
-    return (
-      <span className={`px-2 py-1 rounded text-xs font-medium border ${statusStyles[status] || 'bg-gray-100 text-gray-800 border-gray-300'}`}>
-        {status.replace(/_/g, ' ')}
-      </span>
-    );
-  };
 
   return (
     <div className="space-y-6">
@@ -257,7 +269,7 @@ const SingleCustomer = ({ params }) => {
                         <TableHead>Date</TableHead>
                         <TableHead className="hidden sm:table-cell">Items</TableHead>
                         <TableHead className="text-right">Amount</TableHead>
-                        <TableHead>Status</TableHead>
+                        <TableHead>delivery Person Name</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -267,7 +279,7 @@ const SingleCustomer = ({ params }) => {
                           <TableCell>{formatDate(order.createdAt)}</TableCell>
                           <TableCell className="hidden sm:table-cell">{order.items.length}</TableCell>
                           <TableCell className="text-right">{formatCurrency(order.totalAmount)}</TableCell>
-                          <TableCell>{getOrderStatusBadge(order.status)}</TableCell>
+                          <TableCell>{order.deliveryPersonName}</TableCell>
                         </TableRow>
                       ))}
                     </TableBody>
@@ -303,7 +315,11 @@ const SingleCustomer = ({ params }) => {
                     <TableBody>
                       {orders.flatMap(order => 
                         order.items.map((item, index) => (
-                          <TableRow key={`${order.id}-${index}`}>
+                          <TableRow 
+                            key={`${order.id}-${index}`} 
+                            className="cursor-pointer hover:bg-muted/50"
+                            onClick={() => openItemDialog(item, order)}
+                          >
                             <TableCell>
                               <div>
                                 <div className="font-medium">{item.name}</div>
@@ -334,6 +350,23 @@ const SingleCustomer = ({ params }) => {
           </Card>
         </TabsContent>
       </Tabs>
+
+      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+        <DialogContent className="sm:max-w-md md:max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Item Details</DialogTitle>
+            <DialogDescription>
+              Detailed information about the purchased item
+            </DialogDescription>
+           
+          </DialogHeader>
+          <div className="px-0 py-3">
+            {selectedItem && selectedOrder && (
+              <PurchasedItem item={selectedItem} orderDetails={selectedOrder} />
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

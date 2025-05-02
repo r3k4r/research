@@ -68,7 +68,7 @@ export async function GET(req, { params }) {
         updatedAt: true,
         deliveryAddress: true,
         deliveryNotes: true,
-        paymentMethod: true,
+        deliveryPersonName: true,
         items: {
           select: {
             id: true,
@@ -78,7 +78,11 @@ export async function GET(req, { params }) {
               select: {
                 id: true,
                 name: true,
-                description: true
+                description: true,
+                image: true,
+                price: true,
+                discountedPrice: true,
+                categoryId: true
               }
             }
           }
@@ -98,7 +102,10 @@ export async function GET(req, { params }) {
         price: item.price,
         name: item.foodItem.name,
         description: item.foodItem.description,
-        foodItemId: item.foodItem.id
+        foodItemId: item.foodItem.id,
+        image: item.foodItem.image,
+        originalPrice: item.foodItem.price,
+        discountedPrice: item.foodItem.discountedPrice
       }))
     }));
     
