@@ -12,7 +12,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { useNotifications } from '@/contexts/NotificationContext';
+import { useNotifications } from '@/components/NotificationContext';
 import { useRouter } from 'next/navigation';
 import { formatDistanceToNow } from 'date-fns';
 

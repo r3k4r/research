@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import ProviderSidebar from '@/components/provider/ProviderSidebar';
 import ProviderHeader from '@/components/provider/ProviderHeader';
-import { NotificationProvider } from '@/contexts/NotificationContext';
+import { NotificationProvider } from '@/components/NotificationContext';
 
 export default function ProviderDashboardLayout({ children }) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
