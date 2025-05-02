@@ -16,7 +16,7 @@ export default function Home() {
   
   // State for data
   const [foods, setFoods] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState(null);
   const [page, setPage] = useState(1);
@@ -52,7 +52,7 @@ export default function Home() {
       const newPage = reset ? 1 : currentPage;
       if (reset) {
         setLoadingMore(false);
-        setLoading(true);
+        setLoading(true); // Set loading to true when resetting
       } else {
         setLoadingMore(true);
       }
@@ -129,30 +129,34 @@ export default function Home() {
         setLoadingMore(false);
       }
     }
-  }, [searchTerm, filters, showToast, isFilterApplied, loading, loadingMore]);
+  }, [searchTerm, filters, showToast, isFilterApplied]);  // Remove loading and loadingMore from dependencies
 
   // Initial data load
   useEffect(() => {
     console.log('Initial load effect triggered');
+    isMountedRef.current = true; // Ensure this is set to true on first mount
     fetchFoods(true);
     
     // Cleanup function - mark component as unmounted when it's destroyed
     return () => {
       isMountedRef.current = false;
     };
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, []); // Empty dependency array to run only once on mount
 
   // Handle search term and filter changes separately with debounce
   useEffect(() => {
+    // Don't trigger a fetch if component was just mounted
+    // This prevents double fetching on initial load
     const timer = setTimeout(() => {
-      if (isMountedRef.current) {
+      if (isMountedRef.current && document.readyState === 'complete') {
+        // Only fetch if the page has fully loaded and it's not the initial render
         fetchFoods(true);
       }
     }, 500);
     
     return () => clearTimeout(timer);
-  }, [searchTerm, filters, fetchFoods]);
-
+  }, [searchTerm, filters]); // Remove fetchFoods from dependencies
+  
   // Set up intersection observer for infinite scrolling
   useEffect(() => {
     // Cleanup previous observer
@@ -189,7 +193,7 @@ export default function Home() {
         observerRef.current.unobserve(currentRef);
       }
     };
-  }, [hasMore, loading, loadingMore, page, foods.length, fetchFoods]);
+  }, [hasMore, loading, loadingMore, page, foods.length]); // Remove fetchFoods from dependencies
 
   // Handle filter changes
   const handleFilterChange = useCallback((newFilters) => {
@@ -328,7 +332,7 @@ export default function Home() {
                 </Button>
               </div>
             ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
                 {foods.map((food, index) => {
                   // Add ref to the last element for infinite scrolling
                   if (foods.length === index + 1) {
