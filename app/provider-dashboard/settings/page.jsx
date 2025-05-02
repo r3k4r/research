@@ -1,13 +1,10 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { 
-  AlertCircle, 
-  CheckCircle, 
-  Mail, 
   AlertTriangle,
   Loader2
 } from 'lucide-react';
@@ -42,47 +39,49 @@ const Settings = () => {
     businessHours: '',
     logo: '',
   });
+  
+  // Track if initial fetch is complete to prevent re-fetching
+  const initialFetchComplete = useRef(false);
 
   // Fetch provider profile data
   useEffect(() => {
-    const fetchSettings = async () => {
-      if (!session?.user) return;
-      
-      try {
-        setLoading(true);
-        const response = await fetch('/api/provider/settings');
-        
-        if (!response.ok) {
-          throw new Error('Failed to fetch settings');
+    // Only fetch if we haven't already and session exists
+    if (!initialFetchComplete.current && session?.user) {
+      const fetchSettings = async () => {
+        try {
+          setLoading(true);
+          const response = await fetch('/api/provider/settings');
+          
+          if (!response.ok) {
+            throw new Error('Failed to fetch settings');
+          }
+          
+          const data = await response.json();
+          
+          setFormData({
+            name: data.name || '',
+            email: data.user.email || '',
+            businessName: data.businessName || '',
+            description: data.description || '',
+            address: data.address || '',
+            phoneNumber: data.phoneNumber || '',
+            businessHours: data.businessHours || '',
+            logo: data.logo || '',
+          });
+          
+          setEmailVerificationNeeded(!data.user.emailVerified);
+          initialFetchComplete.current = true;
+        } catch (error) {
+          console.error('Error fetching settings:', error);
+          showToast('Failed to load settings. Please try again.', 'error');
+        } finally {
+          setLoading(false);
         }
-        
-        const data = await response.json();
-        
-        setFormData({
-          name: data.name || '',
-          email: data.user.email || '',
-          businessName: data.businessName || '',
-          description: data.description || '',
-          address: data.address || '',
-          phoneNumber: data.phoneNumber || '',
-          businessHours: data.businessHours || '',
-          logo: data.logo || '',
-        });
-        
-        setEmailVerificationNeeded(!data.user.emailVerified);
-      } catch (error) {
-        console.error('Error fetching settings:', error);
-        showToast('Failed to load settings. Please try again.', 'error');
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    // Only fetch settings if session is loaded
-    if (session?.user) {
+      };
+      
       fetchSettings();
     }
-  }, [session]);
+  }, [session, showToast]);
 
   // Handle input changes
   const handleChange = (e) => {
@@ -129,15 +128,17 @@ const Settings = () => {
       
       showToast('Settings updated successfully', 'success');
       
-      // Update session to reflect changes without triggering a reload
-      await update({
-        ...session,
-        user: {
-          ...session.user,
-          name: formData.name,
-          email: formData.email,
-        },
-      });
+      // Just update the user info in the session without triggering a reload
+      if (session) {
+        await update({
+          ...session,
+          user: {
+            ...session.user,
+            name: formData.name,
+            email: formData.email,
+          },
+        });
+      }
       
     } catch (error) {
       console.error('Error saving settings:', error);
