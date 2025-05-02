@@ -1,8 +1,7 @@
 'use client';
 
-import { Bell, Menu, Search, ArrowLeft } from 'lucide-react';
+import { Bell, Menu, ArrowLeft, Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { useSession } from 'next-auth/react';
 import Link from 'next/link';
 import {
@@ -13,12 +12,23 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { useNotifications } from '@/contexts/NotificationContext';
+import { useRouter } from 'next/navigation';
+import { formatDistanceToNow } from 'date-fns';
 
 export default function ProviderHeader({ setIsSidebarOpen }) {
   const { data: session } = useSession();
+  const { notifications, unreadCount, markAsViewed, markAllAsViewed } = useNotifications();
+  const router = useRouter();
+  
+  const handleNotificationClick = (notification) => {
+    markAsViewed(notification.id);
+    
+    router.push('/provider-dashboard/orders');
+  };
   
   return (
-    <header className="sticky top-0 z-30 flex h-14 items-center justify-between gap-4 border-b bg-background px-6">
+    <header className="sticky  z-30 flex h-14 items-center justify-between gap-4 border-b bg-background px-6">
       {/* Mobile menu button */}
       <Button 
         variant="ghost" 
@@ -49,35 +59,67 @@ export default function ProviderHeader({ setIsSidebarOpen }) {
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" size="icon" className="relative">
               <Bell className="h-5 w-5" />
-              <span className="absolute top-0 right-0 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-xs text-primary-foreground">
-                2
-              </span>
+              {unreadCount > 0 && (
+                <span className="absolute top-0 right-0 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-xs text-primary-foreground">
+                  {unreadCount}
+                </span>
+              )}
               <span className="sr-only">Notifications</span>
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-80">
-            <DropdownMenuLabel>Notifications</DropdownMenuLabel>
+            <DropdownMenuLabel className="flex justify-between items-center">
+              <span>Notifications</span>
+              {unreadCount > 0 && (
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  className="text-xs h-7"
+                  onClick={markAllAsViewed}
+                >
+                  <Check className="h-3 w-3 mr-1" /> Mark all as viewed
+                </Button>
+              )}
+            </DropdownMenuLabel>
             <DropdownMenuSeparator />
-            <DropdownMenuItem>
-              <div className="flex flex-col">
-                <span>New order received</span>
-                <span className="text-xs text-muted-foreground">5 minutes ago</span>
-              </div>
-            </DropdownMenuItem>
-            <DropdownMenuItem>
-              <div className="flex flex-col">
-                <span>Product about to expire</span>
-                <span className="text-xs text-muted-foreground">1 hour ago</span>
-              </div>
-            </DropdownMenuItem>
+            
+            <div className="max-h-[300px] overflow-y-auto">
+              {notifications.length === 0 ? (
+                <div className="py-6 text-center text-sm text-muted-foreground">
+                  No notifications
+                </div>
+              ) : (
+                notifications.map((notification) => (
+                  <DropdownMenuItem 
+                    key={notification.id}
+                    className={`flex flex-col items-start py-3 cursor-pointer ${!notification.viewed ? 'bg-accent/40' : ''}`}
+                    onClick={() => handleNotificationClick(notification)}
+                  >
+                    <div className="flex flex-col w-full">
+                      <span className="font-medium">
+                        {notification.title}
+                      </span>
+                      <span className="text-sm text-muted-foreground">
+                        {notification.message}
+                      </span>
+                      <span className="text-xs text-muted-foreground mt-1">
+                        {formatDistanceToNow(new Date(notification.createdAt), { addSuffix: true })}
+                      </span>
+                    </div>
+                  </DropdownMenuItem>
+                ))
+              )}
+            </div>
+            
             <DropdownMenuSeparator />
-            <DropdownMenuItem className="justify-center">
-              View all notifications
+            <DropdownMenuItem 
+              className="justify-center text-center"
+              asChild
+            >
+              <Link href="/provider-dashboard/notifications">View all notifications</Link>
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
-        
-        {/* Theme toggle position would be here */}
       </div>
     </header>
   );

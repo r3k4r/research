@@ -1,36 +1,24 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import ProviderSidebar from '@/components/provider/ProviderSidebar';
 import ProviderHeader from '@/components/provider/ProviderHeader';
+import { NotificationProvider } from '@/contexts/NotificationContext';
 
 export default function ProviderDashboardLayout({ children }) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  
-  useEffect(() => {
-    const handleResize = () => {
-      setIsSidebarOpen(window.innerWidth >= 1024);
-    };
-        handleResize();
-    
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, []);
 
   return (
-    <div className="flex h-screen overflow-hidden bg-background">
-      {/* Sidebar */}
-      <ProviderSidebar isOpen={isSidebarOpen} setIsOpen={setIsSidebarOpen} />
-      
-      {/* Content area */}
-      <div className="relative flex flex-col flex-1 overflow-hidden">
-        <ProviderHeader setIsSidebarOpen={setIsSidebarOpen} />
-        
-        {/* Main content with scroll */}
-        <main className="flex-1 overflow-y-auto px-4 py-6 md:px-6 lg:px-8">
-          {children}
-        </main>
+    <NotificationProvider>
+      <div className="min-h-screen flex">
+        <ProviderSidebar isOpen={isSidebarOpen} setIsOpen={setIsSidebarOpen} />
+        <div className="flex-1 flex flex-col">
+          <ProviderHeader setIsSidebarOpen={setIsSidebarOpen} />
+          <main className="flex-1 p-6 overflow-auto">
+            {children}
+          </main>
+        </div>
       </div>
-    </div>
+    </NotificationProvider>
   );
 }
