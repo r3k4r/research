@@ -27,7 +27,6 @@ import { useToast } from '@/components/ui/toast';
 
 const Settings = () => {
   const { data: session, update } = useSession();
-  const router = useRouter();
   const { showToast, ToastComponent } = useToast();
   
   const [loading, setLoading] = useState(true);

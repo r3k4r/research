@@ -5,7 +5,6 @@ import { authOptions } from "@/lib/auth";
 import { randomUUID } from "crypto";
 import { prisma } from "@/lib/db";
 
-// GET: Fetch provider settings
 export async function GET() {
   try {
     const session = await getServerSession(authOptions);
@@ -20,7 +19,6 @@ export async function GET() {
     
     const userId = session.user.id;
     
-    // Get provider profile with user information
     const provider = await prisma.providerProfile.findUnique({
       where: { userId },
       include: {
@@ -61,15 +59,12 @@ export async function PUT(req) {
     const userId = session.user.id;
     const data = await req.json();
     
-    // Get current user data to check if email changed
     const currentUser = await prisma.user.findUnique({
       where: { id: userId },
       select: { email: true }
     });
     
-    // Start a transaction to ensure data consistency
     const result = await prisma.$transaction(async (prisma) => {
-      // Update provider profile
       const updatedProfile = await prisma.providerProfile.update({
         where: { userId },
         data: {
@@ -82,12 +77,10 @@ export async function PUT(req) {
         }
       });
       
-      // Check if email needs to be updated
       let emailUpdateResult = null;
       let verificationNeeded = false;
       
       if (data.email && data.email !== currentUser.email) {
-        // Email changed - update email and set emailVerified to null
         emailUpdateResult = await prisma.user.update({
           where: { id: userId },
           data: { 
@@ -96,17 +89,14 @@ export async function PUT(req) {
           }
         });
         
-        // Create new email verification token
         const token = randomUUID();
         const expires = new Date();
-        expires.setHours(expires.getHours() + 24); // Token valid for 24 hours
+        expires.setHours(expires.getHours() + 24); 
         
-        // Delete any existing verification record
         await prisma.emailVerification.deleteMany({
           where: { userId }
         });
         
-        // Create new verification record
         await prisma.emailVerification.create({
           data: {
             userId,
