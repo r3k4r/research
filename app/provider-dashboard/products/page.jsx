@@ -386,6 +386,7 @@ export default function ProductsPage() {
                         category={item.category.name}
                         expiresIn={getExpiresInText(item.expiresAt)}
                         quantity={item.quantity}
+                        disabled={true}
                       />
                       <div className="absolute top-2 right-2 space-x-2">
                         <Button 

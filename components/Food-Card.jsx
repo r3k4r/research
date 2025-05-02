@@ -22,6 +22,7 @@ export function FoodCard({
   category,
   expiresIn,
   quantity,
+  disabled
 }) {
   const discount = Math.round(((originalPrice - discountedPrice) / originalPrice) * 100);
   const { addItem, openCart } = useCart();
@@ -94,7 +95,7 @@ export function FoodCard({
       <CardFooter className="flex items-center justify-between">
         <Button
           onClick={handleAddToCart}
-          disabled={isLoading}
+          disabled={isLoading || disabled}
           className="flex items-center gap-2"
         >
           <ShoppingCart size={16} />
