@@ -5,7 +5,7 @@ import Image from 'next/image';
 import { Card, CardContent, CardHeader, CardFooter } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Clock, ShoppingCart } from 'lucide-react';
+import { ShoppingCart } from 'lucide-react';
 import { useCart } from '@/lib/cart-context';
 import { useToast } from './ui/toast';
 
@@ -21,6 +21,7 @@ export function FoodCard({
   providerLogo,
   category,
   expiresIn,
+  quantity,
 }) {
   const discount = Math.round(((originalPrice - discountedPrice) / originalPrice) * 100);
   const { addItem, openCart } = useCart();
@@ -80,14 +81,13 @@ export function FoodCard({
         <p className="text-sm text-muted-foreground mb-4 line-clamp-2">{description}</p>
         <div className="flex items-end justify-between mb-3">
           <div className="space-y-1 flex items-center justify-center gap-4">
-            <p className="text-sm line-through text-muted-foreground">${originalPrice.toFixed(2)}</p>
-            <p className="text-lg font-semibold text-primary">${discountedPrice.toFixed(2)}</p>
+            <p className="text-sm line-through text-muted-foreground">{originalPrice.toFixed(2)} IQD</p>
+            <p className="text-lg font-semibold text-primary">{discountedPrice.toFixed(2)} IQD</p>
           </div>
           <Badge variant="outline" className="text-orange-600">
             {
               expiresIn === 'Expired' ? 'Expired' : `Expires in ${expiresIn}`
             }
-        
           </Badge>
         </div>
       </CardContent>
@@ -100,10 +100,9 @@ export function FoodCard({
           <ShoppingCart size={16} />
           {isLoading ? 'Adding...' : 'Add to cart'}
         </Button>
-        <div className="flex items-center gap-1 text-muted-foreground">
-          <Clock size={16} />
-          <span className="text-xs">{expiresIn}</span>
-        </div>
+        <Badge variant="outline" className="bg-gray-100 text-gray-600">
+          {quantity} left
+        </Badge>
       </CardFooter>
     </Card>
   );

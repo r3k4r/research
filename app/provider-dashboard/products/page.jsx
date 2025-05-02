@@ -385,6 +385,7 @@ export default function ProductsPage() {
                         providerLogo={item.provider.logo || "/default-logo.png"}
                         category={item.category.name}
                         expiresIn={getExpiresInText(item.expiresAt)}
+                        quantity={item.quantity}
                       />
                       <div className="absolute top-2 right-2 space-x-2">
                         <Button 
