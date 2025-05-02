@@ -11,17 +11,14 @@ export function Filters({
   loading,
   maxPriceLimit = 50
 }) {
-  // State for filters
   const [priceRange, setPriceRange] = useState([0, maxPriceLimit]);
   const [selectedCategories, setSelectedCategories] = useState([]);
   const [categories, setCategories] = useState([]);
   const [loadingCategories, setLoadingCategories] = useState(true);
   const [isInitialized, setIsInitialized] = useState(false);
   
-  // Debounce price changes to avoid too many API requests
   const debouncedPriceRange = useDebounce(priceRange, 500);
   
-  // Fetch categories on component mount
   useEffect(() => {
     let isMounted = true;
     
@@ -66,9 +63,7 @@ export function Filters({
     };
   }, []);
   
-  // Apply filters when they change
   useEffect(() => {
-    // Only apply filter changes after initial load
     if (!isInitialized) return;
     
     if (onFilterChange) {
@@ -80,7 +75,6 @@ export function Filters({
     }
   }, [debouncedPriceRange, selectedCategories, onFilterChange, isInitialized]);
   
-  // Update price range when max limit changes
   useEffect(() => {
     setPriceRange(prev => [prev[0], maxPriceLimit]);
   }, [maxPriceLimit]);
@@ -93,7 +87,6 @@ export function Filters({
     );
   }, []);
   
-  // Reset all filters
   const resetFilters = useCallback(() => {
     setPriceRange([0, maxPriceLimit]);
     setSelectedCategories([]);

@@ -10,11 +10,9 @@ import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/toast';
 
 export default function Home() {
-  // State for UI
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [isFilterApplied, setIsFilterApplied] = useState(false);
   
-  // State for data
   const [foods, setFoods] = useState([]);
   const [loading, setLoading] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
@@ -24,26 +22,21 @@ export default function Home() {
   const [totalItems, setTotalItems] = useState(0);
   const [maxPriceLimit, setMaxPriceLimit] = useState(50);
   
-  // State for filters
   const [filters, setFilters] = useState({
     minPrice: 0,
     maxPrice: 50,
     categories: null
   });
   
-  // State for search
   const [searchTerm, setSearchTerm] = useState('');
   
-  // Refs for infinite scrolling
   const observerRef = useRef(null);
   const lastFoodElementRef = useRef(null);
-  const isMountedRef = useRef(true); // Track component mount status
+  const isMountedRef = useRef(true);
   
   const { showToast, ToastComponent } = useToast();
 
-  // Fetch food items with filters
   const fetchFoods = useCallback(async (reset = false, currentPage = 1) => {
-    // Don't fetch if already loading
     if ((reset && loading) || (!reset && loadingMore)) {
       return;
     }
@@ -52,7 +45,7 @@ export default function Home() {
       const newPage = reset ? 1 : currentPage;
       if (reset) {
         setLoadingMore(false);
-        setLoading(true); // Set loading to true when resetting
+        setLoading(true); 
       } else {
         setLoadingMore(true);
       }
@@ -68,7 +61,6 @@ export default function Home() {
         filters.categories.forEach(category => params.append('category', category));
       }
       
-      // Add timestamp to avoid caching
       params.append('t', Date.now());
       
       console.log('Fetching items with params:', params.toString());
@@ -91,14 +83,11 @@ export default function Home() {
         hasMore: data.pagination?.hasMore
       });
       
-      // Only update state if component is still mounted
       if (!isMountedRef.current) return;
       
       if (data.priceRange) {
-        // Update max price if it's the first load
         if (reset && data.priceRange.max > 0) {
           setMaxPriceLimit(Math.ceil(data.priceRange.max));
-          // Only update filter max if user hasn't changed it
           if (!isFilterApplied) {
             setFilters(prev => ({...prev, maxPrice: Math.ceil(data.priceRange.max)}));
           }
@@ -113,7 +102,6 @@ export default function Home() {
         setPage(1);
       } else {
         setFoods(prev => {
-          // Filter out duplicates when appending
           const existingIds = new Set(prev.map(item => item.id));
           const newItems = (data.foodItems || []).filter(item => !existingIds.has(item.id));
           return [...prev, ...newItems];
@@ -129,45 +117,35 @@ export default function Home() {
         setLoadingMore(false);
       }
     }
-  }, [searchTerm, filters, showToast, isFilterApplied]);  // Remove loading and loadingMore from dependencies
-
-  // Initial data load
+  }, [searchTerm, filters, showToast, isFilterApplied]); 
   useEffect(() => {
     console.log('Initial load effect triggered');
-    isMountedRef.current = true; // Ensure this is set to true on first mount
+    isMountedRef.current = true; 
     fetchFoods(true);
     
-    // Cleanup function - mark component as unmounted when it's destroyed
     return () => {
       isMountedRef.current = false;
     };
-  }, []); // Empty dependency array to run only once on mount
+  }, []); 
 
-  // Handle search term and filter changes separately with debounce
   useEffect(() => {
-    // Don't trigger a fetch if component was just mounted
-    // This prevents double fetching on initial load
+    
     const timer = setTimeout(() => {
       if (isMountedRef.current && document.readyState === 'complete') {
-        // Only fetch if the page has fully loaded and it's not the initial render
         fetchFoods(true);
       }
     }, 500);
     
     return () => clearTimeout(timer);
-  }, [searchTerm, filters]); // Remove fetchFoods from dependencies
+  }, [searchTerm, filters]); 
   
-  // Set up intersection observer for infinite scrolling
   useEffect(() => {
-    // Cleanup previous observer
     if (observerRef.current) {
       observerRef.current.disconnect();
     }
     
-    // Don't observe if loading or no more data
     if (!hasMore || loading || loadingMore) return;
     
-    // Create new observer
     observerRef.current = new IntersectionObserver(
       entries => {
         const [entry] = entries;
@@ -181,21 +159,18 @@ export default function Home() {
       { threshold: 0.1, rootMargin: '100px' }
     );
     
-    // Observe last food element
     const currentRef = lastFoodElementRef.current;
     if (currentRef) {
       observerRef.current.observe(currentRef);
     }
     
-    // Cleanup observer
     return () => {
       if (currentRef && observerRef.current) {
         observerRef.current.unobserve(currentRef);
       }
     };
-  }, [hasMore, loading, loadingMore, page, foods.length]); // Remove fetchFoods from dependencies
+  }, [hasMore, loading, loadingMore, page, foods.length]); 
 
-  // Handle filter changes
   const handleFilterChange = useCallback((newFilters) => {
     setFilters(prev => {
       const updatedFilters = {...prev, ...newFilters};
@@ -204,12 +179,10 @@ export default function Home() {
     });
   }, []);
 
-  // Toggle filter panel (mobile)
   const toggleFilter = () => {
     setIsFilterOpen(!isFilterOpen);
   };
 
-  // Unified loading component
   const LoadingComponent = () => (
     <div className="flex justify-center items-center min-h-[60vh]">
       <div className="flex flex-col items-center">
