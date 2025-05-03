@@ -19,7 +19,9 @@ export function CartDrawer() {
     updateItemQuantity, 
     clearCart,
     subtotal,
-    isLoading 
+    isLoading,
+    stockLimits,
+    isAtMaxQuantity
   } = useCart();
   const router = useRouter();
   const { showToast } = useToast();
@@ -39,12 +41,16 @@ export function CartDrawer() {
     setCartErrors([]);
     
     try {
+      // Add a delay to prevent API hammering
+      await new Promise(resolve => setTimeout(resolve, 300));
+      
       // Validate the cart with the API
       const response = await fetch('/api/cart', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
+        cache: 'no-store',
         body: JSON.stringify({ items: cartItems }),
       });
       
@@ -77,6 +83,9 @@ export function CartDrawer() {
         }
       }
       
+      // Add small delay before navigation to ensure cart state is saved
+      await new Promise(resolve => setTimeout(resolve, 300));
+      
       // Proceed to checkout
       router.push('/checkout');
       closeCart();
@@ -90,12 +99,28 @@ export function CartDrawer() {
   
   // Handle adjusting quantities based on available stock
   const handleAdjustQuantity = (itemId, newQuantity) => {
+    // Get max available quantity
+    const maxQuantity = stockLimits[itemId] || 999;
+    
+    // Validate quantity
+    if (newQuantity > maxQuantity) {
+      showToast(`Only ${maxQuantity} available`, 'warning');
+      newQuantity = maxQuantity;
+    }
+    
     updateItemQuantity(itemId, newQuantity);
     setCartErrors(prev => prev.filter(error => error.id !== itemId));
   };
 
   return (
-    <Sheet open={isOpen} onOpenChange={closeCart}>
+    <Sheet 
+      open={isOpen} 
+      onOpenChange={(open) => {
+        if (!open && !isProcessing) {
+          closeCart();
+        }
+      }}
+    >
       <SheetContent className="w-full sm:max-w-md flex flex-col">
         <SheetHeader>
           <SheetTitle>Your Cart</SheetTitle>
@@ -135,6 +160,8 @@ export function CartDrawer() {
 
               {cartItems.map((item) => {
                 const error = cartErrors.find(err => err.id === item.id);
+                const isMaxQuantity = isAtMaxQuantity(item.id);
+                const maxStock = stockLimits[item.id];
                 
                 return (
                   <div key={item.id} className="flex items-start gap-4 py-3 border-b">
@@ -155,13 +182,19 @@ export function CartDrawer() {
                         <p className="text-xs text-red-500 mt-1">{error.message}</p>
                       )}
                       
+                      {isMaxQuantity && !error && (
+                        <p className="text-xs text-amber-500 mt-1">
+                          Maximum quantity reached ({maxStock})
+                        </p>
+                      )}
+                      
                       <div className="flex items-center justify-between mt-2">
                         <div className="flex items-center border rounded-md">
                           <Button
                             variant="ghost"
                             size="icon"
                             className="h-8 w-8 rounded-none"
-                            onClick={() => updateItemQuantity(item.id, (item.quantity || 1) - 1)}
+                            onClick={() => handleAdjustQuantity(item.id, (item.quantity || 1) - 1)}
                             disabled={item.quantity <= 1 || isProcessing}
                           >
                             <Minus className="h-3 w-3" />
@@ -173,8 +206,8 @@ export function CartDrawer() {
                             variant="ghost"
                             size="icon"
                             className="h-8 w-8 rounded-none"
-                            onClick={() => updateItemQuantity(item.id, (item.quantity || 1) + 1)}
-                            disabled={isProcessing}
+                            onClick={() => handleAdjustQuantity(item.id, (item.quantity || 1) + 1)}
+                            disabled={isProcessing || isMaxQuantity}
                           >
                             <Plus className="h-3 w-3" />
                           </Button>

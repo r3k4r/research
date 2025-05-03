@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import Navbar from '@/components/Navbar';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
@@ -32,77 +32,91 @@ export default function OrdersPage() {
   const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
   const [orderToCancel, setOrderToCancel] = useState(null);
   const [isCancelling, setIsCancelling] = useState(false);
-  
-  const fetchedRef = useRef(false);
-  const tabChangeRef = useRef(false);
-  const activeTabRef = useRef(activeTab);
-  
+
+  const isMountedRef = useRef(true);
+  const isInitialFetchDoneRef = useRef(false);
+  const lastFetchTimeRef = useRef(0);
+  const MIN_FETCH_INTERVAL = 2000;
+
   useEffect(() => {
     if (status === 'unauthenticated') {
       router.push('/api/auth/signin?callbackUrl=/orders');
     }
+
+    return () => {
+      isMountedRef.current = false;
+    };
   }, [status, router]);
 
-  useEffect(() => {
-    if (status !== 'authenticated') return;
-    
-    activeTabRef.current = activeTab;
-    
-    async function fetchOrders() {
-      if (tabChangeRef.current && activeTabRef.current === activeTab) {
-        tabChangeRef.current = false;
-        return;
+  const fetchOrders = useCallback(async (tabValue = activeTab) => {
+    if (!isMountedRef.current) return;
+
+    const now = Date.now();
+    if (now - lastFetchTimeRef.current < MIN_FETCH_INTERVAL && isInitialFetchDoneRef.current) {
+      console.log('Throttling fetch - too soon since last fetch');
+      return;
+    }
+
+    lastFetchTimeRef.current = now;
+
+    try {
+      setLoading(true);
+
+      const params = new URLSearchParams();
+      if (tabValue !== 'all') {
+        params.append('status', tabValue);
+      }
+      params.append('t', `${Date.now()}-${Math.random()}`);
+
+      console.log(`Fetching orders with tab: ${tabValue} at ${new Date().toISOString()}`);
+
+      const response = await fetch(`/api/orders?${params.toString()}`, {
+        method: 'GET',
+        cache: 'no-store',
+        headers: {
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          'Pragma': 'no-cache',
+          'Expires': '0',
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch orders');
       }
 
-      try {
-        setLoading(true);
-        
-        const params = new URLSearchParams();
-        if (activeTab !== 'all') {
-          params.append('status', activeTab);
-        }
-        params.append('t', Date.now() + Math.random());
-        
-        const response = await fetch(`/api/orders?${params.toString()}`, {
-          cache: 'no-store',
-          headers: {
-            'Cache-Control': 'no-cache, no-store, must-revalidate',
-            'Pragma': 'no-cache',
-            'Expires': '0'
-          }
-        });
-        
-        if (!response.ok) {
-          throw new Error('Failed to fetch orders');
-        }
-        
-        const data = await response.json();
+      const data = await response.json();
+
+      if (isMountedRef.current) {
         setOrders(data);
-      } catch (error) {
-        console.error('Error fetching orders:', error);
+        isInitialFetchDoneRef.current = true;
+      }
+    } catch (error) {
+      console.error('Error fetching orders:', error);
+      if (isMountedRef.current) {
         showToast('Failed to load orders', 'error');
-      } finally {
+      }
+    } finally {
+      if (isMountedRef.current) {
         setLoading(false);
-        fetchedRef.current = true;
       }
     }
+  }, [showToast]);
 
-    if (!fetchedRef.current || tabChangeRef.current) {
-      fetchOrders();
+  useEffect(() => {
+    if (status === 'authenticated' && !isInitialFetchDoneRef.current) {
+      fetchOrders(activeTab);
     }
-  }, [activeTab, status, showToast]);
+  }, [status, fetchOrders]);
+
+  const handleTabChange = useCallback((value) => {
+    setActiveTab(value);
+    fetchOrders(value);
+  }, [fetchOrders]);
 
   const filteredOrders = activeTab === 'all'
     ? orders
     : orders.filter(order => order.status === activeTab);
 
-  const handleTabChange = (value) => {
-    if (value !== activeTab) {
-      setActiveTab(value);
-      tabChangeRef.current = true;
-    }
-  };
-  
   const formatDate = (dateString) => {
     const date = new Date(dateString);
     return date.toLocaleString('en-US', {
@@ -111,10 +125,10 @@ export default function OrdersPage() {
       year: 'numeric',
       hour: 'numeric',
       minute: 'numeric',
-      hour12: true
+      hour12: true,
     });
   };
-  
+
   const getStatusBadge = (status) => {
     switch (status) {
       case 'PENDING':
@@ -156,28 +170,28 @@ export default function OrdersPage() {
         return <Badge variant="outline">{status}</Badge>;
     }
   };
-  
+
   const handleCancelOrder = async () => {
     if (!orderToCancel) return;
-    
+
     try {
       setIsCancelling(true);
-      
+
       const response = await fetch(`/api/orders/${orderToCancel.id}/cancel`, {
         method: 'POST',
       });
-      
+
       if (!response.ok) {
         const data = await response.json();
         throw new Error(data.error || 'Failed to cancel order');
       }
-      
-      setOrders(prev => prev.map(order => 
-        order.id === orderToCancel.id 
-          ? {...order, status: 'CANCELLED'} 
+
+      setOrders(prev => prev.map(order =>
+        order.id === orderToCancel.id
+          ? { ...order, status: 'CANCELLED' }
           : order
       ));
-      
+
       showToast('Order cancelled successfully', 'success');
     } catch (error) {
       console.error('Error cancelling order:', error);
@@ -188,12 +202,12 @@ export default function OrdersPage() {
       setIsCancelling(false);
     }
   };
-  
+
   const openCancelDialog = (order) => {
     setOrderToCancel(order);
     setCancelDialogOpen(true);
   };
-  
+
   if (status === 'loading') {
     return (
       <div className="min-h-screen bg-gray-50">
@@ -209,10 +223,10 @@ export default function OrdersPage() {
   return (
     <div className="min-h-screen bg-gray-50">
       <Navbar />
-      
+
       <main className="container mx-auto px-4 py-8">
         <h1 className="text-2xl font-bold mb-6">My Orders</h1>
-        
+
         <Tabs defaultValue="all" value={activeTab} onValueChange={handleTabChange}>
           <TabsList className="mb-6">
             <TabsTrigger value="all">All Orders</TabsTrigger>
@@ -221,7 +235,7 @@ export default function OrdersPage() {
             <TabsTrigger value="IN_TRANSIT">In Transit</TabsTrigger>
             <TabsTrigger value="DELIVERED">Delivered</TabsTrigger>
           </TabsList>
-          
+
           <TabsContent value={activeTab}>
             {loading ? (
               <div className="flex justify-center items-center py-12">
@@ -245,7 +259,7 @@ export default function OrdersPage() {
                         {formatDate(order.date)}
                       </CardDescription>
                     </CardHeader>
-                    
+
                     <CardContent>
                       <div className="space-y-4">
                         <div className="flex items-center gap-3">
@@ -267,7 +281,7 @@ export default function OrdersPage() {
                             <h3 className="text-sm font-medium">{order.provider}</h3>
                           </div>
                         </div>
-                        
+
                         <div>
                           <h3 className="text-sm font-medium text-muted-foreground mb-1">Items</h3>
                           <ul className="space-y-1">
@@ -297,7 +311,7 @@ export default function OrdersPage() {
                             </div>
                           </div>
                         </div>
-                        
+
                         {order.status === 'PREPARING' && (
                           <div className="bg-blue-50 p-3 rounded-md text-sm">
                             <p className="font-medium text-blue-800">Your order is being prepared</p>
@@ -306,7 +320,7 @@ export default function OrdersPage() {
                             )}
                           </div>
                         )}
-                        
+
                         {order.status === 'IN_TRANSIT' && (
                           <div className="bg-blue-50 p-3 rounded-md text-sm">
                             <p className="font-medium text-blue-800">Your order is on the way</p>
@@ -315,7 +329,7 @@ export default function OrdersPage() {
                             )}
                           </div>
                         )}
-                        
+
                         {order.status === 'DELIVERED' && (
                           <div className="bg-green-50 p-3 rounded-md text-sm">
                             <p className="font-medium text-green-800">Order Delivered</p>
@@ -325,7 +339,7 @@ export default function OrdersPage() {
                             )}
                           </div>
                         )}
-                        
+
                         {order.status === 'CANCELLED' && (
                           <div className="bg-red-50 p-3 rounded-md text-sm">
                             <p className="font-medium text-red-800">Order Cancelled</p>
@@ -336,11 +350,11 @@ export default function OrdersPage() {
                         )}
                       </div>
                     </CardContent>
-                    
+
                     {order.status === 'PENDING' && (
                       <CardFooter className="border-t pt-4">
-                        <Button 
-                          variant="destructive" 
+                        <Button
+                          variant="destructive"
                           size="sm"
                           className="ml-auto"
                           onClick={() => openCancelDialog(order)}
@@ -356,7 +370,7 @@ export default function OrdersPage() {
           </TabsContent>
         </Tabs>
       </main>
-      
+
       <AlertDialog open={cancelDialogOpen} onOpenChange={setCancelDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -367,7 +381,7 @@ export default function OrdersPage() {
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel disabled={isCancelling}>No, keep order</AlertDialogCancel>
-            <AlertDialogAction 
+            <AlertDialogAction
               className="bg-red-600 hover:bg-red-700"
               onClick={handleCancelOrder}
               disabled={isCancelling}
