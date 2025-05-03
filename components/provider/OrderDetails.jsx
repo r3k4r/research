@@ -34,12 +34,8 @@ export function OrderDetails({ order, onStatusUpdate }) {
   const getNextStatuses = (currentStatus) => {
     switch (currentStatus) {
       case 'PENDING':
-        return ['ACCEPTED', 'CANCELLED'];
-      case 'ACCEPTED':
         return ['PREPARING', 'CANCELLED'];
       case 'PREPARING':
-        return ['READY_FOR_PICKUP', 'CANCELLED'];
-      case 'READY_FOR_PICKUP':
         return ['IN_TRANSIT', 'CANCELLED'];
       case 'IN_TRANSIT':
         return ['DELIVERED', 'CANCELLED'];
@@ -81,9 +77,7 @@ export function OrderDetails({ order, onStatusUpdate }) {
   
   const getStatusText = (status) => {
     switch (status) {
-      case 'ACCEPTED': return 'Accept Order';
       case 'PREPARING': return 'Start Preparation';
-      case 'READY_FOR_PICKUP': return 'Mark Ready';
       case 'IN_TRANSIT': return 'Start Delivery';
       case 'DELIVERED': return 'Mark Delivered';
       case 'CANCELLED': return 'Cancel Order';

@@ -120,7 +120,6 @@ export default function OrdersPage() {
       }
       
       // Show success message
-      const responseData = await response.json();
       showToast(
         action === 'go-back' 
           ? `Order status reverted successfully` 
@@ -185,14 +184,11 @@ export default function OrdersPage() {
                     <TabsTrigger value="PENDING" className="py-2 px-1 text-[13px] md:text-md data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none">
                       Pending
                     </TabsTrigger>
-                    <TabsTrigger value="ACCEPTED" className="py-2 px-1 text-[13px] md:text-md data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none">
-                      Accepted
-                    </TabsTrigger>
                     <TabsTrigger value="PREPARING" className="py-2 px-1 text-[13px] md:text-md data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none">
                       Preparing
                     </TabsTrigger>
-                    <TabsTrigger value="READY_FOR_PICKUP" className="py-2 px-1 text-[13px] md:text-md data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none">
-                      Ready
+                    <TabsTrigger value="IN_TRANSIT" className="py-2 px-1 text-[13px] md:text-md data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none">
+                      In Transit
                     </TabsTrigger>
                     <TabsTrigger value="DELIVERED" className="py-2 px-1 text-[13px] md:text-md data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none">
                       Delivered

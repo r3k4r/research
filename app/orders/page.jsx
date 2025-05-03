@@ -1,12 +1,14 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
+import { useRouter } from 'next/navigation';
 import Navbar from '@/components/Navbar';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { CheckCircle, Clock, Package, AlertTriangle } from 'lucide-react';
+import { useToast } from '@/components/ui/toast';
+import { CheckCircle, Clock, Package, AlertTriangle, Loader2 } from 'lucide-react';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -17,71 +19,89 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-
-const mockOrders = [
-  {
-    id: 'ORD-123456',
-    date: '2025-04-15T14:30:00',
-    status: 'delivered',
-    items: [
-      { name: 'Artisan Bread Bundle', quantity: 1, price: 7.99 },
-      { name: 'Organic Vegetable Box', quantity: 2, price: 12.99 }
-    ],
-    total: 33.97,
-    provider: 'Fresh Bakery',
-    deliveryAddress: '123 Main St, Anytown, USA',
-    deliveryPerson: 'John D.',
-    deliveryTime: '2025-04-15T15:15:00'
-  },
-  {
-    id: 'ORD-123457',
-    date: '2025-04-14T12:15:00',
-    status: 'delivered',
-    items: [
-      { name: 'Pasta Special', quantity: 1, price: 9.49 }
-    ],
-    total: 11.49, // Including delivery fee
-    provider: 'Pasta House',
-    deliveryAddress: '123 Main St, Anytown, USA',
-    deliveryPerson: 'Sarah M.',
-    deliveryTime: '2025-04-14T12:45:00'
-  },
-  {
-    id: 'ORD-123458',
-    date: '2025-04-16T18:00:00',
-    status: 'pending',
-    items: [
-      { name: 'Organic Vegetable Box', quantity: 1, price: 12.99 },
-      { name: 'Artisan Bread Bundle', quantity: 1, price: 7.99 }
-    ],
-    total: 22.98,
-    provider: 'Green Market',
-    deliveryAddress: '123 Main St, Anytown, USA'
-  },
-  {
-    id: 'ORD-123459',
-    date: '2025-04-16T17:30:00',
-    status: 'in_progress',
-    items: [
-      { name: 'Pasta Special', quantity: 2, price: 9.49 }
-    ],
-    total: 20.98,
-    provider: 'Pasta House',
-    deliveryAddress: '123 Main St, Anytown, USA',
-    deliveryPerson: 'Mike T.',
-    estimatedDelivery: '2025-04-16T18:15:00'
-  }
-];
+import { useSession } from 'next-auth/react';
+import Image from 'next/image';
 
 export default function OrdersPage() {
-  const [orders, setOrders] = useState(mockOrders);
+  const router = useRouter();
+  const { data: session, status } = useSession();
+  const { showToast, ToastComponent } = useToast();
+  const [orders, setOrders] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('all');
   const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
   const [orderToCancel, setOrderToCancel] = useState(null);
+  const [isCancelling, setIsCancelling] = useState(false);
   
-  const filteredOrders = activeTab === 'all' 
-    ? orders 
+  const fetchedRef = useRef(false);
+  const tabChangeRef = useRef(false);
+  const activeTabRef = useRef(activeTab);
+  
+  useEffect(() => {
+    if (status === 'unauthenticated') {
+      router.push('/api/auth/signin?callbackUrl=/orders');
+    }
+  }, [status, router]);
+
+  useEffect(() => {
+    if (status !== 'authenticated') return;
+    
+    activeTabRef.current = activeTab;
+    
+    async function fetchOrders() {
+      if (tabChangeRef.current && activeTabRef.current === activeTab) {
+        tabChangeRef.current = false;
+        return;
+      }
+
+      try {
+        setLoading(true);
+        
+        const params = new URLSearchParams();
+        if (activeTab !== 'all') {
+          params.append('status', activeTab);
+        }
+        params.append('t', Date.now() + Math.random());
+        
+        const response = await fetch(`/api/orders?${params.toString()}`, {
+          cache: 'no-store',
+          headers: {
+            'Cache-Control': 'no-cache, no-store, must-revalidate',
+            'Pragma': 'no-cache',
+            'Expires': '0'
+          }
+        });
+        
+        if (!response.ok) {
+          throw new Error('Failed to fetch orders');
+        }
+        
+        const data = await response.json();
+        setOrders(data);
+      } catch (error) {
+        console.error('Error fetching orders:', error);
+        showToast('Failed to load orders', 'error');
+      } finally {
+        setLoading(false);
+        fetchedRef.current = true;
+      }
+    }
+
+    if (!fetchedRef.current || tabChangeRef.current) {
+      fetchOrders();
+    }
+  }, [activeTab, status, showToast]);
+
+  const filteredOrders = activeTab === 'all'
+    ? orders
     : orders.filter(order => order.status === activeTab);
+
+  const handleTabChange = (value) => {
+    if (value !== activeTab) {
+      setActiveTab(value);
+      tabChangeRef.current = true;
+    }
+  };
   
   const formatDate = (dateString) => {
     const date = new Date(dateString);
@@ -97,32 +117,39 @@ export default function OrdersPage() {
   
   const getStatusBadge = (status) => {
     switch (status) {
-      case 'pending':
+      case 'PENDING':
         return (
           <Badge variant="outline" className="bg-yellow-100 text-yellow-800 border-yellow-300 flex items-center gap-1">
             <Clock className="h-3.5 w-3.5" />
             <span>Pending</span>
           </Badge>
         );
-      case 'in_progress':
+      case 'PREPARING':
         return (
           <Badge variant="outline" className="bg-blue-100 text-blue-800 border-blue-300 flex items-center gap-1">
             <Package className="h-3.5 w-3.5" />
-            <span>In Progress</span>
+            <span>Preparing</span>
           </Badge>
         );
-      case 'delivered':
+      case 'IN_TRANSIT':
+        return (
+          <Badge variant="outline" className="bg-blue-100 text-blue-800 border-blue-300 flex items-center gap-1">
+            <Package className="h-3.5 w-3.5" />
+            <span>In Transit</span>
+          </Badge>
+        );
+      case 'DELIVERED':
         return (
           <Badge variant="outline" className="bg-green-100 text-green-800 border-green-300 flex items-center gap-1">
             <CheckCircle className="h-3.5 w-3.5" />
             <span>Delivered</span>
           </Badge>
         );
-      case 'canceled':
+      case 'CANCELLED':
         return (
           <Badge variant="outline" className="bg-red-100 text-red-800 border-red-300 flex items-center gap-1">
             <AlertTriangle className="h-3.5 w-3.5" />
-            <span>Canceled</span>
+            <span>Cancelled</span>
           </Badge>
         );
       default:
@@ -130,19 +157,54 @@ export default function OrdersPage() {
     }
   };
   
-  const handleCancelOrder = (orderId) => {
-    setOrders(orders.map(order => 
-      order.id === orderId 
-        ? {...order, status: 'canceled'} 
-        : order
-    ));
-    setCancelDialogOpen(false);
+  const handleCancelOrder = async () => {
+    if (!orderToCancel) return;
+    
+    try {
+      setIsCancelling(true);
+      
+      const response = await fetch(`/api/orders/${orderToCancel.id}/cancel`, {
+        method: 'POST',
+      });
+      
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error || 'Failed to cancel order');
+      }
+      
+      setOrders(prev => prev.map(order => 
+        order.id === orderToCancel.id 
+          ? {...order, status: 'CANCELLED'} 
+          : order
+      ));
+      
+      showToast('Order cancelled successfully', 'success');
+    } catch (error) {
+      console.error('Error cancelling order:', error);
+      showToast(error.message || 'Failed to cancel order', 'error');
+    } finally {
+      setCancelDialogOpen(false);
+      setOrderToCancel(null);
+      setIsCancelling(false);
+    }
   };
   
   const openCancelDialog = (order) => {
     setOrderToCancel(order);
     setCancelDialogOpen(true);
   };
+  
+  if (status === 'loading') {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <Navbar />
+        <div className="container mx-auto px-4 py-8 flex justify-center items-center">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          <span className="ml-2">Loading...</span>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -151,17 +213,22 @@ export default function OrdersPage() {
       <main className="container mx-auto px-4 py-8">
         <h1 className="text-2xl font-bold mb-6">My Orders</h1>
         
-        <Tabs defaultValue="all" value={activeTab} onValueChange={setActiveTab}>
+        <Tabs defaultValue="all" value={activeTab} onValueChange={handleTabChange}>
           <TabsList className="mb-6">
             <TabsTrigger value="all">All Orders</TabsTrigger>
-            <TabsTrigger value="pending">Pending</TabsTrigger>
-            <TabsTrigger value="in_progress">In Progress</TabsTrigger>
-            <TabsTrigger value="delivered">Delivered</TabsTrigger>
-            <TabsTrigger value="canceled">Canceled</TabsTrigger>
+            <TabsTrigger value="PENDING">Pending</TabsTrigger>
+            <TabsTrigger value="PREPARING">Preparing</TabsTrigger>
+            <TabsTrigger value="IN_TRANSIT">In Transit</TabsTrigger>
+            <TabsTrigger value="DELIVERED">Delivered</TabsTrigger>
           </TabsList>
           
           <TabsContent value={activeTab}>
-            {filteredOrders.length === 0 ? (
+            {loading ? (
+              <div className="flex justify-center items-center py-12">
+                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                <span className="ml-2">Loading orders...</span>
+              </div>
+            ) : filteredOrders.length === 0 ? (
               <div className="text-center py-12">
                 <p className="text-muted-foreground">No orders found</p>
               </div>
@@ -171,7 +238,7 @@ export default function OrdersPage() {
                   <Card key={order.id} className="overflow-hidden">
                     <CardHeader>
                       <div className="flex justify-between items-center">
-                        <CardTitle className="text-lg">{order.id}</CardTitle>
+                        <CardTitle className="text-lg">Order #{order.id.substring(0, 8).toUpperCase()}</CardTitle>
                         {getStatusBadge(order.status)}
                       </div>
                       <CardDescription>
@@ -181,55 +248,96 @@ export default function OrdersPage() {
                     
                     <CardContent>
                       <div className="space-y-4">
-                        {/* Provider */}
-                        <div>
-                          <h3 className="text-sm font-medium text-muted-foreground mb-1">Provider</h3>
-                          <p>{order.provider}</p>
+                        <div className="flex items-center gap-3">
+                          <div className="relative h-10 w-10 overflow-hidden rounded-full">
+                            {order.providerLogo ? (
+                              <Image
+                                src={order.providerLogo}
+                                alt={order.provider}
+                                fill
+                                className="object-cover"
+                              />
+                            ) : (
+                              <div className="bg-primary h-full w-full flex items-center justify-center text-white">
+                                {order.provider.charAt(0)}
+                              </div>
+                            )}
+                          </div>
+                          <div>
+                            <h3 className="text-sm font-medium">{order.provider}</h3>
+                          </div>
                         </div>
                         
-                        {/* Order Items */}
                         <div>
                           <h3 className="text-sm font-medium text-muted-foreground mb-1">Items</h3>
                           <ul className="space-y-1">
                             {order.items.map((item, index) => (
                               <li key={index} className="flex justify-between text-sm">
                                 <span>{item.quantity}x {item.name}</span>
-                                <span>${(item.price * item.quantity).toFixed(2)}</span>
+                                <span>{(item.price * item.quantity).toFixed(2)} IQD</span>
                               </li>
                             ))}
                           </ul>
-                          <div className="pt-2 mt-2 border-t flex justify-between font-medium">
-                            <span>Total</span>
-                            <span>${order.total.toFixed(2)}</span>
+                          <div className="pt-2 mt-2 border-t">
+                            <div className="flex justify-between text-sm">
+                              <span>Subtotal</span>
+                              <span>{order.subtotal.toFixed(2)} IQD</span>
+                            </div>
+                            <div className="flex justify-between text-sm">
+                              <span>Delivery Fee</span>
+                              <span>{order.deliveryFee.toFixed(2)} IQD</span>
+                            </div>
+                            <div className="flex justify-between text-sm">
+                              <span>Service Fee</span>
+                              <span>{order.serviceFee.toFixed(2)} IQD</span>
+                            </div>
+                            <div className="flex justify-between font-medium pt-1 mt-1 border-t">
+                              <span>Total</span>
+                              <span>{order.total.toFixed(2)} IQD</span>
+                            </div>
                           </div>
                         </div>
                         
-                        {/* Status-specific information */}
-                        {order.status === 'in_progress' && (
+                        {order.status === 'PREPARING' && (
                           <div className="bg-blue-50 p-3 rounded-md text-sm">
-                            <p className="font-medium text-blue-800">Your order is on the way!</p>
-                            <p className="mt-1">Delivery Person: {order.deliveryPerson}</p>
-                            <p>Estimated Arrival: {formatDate(order.estimatedDelivery)}</p>
+                            <p className="font-medium text-blue-800">Your order is being prepared</p>
+                            {order.timeline && order.timeline[0] && (
+                              <p>Last update: {formatDate(order.timeline[0].date)}</p>
+                            )}
                           </div>
                         )}
                         
-                        {order.status === 'delivered' && (
+                        {order.status === 'IN_TRANSIT' && (
+                          <div className="bg-blue-50 p-3 rounded-md text-sm">
+                            <p className="font-medium text-blue-800">Your order is on the way</p>
+                            {order.timeline && order.timeline[0] && (
+                              <p>Last update: {formatDate(order.timeline[0].date)}</p>
+                            )}
+                          </div>
+                        )}
+                        
+                        {order.status === 'DELIVERED' && (
                           <div className="bg-green-50 p-3 rounded-md text-sm">
-                            <p className="font-medium text-green-800">Delivered</p>
-                            <p className="mt-1">By: {order.deliveryPerson}</p>
-                            <p>At: {formatDate(order.deliveryTime)}</p>
+                            <p className="font-medium text-green-800">Order Delivered</p>
+                            <p className="mt-1">Your order has been delivered successfully</p>
+                            {order.timeline && order.timeline[0] && (
+                              <p>Delivered at: {formatDate(order.timeline[0].date)}</p>
+                            )}
                           </div>
                         )}
                         
-                        {order.status === 'canceled' && (
+                        {order.status === 'CANCELLED' && (
                           <div className="bg-red-50 p-3 rounded-md text-sm">
-                            <p className="font-medium text-red-800">Order was canceled</p>
+                            <p className="font-medium text-red-800">Order Cancelled</p>
+                            {order.timeline && order.timeline[0] && order.timeline[0].notes && (
+                              <p className="mt-1">Reason: {order.timeline[0].notes}</p>
+                            )}
                           </div>
                         )}
                       </div>
                     </CardContent>
                     
-                    {order.status === 'pending' && (
+                    {order.status === 'PENDING' && (
                       <CardFooter className="border-t pt-4">
                         <Button 
                           variant="destructive" 
@@ -249,7 +357,6 @@ export default function OrdersPage() {
         </Tabs>
       </main>
       
-      {/* Cancel Order Confirmation Dialog */}
       <AlertDialog open={cancelDialogOpen} onOpenChange={setCancelDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -259,16 +366,24 @@ export default function OrdersPage() {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>No, keep order</AlertDialogCancel>
+            <AlertDialogCancel disabled={isCancelling}>No, keep order</AlertDialogCancel>
             <AlertDialogAction 
               className="bg-red-600 hover:bg-red-700"
-              onClick={() => orderToCancel && handleCancelOrder(orderToCancel.id)}
+              onClick={handleCancelOrder}
+              disabled={isCancelling}
             >
-              Yes, cancel order
+              {isCancelling ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Cancelling...
+                </>
+              ) : 'Yes, cancel order'}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {ToastComponent}
     </div>
   );
 }
