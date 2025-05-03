@@ -69,7 +69,6 @@ export async function GET(req) {
     
 
     const formattedOrders = orders.map(order => {
-
       const deliveryFee = 2500; 
       const serviceFee = 500;   
       
@@ -77,6 +76,10 @@ export async function GET(req) {
       
       const total = subtotal + deliveryFee + serviceFee;
 
+      // Get estimated delivery time if available
+      const estimatedTime = order.estimatedDelivery ? 
+        new Date(order.estimatedDelivery).getTime() : null;
+      
       return {
         id: order.id,
         customerName: order.userProfile.name,
@@ -86,6 +89,9 @@ export async function GET(req) {
         deliveryFee, 
         serviceFee, 
         totalAmount: total,
+        estimatedDelivery: order.estimatedDelivery ? order.estimatedDelivery.toISOString() : null,
+        estimatedMinutes: estimatedTime ? 
+          Math.max(0, Math.floor((estimatedTime - Date.now()) / (1000 * 60))) : null,
         items: order.items.map(item => ({
           name: item.foodItem.name,
           quantity: item.quantity,
@@ -133,7 +139,7 @@ export async function POST(req) {
     
     // Parse request body
     const data = await req.json();
-    const { orderId, status, notes, action } = data;
+    const { orderId, status, notes, action, estimatedMinutes } = data;
     
     if (!orderId) {
       return NextResponse.json({ error: 'Order ID is required' }, { status: 400 });
@@ -197,14 +203,15 @@ export async function POST(req) {
       }
       
       // Check if the status transition is valid
+      // Updated to allow transitions from PENDING to ACCEPTED first
       const validTransitions = {
         'PENDING': ['ACCEPTED', 'CANCELLED'],
         'ACCEPTED': ['PREPARING', 'CANCELLED'],
         'PREPARING': ['READY_FOR_PICKUP', 'CANCELLED'],
         'READY_FOR_PICKUP': ['IN_TRANSIT', 'CANCELLED'],
         'IN_TRANSIT': ['DELIVERED', 'CANCELLED'],
-        'DELIVERED': [],
-        'CANCELLED': []
+        'DELIVERED': ['CANCELLED'], // Allow reverting from DELIVERED to CANCELLED
+        'CANCELLED': ['PENDING', 'ACCEPTED'] // Allow restoring cancelled orders
       };
       
       if (!validTransitions[order.status].includes(status)) {
@@ -213,10 +220,23 @@ export async function POST(req) {
         }, { status: 400 });
       }
       
+      // Calculate estimated delivery time if accepting the order
+      let updateData = { status };
+      
+      // If this is an ACCEPTED status and estimatedMinutes is provided, set the estimated delivery time
+      if (status === 'ACCEPTED' && estimatedMinutes && !isNaN(estimatedMinutes)) {
+        const minutes = parseInt(estimatedMinutes, 10);
+        if (minutes > 0) {
+          const estimatedDelivery = new Date();
+          estimatedDelivery.setMinutes(estimatedDelivery.getMinutes() + minutes);
+          updateData.estimatedDelivery = estimatedDelivery;
+        }
+      }
+      
       // Update the order status
       const updatedOrder = await prisma.purchasedOrder.update({
         where: { id: orderId },
-        data: { status }
+        data: updateData
       });
       
       // Create a status log entry

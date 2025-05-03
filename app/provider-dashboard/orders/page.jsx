@@ -80,6 +80,13 @@ export default function OrdersPage() {
   // Initial data load
   useEffect(() => {
     fetchOrders();
+    
+    // Set up refresh interval for estimated delivery times
+    const intervalId = setInterval(() => {
+      fetchOrders();
+    }, 60000); // Refresh every minute to update remaining time
+    
+    return () => clearInterval(intervalId);
   }, []);
   
   // Handle tab change
@@ -99,12 +106,23 @@ export default function OrdersPage() {
   };
   
   // Handle status update
-  const handleStatusUpdate = async (orderId, newStatus, notes, action = 'update') => {
+  const handleStatusUpdate = async (orderId, newStatus, notes, action = 'update', estimatedMinutes) => {
     try {
       // Prepare request body based on action type
-      const requestBody = action === 'go-back' 
-        ? { orderId, notes, action: 'go-back' }
-        : { orderId, status: newStatus, notes };
+      const requestBody = {
+        orderId,
+        notes,
+        action: action || 'update'
+      };
+      
+      if (action !== 'go-back') {
+        requestBody.status = newStatus;
+      }
+      
+      // Add estimated minutes if provided (for ACCEPTED status)
+      if (newStatus === 'ACCEPTED' && estimatedMinutes) {
+        requestBody.estimatedMinutes = parseInt(estimatedMinutes, 10);
+      }
       
       const response = await fetch('/api/provider/orders', {
         method: 'POST',
@@ -183,6 +201,9 @@ export default function OrdersPage() {
                     </TabsTrigger>
                     <TabsTrigger value="PENDING" className="py-2 px-1 text-[13px] md:text-md data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none">
                       Pending
+                    </TabsTrigger>
+                    <TabsTrigger value="ACCEPTED" className="py-2 px-1 text-[13px] md:text-md data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none">
+                      Accepted
                     </TabsTrigger>
                     <TabsTrigger value="PREPARING" className="py-2 px-1 text-[13px] md:text-md data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none">
                       Preparing

@@ -100,13 +100,23 @@ export default function OrdersPage() {
         setLoading(false);
       }
     }
-  }, [showToast]);
+  }, [showToast, activeTab]);
 
   useEffect(() => {
     if (status === 'authenticated' && !isInitialFetchDoneRef.current) {
       fetchOrders(activeTab);
     }
-  }, [status, fetchOrders]);
+  }, [status, fetchOrders, activeTab]);
+
+  useEffect(() => {
+    if (status === 'authenticated') {
+      const intervalId = setInterval(() => {
+        fetchOrders(activeTab);
+      }, 60000);
+
+      return () => clearInterval(intervalId);
+    }
+  }, [status, fetchOrders, activeTab]);
 
   const handleTabChange = useCallback((value) => {
     setActiveTab(value);
@@ -138,11 +148,25 @@ export default function OrdersPage() {
             <span>Pending</span>
           </Badge>
         );
+      case 'ACCEPTED':
+        return (
+          <Badge variant="outline" className="bg-blue-100 text-blue-800 border-blue-300 flex items-center gap-1">
+            <Clock className="h-3.5 w-3.5" />
+            <span>Accepted</span>
+          </Badge>
+        );
       case 'PREPARING':
         return (
           <Badge variant="outline" className="bg-blue-100 text-blue-800 border-blue-300 flex items-center gap-1">
             <Package className="h-3.5 w-3.5" />
             <span>Preparing</span>
+          </Badge>
+        );
+      case 'READY_FOR_PICKUP':
+        return (
+          <Badge variant="outline" className="bg-purple-100 text-purple-800 border-purple-300 flex items-center gap-1">
+            <Package className="h-3.5 w-3.5" />
+            <span>Ready for Pickup</span>
           </Badge>
         );
       case 'IN_TRANSIT':
@@ -208,6 +232,22 @@ export default function OrdersPage() {
     setCancelDialogOpen(true);
   };
 
+  const getDeliveryEstimate = (order) => {
+    if (!order.estimatedDelivery) return null;
+
+    const estimatedTime = new Date(order.estimatedDelivery).getTime();
+    const now = Date.now();
+    const minutesRemaining = Math.max(0, Math.floor((estimatedTime - now) / (1000 * 60)));
+
+    if (minutesRemaining <= 0) {
+      return "Expected any moment";
+    } else if (minutesRemaining < 5) {
+      return "Less than 5 minutes";
+    } else {
+      return `${minutesRemaining} minutes remaining`;
+    }
+  };
+
   if (status === 'loading') {
     return (
       <div className="min-h-screen bg-gray-50">
@@ -231,7 +271,9 @@ export default function OrdersPage() {
           <TabsList className="mb-6">
             <TabsTrigger value="all">All Orders</TabsTrigger>
             <TabsTrigger value="PENDING">Pending</TabsTrigger>
+            <TabsTrigger value="ACCEPTED">Accepted</TabsTrigger>
             <TabsTrigger value="PREPARING">Preparing</TabsTrigger>
+            <TabsTrigger value="READY_FOR_PICKUP">Ready</TabsTrigger>
             <TabsTrigger value="IN_TRANSIT">In Transit</TabsTrigger>
             <TabsTrigger value="DELIVERED">Delivered</TabsTrigger>
           </TabsList>
@@ -312,18 +354,15 @@ export default function OrdersPage() {
                           </div>
                         </div>
 
-                        {order.status === 'PREPARING' && (
-                          <div className="bg-blue-50 p-3 rounded-md text-sm">
-                            <p className="font-medium text-blue-800">Your order is being prepared</p>
-                            {order.timeline && order.timeline[0] && (
-                              <p>Last update: {formatDate(order.timeline[0].date)}</p>
-                            )}
-                          </div>
-                        )}
-
-                        {order.status === 'IN_TRANSIT' && (
+                        {(order.status === 'ACCEPTED' || order.status === 'PREPARING' || order.status === 'READY_FOR_PICKUP' || order.status === 'IN_TRANSIT') && (
                           <div className="bg-blue-50 p-3 rounded-md text-sm">
                             <p className="font-medium text-blue-800">Your order is on the way</p>
+                            {order.estimatedDelivery && (
+                              <p className="text-blue-600 mt-1">
+                                <span className="font-medium">Estimated Delivery: </span> 
+                                {getDeliveryEstimate(order)}
+                              </p>
+                            )}
                             {order.timeline && order.timeline[0] && (
                               <p>Last update: {formatDate(order.timeline[0].date)}</p>
                             )}

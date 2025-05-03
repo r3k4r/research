@@ -11,6 +11,8 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { AlertCircle, Clock, MapPin, Phone, User, ArrowLeft } from 'lucide-react';
 
 export function OrderDetails({ order, onStatusUpdate }) {
@@ -18,6 +20,7 @@ export function OrderDetails({ order, onStatusUpdate }) {
   const [selectedStatus, setSelectedStatus] = useState('');
   const [actionType, setActionType] = useState('update'); // 'update' or 'go-back'
   const [statusNote, setStatusNote] = useState('');
+  const [estimatedMinutes, setEstimatedMinutes] = useState('30');
   
   const formatDate = (dateString) => {
     const date = new Date(dateString);
@@ -34,14 +37,19 @@ export function OrderDetails({ order, onStatusUpdate }) {
   const getNextStatuses = (currentStatus) => {
     switch (currentStatus) {
       case 'PENDING':
+        return ['ACCEPTED', 'CANCELLED'];
+      case 'ACCEPTED':
         return ['PREPARING', 'CANCELLED'];
       case 'PREPARING':
+        return ['READY_FOR_PICKUP', 'CANCELLED'];
+      case 'READY_FOR_PICKUP':
         return ['IN_TRANSIT', 'CANCELLED'];
       case 'IN_TRANSIT':
         return ['DELIVERED', 'CANCELLED'];
       case 'DELIVERED':
+        return ['CANCELLED']; // Can cancel even after delivery
       case 'CANCELLED':
-        return [];
+        return ['PENDING', 'ACCEPTED']; // Can restore cancelled orders
       default:
         return [];
     }
@@ -60,7 +68,12 @@ export function OrderDetails({ order, onStatusUpdate }) {
   
   const confirmStatusUpdate = () => {
     if (actionType === 'update') {
-      onStatusUpdate(order.id, selectedStatus, statusNote);
+      // If accepting the order, include estimated minutes
+      if (selectedStatus === 'ACCEPTED') {
+        onStatusUpdate(order.id, selectedStatus, statusNote, 'update', estimatedMinutes);
+      } else {
+        onStatusUpdate(order.id, selectedStatus, statusNote);
+      }
     } else {
       // Call onStatusUpdate with the go-back action
       onStatusUpdate(order.id, null, statusNote, 'go-back');
@@ -77,22 +90,27 @@ export function OrderDetails({ order, onStatusUpdate }) {
   
   const getStatusText = (status) => {
     switch (status) {
+      case 'ACCEPTED': return 'Accept Order';
       case 'PREPARING': return 'Start Preparation';
+      case 'READY_FOR_PICKUP': return 'Ready for Pickup';
       case 'IN_TRANSIT': return 'Start Delivery';
       case 'DELIVERED': return 'Mark Delivered';
       case 'CANCELLED': return 'Cancel Order';
+      case 'PENDING': return 'Mark Pending';
       default: return status;
     }
   };
   
   const getStatusButtonVariant = (status) => {
-    return status === 'CANCELLED' ? 'destructive' : 'default';
+    if (status === 'CANCELLED') return 'destructive';
+    if (status === 'ACCEPTED') return 'success';
+    return 'default';
   };
   
-  // Function to determine if Go Back button should be shown
+  // Function to determine if Go Back button should be shown - now show for all statuses
   const canGoBack = () => {
-    // Don't show for PENDING (first status) or terminal statuses
-    return !['PENDING', 'DELIVERED', 'CANCELLED'].includes(order.status);
+    // Show Go Back for all statuses that have history
+    return order.statusLogs && order.statusLogs.length > 1;
   };
   
   if (!order) return null;
@@ -104,7 +122,7 @@ export function OrderDetails({ order, onStatusUpdate }) {
       <Card className="h-full flex flex-col">
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
           <div>
-            <CardTitle className="text-xl font-bold">{order.id}</CardTitle>
+            <CardTitle className="text-xl font-bold">#{order.id.substring(0, 8).toUpperCase()}</CardTitle>
             <div className="text-sm text-muted-foreground">
               Placed on {formatDate(order.date)}
             </div>
@@ -172,12 +190,30 @@ export function OrderDetails({ order, onStatusUpdate }) {
               </div>
             </div>
             
+            {/* Estimated delivery time */}
+            {order.estimatedDelivery && (
+              <div className="bg-blue-50 border border-blue-200 rounded-md p-3 flex items-start gap-2">
+                <Clock className="h-5 w-5 text-blue-500 mt-0.5" />
+                <div>
+                  <p className="font-medium text-blue-700">Estimated Delivery Time</p>
+                  <p className="text-sm text-blue-600">
+                    {order.estimatedMinutes > 0 
+                      ? `Approximately ${order.estimatedMinutes} minutes remaining` 
+                      : `Expected delivery time: ${formatDate(order.estimatedDelivery)}`}
+                  </p>
+                </div>
+              </div>
+            )}
+            
             {order.status === 'CANCELLED' && (
               <div className="bg-red-50 border border-red-200 rounded-md p-3 flex items-start gap-2">
                 <AlertCircle className="h-5 w-5 text-red-500 mt-0.5" />
                 <div>
                   <p className="font-medium text-red-700">Order Cancelled</p>
-                  <p className="text-sm text-red-600">This order has been cancelled and no further actions are required.</p>
+                  <p className="text-sm text-red-600">This order has been cancelled.</p>
+                  {order.statusLogs && order.statusLogs.length > 0 && order.statusLogs[0].notes && (
+                    <p className="text-sm text-red-600 mt-1">Reason: {order.statusLogs[0].notes}</p>
+                  )}
                 </div>
               </div>
             )}
@@ -195,7 +231,7 @@ export function OrderDetails({ order, onStatusUpdate }) {
         </CardContent>
         
         <CardFooter className="border-t pt-4 flex flex-wrap gap-2">
-          {/* Go Back button */}
+          {/* Go Back button - now available for any status with history */}
           {canGoBack() && (
             <Button
               variant="outline"
@@ -236,15 +272,32 @@ export function OrderDetails({ order, onStatusUpdate }) {
                 ? 'This will revert the order to its previous status.'
                 : selectedStatus === 'CANCELLED'
                   ? 'Are you sure you want to cancel this order? This action cannot be undone.'
-                  : `Change the status of order ${order?.id} to ${selectedStatus.replace('_', ' ')}.`}
+                  : `Change the status of order #${order?.id.substring(0, 8).toUpperCase()} to ${selectedStatus.replace('_', ' ')}.`}
             </DialogDescription>
           </DialogHeader>
           
           <div className="space-y-4 py-2">
+            {/* For ACCEPTED status, show estimated delivery time input */}
+            {selectedStatus === 'ACCEPTED' && (
+              <div className="space-y-2">
+                <Label htmlFor="estimatedMinutes">Estimated Delivery Time (minutes)</Label>
+                <Input
+                  id="estimatedMinutes"
+                  type="number"
+                  min="1"
+                  value={estimatedMinutes}
+                  onChange={(e) => setEstimatedMinutes(e.target.value)}
+                />
+                <p className="text-xs text-muted-foreground">
+                  Enter how many minutes it will take to prepare and deliver this order
+                </p>
+              </div>
+            )}
+
             <div className="space-y-2">
-              <label htmlFor="notes" className="text-sm font-medium">
+              <Label htmlFor="notes" className="text-sm font-medium">
                 Add notes (optional)
-              </label>
+              </Label>
               <Textarea
                 id="notes"
                 placeholder="Add any additional notes about this status change..."
