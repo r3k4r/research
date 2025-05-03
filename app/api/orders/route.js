@@ -97,6 +97,7 @@ export async function GET(req) {
         deliveryAddress: order.deliveryAddress,
         deliveryNotes: order.deliveryNotes,
         paymentMethod: order.paymentMethod,
+        estimatedDelivery: order.estimatedDelivery ? order.estimatedDelivery.toISOString() : null,
         timeline: order.statusLogs.map(log => ({
           status: log.status,
           date: log.createdAt.toISOString(),

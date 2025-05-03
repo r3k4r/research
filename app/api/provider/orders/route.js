@@ -230,6 +230,9 @@ export async function POST(req) {
           const estimatedDelivery = new Date();
           estimatedDelivery.setMinutes(estimatedDelivery.getMinutes() + minutes);
           updateData.estimatedDelivery = estimatedDelivery;
+          
+          // Add a note about estimated time in the status log
+          notes = notes || `Estimated delivery time: ${minutes} minutes`;
         }
       }
       

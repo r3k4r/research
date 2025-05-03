@@ -32,6 +32,7 @@ export default function OrdersPage() {
   const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
   const [orderToCancel, setOrderToCancel] = useState(null);
   const [isCancelling, setIsCancelling] = useState(false);
+  const [currentTime, setCurrentTime] = useState(Date.now());
 
   const isMountedRef = useRef(true);
   const isInitialFetchDoneRef = useRef(false);
@@ -118,6 +119,16 @@ export default function OrdersPage() {
     }
   }, [status, fetchOrders, activeTab]);
 
+  useEffect(() => {
+    if (status === 'authenticated') {
+      const timerInterval = setInterval(() => {
+        setCurrentTime(Date.now());
+      }, 30000); // Update every 30 seconds
+
+      return () => clearInterval(timerInterval);
+    }
+  }, [status]);
+
   const handleTabChange = useCallback((value) => {
     setActiveTab(value);
     fetchOrders(value);
@@ -137,6 +148,45 @@ export default function OrdersPage() {
       minute: 'numeric',
       hour12: true,
     });
+  };
+
+  const formatTime = (date) => {
+    return date.toLocaleTimeString('en-US', { 
+      hour: 'numeric', 
+      minute: '2-digit',
+      hour12: true 
+    });
+  };
+
+  const getEstimatedDeliveryRange = (order) => {
+    if (!order.estimatedDelivery) return "Unknown time";
+    
+    const estimatedTime = new Date(order.estimatedDelivery);
+    const minTime = new Date(estimatedTime);
+    const maxTime = new Date(estimatedTime);
+    maxTime.setMinutes(maxTime.getMinutes() + 5); // Add 5 minute buffer
+    
+    return `${formatTime(minTime)}-${formatTime(maxTime)}`;
+  };
+
+  const getDeliveryEstimate = (order) => {
+    if (!order.estimatedDelivery) return "Time not available";
+
+    const estimatedTime = new Date(order.estimatedDelivery).getTime();
+    const now = currentTime;
+    const minutesRemaining = Math.max(0, Math.floor((estimatedTime - now) / (1000 * 60)));
+
+    if (minutesRemaining <= 0) {
+      return "Expected any moment now";
+    } else if (minutesRemaining < 5) {
+      return "Less than 5 minutes";
+    } else if (minutesRemaining < 60) {
+      return `${minutesRemaining} minutes remaining`;
+    } else {
+      const hours = Math.floor(minutesRemaining / 60);
+      const mins = minutesRemaining % 60;
+      return `${hours} ${hours === 1 ? 'hour' : 'hours'} ${mins > 0 ? `and ${mins} minutes` : ''} remaining`;
+    }
   };
 
   const getStatusBadge = (status) => {
@@ -230,26 +280,6 @@ export default function OrdersPage() {
   const openCancelDialog = (order) => {
     setOrderToCancel(order);
     setCancelDialogOpen(true);
-  };
-
-  const getDeliveryEstimate = (order) => {
-    if (!order.estimatedDelivery) return "Time not available";
-
-    const estimatedTime = new Date(order.estimatedDelivery).getTime();
-    const now = Date.now();
-    const minutesRemaining = Math.max(0, Math.floor((estimatedTime - now) / (1000 * 60)));
-
-    if (minutesRemaining <= 0) {
-      return "Expected any moment now";
-    } else if (minutesRemaining < 5) {
-      return "Less than 5 minutes";
-    } else if (minutesRemaining < 60) {
-      return `${minutesRemaining} minutes remaining`;
-    } else {
-      const hours = Math.floor(minutesRemaining / 60);
-      const mins = minutesRemaining % 60;
-      return `${hours} ${hours === 1 ? 'hour' : 'hours'} ${mins > 0 ? `and ${mins} minutes` : ''} remaining`;
-    }
   };
 
   if (status === 'loading') {
@@ -360,10 +390,16 @@ export default function OrdersPage() {
                           <div className="bg-blue-50 p-3 rounded-md text-sm">
                             <p className="font-medium text-blue-800">Your order has been accepted</p>
                             {order.estimatedDelivery && (
-                              <p className="text-blue-600 mt-1">
-                                <span className="font-medium">Estimated Delivery: </span> 
-                                {getDeliveryEstimate(order)}
-                              </p>
+                              <>
+                                <p className="text-blue-600 mt-1">
+                                  <span className="font-medium">Expected delivery: </span> 
+                                  {getEstimatedDeliveryRange(order)}
+                                </p>
+                                <p className="text-blue-600 mt-1">
+                                  <span className="font-medium">Status: </span> 
+                                  {getDeliveryEstimate(order)}
+                                </p>
+                              </>
                             )}
                           </div>
                         )}
@@ -373,7 +409,7 @@ export default function OrdersPage() {
                             <p className="font-medium text-blue-800">We're getting your order ready</p>
                             {order.estimatedDelivery && (
                               <p className="text-blue-600 mt-1">
-                                <span className="font-medium">Estimated Delivery: </span> 
+                                <span className="font-medium">Estimated time remaining: </span> 
                                 {getDeliveryEstimate(order)}
                               </p>
                             )}
