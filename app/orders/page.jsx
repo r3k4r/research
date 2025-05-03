@@ -233,18 +233,22 @@ export default function OrdersPage() {
   };
 
   const getDeliveryEstimate = (order) => {
-    if (!order.estimatedDelivery) return null;
+    if (!order.estimatedDelivery) return "Time not available";
 
     const estimatedTime = new Date(order.estimatedDelivery).getTime();
     const now = Date.now();
     const minutesRemaining = Math.max(0, Math.floor((estimatedTime - now) / (1000 * 60)));
 
     if (minutesRemaining <= 0) {
-      return "Expected any moment";
+      return "Expected any moment now";
     } else if (minutesRemaining < 5) {
       return "Less than 5 minutes";
-    } else {
+    } else if (minutesRemaining < 60) {
       return `${minutesRemaining} minutes remaining`;
+    } else {
+      const hours = Math.floor(minutesRemaining / 60);
+      const mins = minutesRemaining % 60;
+      return `${hours} ${hours === 1 ? 'hour' : 'hours'} ${mins > 0 ? `and ${mins} minutes` : ''} remaining`;
     }
   };
 
@@ -271,9 +275,7 @@ export default function OrdersPage() {
           <TabsList className="mb-6">
             <TabsTrigger value="all">All Orders</TabsTrigger>
             <TabsTrigger value="PENDING">Pending</TabsTrigger>
-            <TabsTrigger value="ACCEPTED">Accepted</TabsTrigger>
             <TabsTrigger value="PREPARING">Preparing</TabsTrigger>
-            <TabsTrigger value="READY_FOR_PICKUP">Ready</TabsTrigger>
             <TabsTrigger value="IN_TRANSIT">In Transit</TabsTrigger>
             <TabsTrigger value="DELIVERED">Delivered</TabsTrigger>
           </TabsList>
@@ -354,17 +356,50 @@ export default function OrdersPage() {
                           </div>
                         </div>
 
-                        {(order.status === 'ACCEPTED' || order.status === 'PREPARING' || order.status === 'READY_FOR_PICKUP' || order.status === 'IN_TRANSIT') && (
+                        {(order.status === 'ACCEPTED') && (
                           <div className="bg-blue-50 p-3 rounded-md text-sm">
-                            <p className="font-medium text-blue-800">Your order is on the way</p>
+                            <p className="font-medium text-blue-800">Your order has been accepted</p>
                             {order.estimatedDelivery && (
                               <p className="text-blue-600 mt-1">
                                 <span className="font-medium">Estimated Delivery: </span> 
                                 {getDeliveryEstimate(order)}
                               </p>
                             )}
-                            {order.timeline && order.timeline[0] && (
-                              <p>Last update: {formatDate(order.timeline[0].date)}</p>
+                          </div>
+                        )}
+
+                        {(order.status === 'PREPARING') && (
+                          <div className="bg-blue-50 p-3 rounded-md text-sm">
+                            <p className="font-medium text-blue-800">We're getting your order ready</p>
+                            {order.estimatedDelivery && (
+                              <p className="text-blue-600 mt-1">
+                                <span className="font-medium">Estimated Delivery: </span> 
+                                {getDeliveryEstimate(order)}
+                              </p>
+                            )}
+                          </div>
+                        )}
+
+                        {(order.status === 'READY_FOR_PICKUP') && (
+                          <div className="bg-blue-50 p-3 rounded-md text-sm">
+                            <p className="font-medium text-blue-800">Your order is ready for pickup</p>
+                            {order.estimatedDelivery && (
+                              <p className="text-blue-600 mt-1">
+                                <span className="font-medium">Expected delivery: </span> 
+                                {getDeliveryEstimate(order)}
+                              </p>
+                            )}
+                          </div>
+                        )}
+
+                        {(order.status === 'IN_TRANSIT') && (
+                          <div className="bg-blue-50 p-3 rounded-md text-sm">
+                            <p className="font-medium text-blue-800">Your order is on the way</p>
+                            {order.estimatedDelivery && (
+                              <p className="text-blue-600 mt-1">
+                                <span className="font-medium">Arriving in: </span> 
+                                {getDeliveryEstimate(order)}
+                              </p>
                             )}
                           </div>
                         )}
