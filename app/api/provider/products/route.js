@@ -19,6 +19,7 @@ export async function GET(request) {
     const { searchParams } = new URL(request.url);
     const searchTerm = searchParams.get("search") || "";
     const categoryId = searchParams.get("category") || "";
+    const status = searchParams.get("status") || "active"; // Get the status filter
     const page = parseInt(searchParams.get("page") || "1");
     const limit = parseInt(searchParams.get("limit") || "10");
     const skip = (page - 1) * limit;
@@ -39,6 +40,8 @@ export async function GET(request) {
     const providerId = user.providerProfile.id;
     
     // Build search filters
+    const now = new Date(); // Current time for expiration comparison
+    
     const where = {
       providerId,
       ...(searchTerm && {
@@ -49,6 +52,14 @@ export async function GET(request) {
       }),
       ...(categoryId && categoryId !== "all" && { categoryId }),
     };
+    
+    // Apply expiration status filter - similar to admin implementation
+    if (status === "active") {
+      where.expiresAt = { gt: now }; // Items that haven't expired
+    } else if (status === "expired") {
+      where.expiresAt = { lt: now }; // Items that have expired
+    }
+    // If status is "all", don't add any expiration filter
     
     // Get total count
     const totalItems = await prisma.foodItem.count({ where });
