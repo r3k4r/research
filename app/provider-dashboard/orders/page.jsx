@@ -44,7 +44,12 @@ export default function OrdersPage() {
       const timestamp = Date.now();
       params.append('t', timestamp);
       
-      const response = await fetch(`/api/provider/orders?${params.toString()}`, {
+      // Get full URL with origin to ensure correct path in production
+      const apiUrl = `${window.location.origin}/api/provider/orders?${params.toString()}`;
+      console.log(`Fetching orders from: ${apiUrl}`);
+      
+      const response = await fetch(apiUrl, {
+        method: 'GET',
         cache: 'no-store',
         headers: {
           'Cache-Control': 'no-cache, no-store, must-revalidate',
@@ -54,7 +59,8 @@ export default function OrdersPage() {
       });
       
       if (!response.ok) {
-        throw new Error('Failed to fetch orders');
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || `Request failed with status ${response.status}`);
       }
       
       const data = await response.json();
@@ -124,7 +130,11 @@ export default function OrdersPage() {
         requestBody.estimatedMinutes = parseInt(estimatedMinutes, 10);
       }
       
-      const response = await fetch('/api/provider/orders', {
+      // Get full URL with origin to ensure correct path in production
+      const apiUrl = `${window.location.origin}/api/provider/orders`;
+      console.log(`Sending update to: ${apiUrl}`);
+      
+      const response = await fetch(apiUrl, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -133,8 +143,8 @@ export default function OrdersPage() {
       });
       
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to update order status');
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || `Request failed with status ${response.status}`);
       }
       
       // Show success message
@@ -222,6 +232,7 @@ export default function OrdersPage() {
                     selectedOrderId={selectedOrder?.id}
                     onOrderSelect={handleOrderSelect}
                     loading={loading}
+                    error={error}
                   />
                 </TabsContent>
               </Tabs>

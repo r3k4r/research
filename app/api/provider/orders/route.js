@@ -15,6 +15,9 @@ export async function GET(req) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
     
+    // Add more detailed logging for debugging in production
+    console.log('Provider orders API called by:', session.user.email);
+    
     // Get the current user and verify provider status
     const user = await prisma.user.findUnique({
       where: { email: session.user.email },
@@ -22,10 +25,12 @@ export async function GET(req) {
     });
     
     if (!user || !user.providerProfile) {
+      console.error('Provider profile not found for user:', session.user.email);
       return NextResponse.json({ error: 'Provider profile not found' }, { status: 404 });
     }
     
     const providerId = user.providerProfile.id;
+    console.log('Found provider ID:', providerId);
     
     // Parse query parameters
     const url = new URL(req.url);
@@ -111,8 +116,16 @@ export async function GET(req) {
     return NextResponse.json(formattedOrders);
     
   } catch (error) {
-    console.error('Error fetching orders:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    // Enhance error logging for debugging
+    console.error('Error in provider orders API:', error);
+    console.error('Stack trace:', error.stack);
+    
+    // Return more helpful error message
+    return NextResponse.json({ 
+      error: 'Failed to fetch orders',
+      message: error.message,
+      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+    }, { status: 500 });
   }
 }
 
