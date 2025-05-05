@@ -87,7 +87,7 @@ const ProvidersPage = () => {
   // Initial data load
   useEffect(() => {
     fetchProviders(true);
-  }, []); // Removed fetchProviders dependency to prevent infinite loop
+  }, []);
 
   // Handle search with debounce
   useEffect(() => {
@@ -104,7 +104,7 @@ const ProvidersPage = () => {
         clearTimeout(searchTimeoutRef.current);
       }
     };
-  }, [searchTerm]); // Removed fetchProviders dependency to prevent infinite loop
+  }, [searchTerm, fetchProviders]);
 
   // Setup intersection observer for infinite scrolling
   useEffect(() => {
@@ -116,7 +116,7 @@ const ProvidersPage = () => {
     
     observerRef.current = new IntersectionObserver(entries => {
       if (entries[0].isIntersecting && hasMore && !loading) {
-        fetchProviders(false);
+        fetchProviders();
       }
     }, { threshold: 0.1, rootMargin: '100px' });
     
@@ -129,7 +129,7 @@ const ProvidersPage = () => {
         observerRef.current.disconnect();
       }
     };
-  }, [loading, hasMore, providers.length]); // Changed dependency from fetchProviders to providers.length
+  }, [loading, hasMore, fetchProviders]);
 
   // Handle search input change
   const handleSearchChange = (e) => {
@@ -155,7 +155,7 @@ const ProvidersPage = () => {
         <div>
           <h1 className="text-3xl font-bold mb-6">Food Providers</h1>
           
-          <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center mb-8">
+          <div className="flex flex-row gap-4 items-start sm:items-center mb-8">
             <div className="relative w-full sm:max-w-md">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
