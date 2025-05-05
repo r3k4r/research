@@ -4,6 +4,7 @@ import { authOptions } from "@/lib/auth";
 import "./globals.css";
 import { CartProvider } from "@/lib/cart-context";
 import Navbar from "@/components/Navbar";
+import { headers } from 'next/headers';
 
 export const metadata = {
   title: "Second Serve",
@@ -12,13 +13,30 @@ export const metadata = {
 
 export default async function RootLayout({ children }) {
   const session = await getServerSession(authOptions);
+  const headersList = await headers();
+  const pathname = headersList.get('x-pathname') || 'nothing';
+  console.log("pathname", pathname);
+  
+  const noNavbarRoutes = [
+    '/signin',
+    'signup',
+    '/forgot-password',
+    '/reset-password',
+    '/two-factor',
+    '/welcome',
+    
+  ];
+
+  const showNavbar = noNavbarRoutes.some(route => 
+    pathname.startsWith(route) 
+  );
   
   return (
     <html lang="en">
       <body>
         <SessionProviderWrapper session={session}>
           <CartProvider>
-            <Navbar />
+            {!showNavbar && <Navbar />}
             {children}
           </CartProvider>
         </SessionProviderWrapper>

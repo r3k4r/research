@@ -15,7 +15,6 @@ export async function GET(request) {
     const limit = parseInt(searchParams.get('limit') || '12', 10);
     const skip = (page - 1) * limit;
     
-    console.log(`API request - Page: ${page}, Skip: ${skip}, Limit: ${limit}, Categories: ${categoryIds.join(',')}`);
     
     const now = new Date();
     
@@ -30,9 +29,8 @@ export async function GET(request) {
         }
       });
       
-      console.log('Updated expired items to EXPIRED status');
     } catch (updateError) {
-      console.error('Failed to update expired items:', updateError);
+      throw new Error('Failed to update expired food items');
     }
     
     const where = {
@@ -57,7 +55,6 @@ export async function GET(request) {
       where.categoryId = { in: categoryIds };
     }
     
-    console.log('Query where clause:', JSON.stringify(where, null, 2));
     
     try {
       const [totalItems, foodItems, categories, priceStats] = await Promise.all([
@@ -99,14 +96,12 @@ export async function GET(request) {
         })
       ]);
       
-      console.log(`API fetch success - Retrieved ${foodItems.length} items`);
       
       const minAvailablePrice = priceStats._min.discountedPrice || 0;
       const maxAvailablePrice = priceStats._max.discountedPrice || 100;
       
       const hasMore = totalItems > skip + foodItems.length;
       
-      console.log(`API response - Items: ${foodItems.length}, Total: ${totalItems}, HasMore: ${hasMore}`);
       
       return NextResponse.json({
         foodItems,
@@ -123,11 +118,9 @@ export async function GET(request) {
         }
       });
     } catch (dbError) {
-      console.error('Database query error:', dbError);
       throw dbError;
     }
   } catch (error) {
-    console.error('Error fetching food items:', error);
     return NextResponse.json(
       {
         error: 'Failed to fetch food items',

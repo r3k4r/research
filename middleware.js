@@ -7,7 +7,8 @@ export default withAuth(
     const isAuth = !!req.nextauth.token
     const userRole = req.nextauth.token?.role || null
     
-  
+    const requestHeaders = new Headers(req.headers)
+    requestHeaders.set('x-pathname', req.nextUrl.pathname)
 
     // Get hasVisited cookie
     const hasVisited = req.cookies.get('hasVisited')
@@ -64,7 +65,11 @@ export default withAuth(
       }
     }
 
-    return NextResponse.next()
+    return NextResponse.next({
+      request: {
+        headers: requestHeaders,
+      }
+    })
   },
   {
     callbacks: {
