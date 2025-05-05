@@ -47,6 +47,7 @@ const SingleProvider = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [loading, setLoading] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [initialLoading, setInitialLoading] = useState(true);
   const [error, setError] = useState(null);
   const [page, setPage] = useState(1);
@@ -54,6 +55,7 @@ const SingleProvider = () => {
   
   const observerRef = useRef(null);
   const lastItemRef = useRef(null);
+  const loadMoreButtonRef = useRef(null);
   const searchTimeoutRef = useRef(null);
   const fetchInProgressRef = useRef(false);
 
@@ -70,6 +72,8 @@ const SingleProvider = () => {
       if (reset) {
         setLoading(true);
         setPage(1);
+      } else {
+        setLoadingMore(true);
       }
       
       const currentPage = reset ? 1 : page;
@@ -120,6 +124,7 @@ const SingleProvider = () => {
       showToast('Failed to load provider data', 'error');
     } finally {
       setLoading(false);
+      setLoadingMore(false);
       setInitialLoading(false);
       fetchInProgressRef.current = false;
     }
@@ -157,28 +162,41 @@ const SingleProvider = () => {
     };
   }, [searchTerm, selectedCategory]);
 
-  // Setup intersection observer for infinite scrolling
   useEffect(() => {
-    if (loading || !hasMore || !lastItemRef.current) return;
+    if (loading || loadingMore || !hasMore) return;
     
-    if (observerRef.current) {
-      observerRef.current.disconnect();
-    }
-    
-    observerRef.current = new IntersectionObserver(entries => {
-      if (entries[0].isIntersecting && hasMore && !loading && !fetchInProgressRef.current) {
+    const handleObserver = (entries) => {
+      const [entry] = entries;
+      if (entry?.isIntersecting && hasMore && !loading && !loadingMore && !fetchInProgressRef.current) {
+        console.log("✅ Intersection detected! Loading more items...");
         fetchProviderData(false);
       }
-    }, { threshold: 0.1, rootMargin: '100px' });
+    };
     
-    observerRef.current.observe(lastItemRef.current);
+    const observer = new IntersectionObserver(handleObserver, {
+      root: null,
+      rootMargin: '500px',
+      threshold: 0
+    });
+    
+    const currentLastItem = lastItemRef.current;
+    const currentLoadMoreButton = loadMoreButtonRef.current;
+    
+    if (currentLastItem) {
+      console.log("📥 Setting up observer on last food item");
+      observer.observe(currentLastItem);
+    }
+    
+    if (currentLoadMoreButton) {
+      observer.observe(currentLoadMoreButton);
+    }
     
     return () => {
-      if (observerRef.current) {
-        observerRef.current.disconnect();
-      }
+      if (currentLastItem) observer.unobserve(currentLastItem);
+      if (currentLoadMoreButton) observer.unobserve(currentLoadMoreButton);
+      observer.disconnect();
     };
-  }, [loading, hasMore, foodItems.length]); 
+  }, [hasMore, loading, loadingMore, foodItems.length]);
 
   // Handle navigation back to providers list
   const goBack = () => {
@@ -464,47 +482,65 @@ const SingleProvider = () => {
             )}
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {foodItems.map((item, index) => {
-              const isLastItem = index === foodItems.length - 1;
-              
-              return (
-                <div 
-                  key={item.id} 
-                  ref={isLastItem ? lastItemRef : null}
+          <>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+              {foodItems.map((item, index) => {
+                const isLastItem = index === foodItems.length - 1;
+                
+                return (
+                  <div 
+                    key={item.id} 
+                    ref={isLastItem ? lastItemRef : null}
+                    className={isLastItem ? "relative" : ""}
+                  >
+                    <FoodCard
+                      id={item.id}
+                      name={item.name}
+                      description={item.description || ""}
+                      image={item.image || "/default-food.jpg"}
+                      originalPrice={item.price}
+                      discountedPrice={item.discountedPrice}
+                      provider={provider.businessName}
+                      providerId={provider.id}
+                      providerLogo={provider.logo || "/default-logo.png"}
+                      category={item.category?.name || "Uncategorized"}
+                      expiresIn={getExpiresInText(item.expiresAt)}
+                      quantity={item.quantity}
+                    />
+                  </div>
+                );
+              })}
+            </div>
+            
+            {/* Manual load more button as fallback */}
+            {hasMore && !loading && !loadingMore && (
+              <div className="flex justify-center mt-8">
+                <Button
+                  ref={loadMoreButtonRef}
+                  variant="outline"
+                  onClick={() => fetchProviderData(false)}
                 >
-                  <FoodCard
-                    id={item.id}
-                    name={item.name}
-                    description={item.description || ""}
-                    image={item.image || "/default-food.jpg"}
-                    originalPrice={item.price}
-                    discountedPrice={item.discountedPrice}
-                    provider={provider.businessName}
-                    providerId={provider.id}
-                    providerLogo={provider.logo || "/default-logo.png"}
-                    category={item.category?.name || "Uncategorized"}
-                    expiresIn={getExpiresInText(item.expiresAt)}
-                    quantity={item.quantity}
-                  />
-                </div>
-              );
-            })}
-          </div>
+                  Load More Items
+                </Button>
+              </div>
+            )}
+          </>
         )}
         
-        {/* Loading indicator */}
-        {loading && !initialLoading && (
+        {/* Update loading indicators */}
+        {(loading || loadingMore) && !initialLoading && (
           <div className="flex justify-center py-6 mt-4">
             <div className="flex items-center space-x-2">
               <Loader2 className="h-6 w-6 animate-spin text-primary" />
-              <p className="text-sm text-muted-foreground">Loading more items...</p>
+              <p className="text-sm text-muted-foreground">
+                {loading ? "Loading items..." : "Loading more items..."}
+              </p>
             </div>
           </div>
         )}
         
         {/* No more items indicator */}
-        {!loading && !hasMore && foodItems.length > 0 && (
+        {!loading && !loadingMore && !hasMore && foodItems.length > 0 && (
           <div className="text-center py-6 text-sm text-muted-foreground">
             No more items available
           </div>
