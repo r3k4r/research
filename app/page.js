@@ -199,23 +199,6 @@ export default function Home() {
       
       <main className="container mx-auto px-4 py-8 h-full">
         {/* Mobile filter toggle */}
-        <button 
-          onClick={toggleFilter} 
-          className="md:hidden flex items-center justify-center gap-2 bg-primary text-white rounded-md px-4 py-2 mb-4 w-full"
-        >
-          {isFilterOpen ? (
-            <>
-              <X size={18} />
-              Close Filters
-            </>
-          ) : (
-            <>
-              <SlidersHorizontal size={18} />
-              Show Filters
-            </>
-          )}
-        </button>
-
         <div className="flex flex-col md:flex-row gap-6 h-full relative">
           {/* Filters sidebar */}
           <aside className={`${isFilterOpen ? 'fixed inset-0 z-50 bg-white p-4 overflow-y-auto' : 'hidden'} 
@@ -239,8 +222,8 @@ export default function Home() {
           {/* Main Content */}
           <div className="flex-1 overflow-y-auto scroll-smooth scroll-hidden">
             {/* Search bar visible only on larger screens */}
-            <div className="flex md:flex-row flex-col md:items-center md:mb-6 gap-2">
-              <div className="relative flex-1 max-w-md">
+            <div className="flex flex-row items-center md:mb-6 gap-2">
+              <div className="relative flex-1 flex items-center max-w-md">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
                   placeholder="Search food items, restaurants, or descriptions..."
@@ -254,13 +237,26 @@ export default function Home() {
                   }}
                 />
               </div>
-              <Button 
-                onClick={() => fetchFoods(true)}
-                disabled={loading}
-              >
-                Search
-              </Button>
+
+              <button 
+                  onClick={toggleFilter} 
+                  className="md:hidden flex items-center justify-center gap-2 bg-primary text-white rounded-md px-4 py-2"
+                >
+                  {isFilterOpen ? (
+                    <>
+                      <X size={18} />
+                      Close Filters
+                    </>
+                  ) : (
+                    <>
+                      <SlidersHorizontal size={18} />
+                      Show Filters
+                    </>
+                  )}
+                </button>
             </div>
+
+            <br />
             
             {/* Results count */}
             <div className="mb-4 text-sm text-muted-foreground">

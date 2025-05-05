@@ -68,14 +68,12 @@ export function OrderDetails({ order, onStatusUpdate }) {
   
   const confirmStatusUpdate = () => {
     if (actionType === 'update') {
-      // If accepting the order, include estimated minutes
       if (selectedStatus === 'ACCEPTED') {
         onStatusUpdate(order.id, selectedStatus, statusNote, 'update', estimatedMinutes);
       } else {
         onStatusUpdate(order.id, selectedStatus, statusNote);
       }
     } else {
-      // Call onStatusUpdate with the go-back action
       onStatusUpdate(order.id, null, statusNote, 'go-back');
     }
     setStatusNote('');
