@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 import { prisma } from '@/lib/db';
+import { Prisma } from '@prisma/client';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -116,16 +117,36 @@ export async function GET(req) {
     return NextResponse.json(formattedOrders);
     
   } catch (error) {
-    // Enhance error logging for debugging
+    // Enhance error detection and response
     console.error('Error in provider orders API:', error);
-    console.error('Stack trace:', error.stack);
     
-    // Return more helpful error message
+    let errorMessage = 'Failed to fetch orders';
+    let statusCode = 500;
+    
+    // Handle Prisma-specific errors
+    if (error instanceof Prisma.PrismaClientKnownRequestError) {
+      console.error('Prisma error code:', error.code);
+      
+      // Handle specific Prisma error codes
+      if (error.code === 'P2009') {
+        errorMessage = 'Invalid data provided: ' + error.message.split('\n').pop();
+      } else if (error.code === 'P2003') {
+        errorMessage = 'Related record not found';
+      }
+    }
+    
+    // Check for enum validation errors
+    if (error.message && error.message.includes("not found in enum")) {
+      errorMessage = "Invalid status value provided. Please check your database schema.";
+      statusCode = 400;
+    }
+    
     return NextResponse.json({ 
-      error: 'Failed to fetch orders',
+      error: errorMessage,
       message: error.message,
+      type: error.name,
       stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
-    }, { status: 500 });
+    }, { status: statusCode });
   }
 }
 

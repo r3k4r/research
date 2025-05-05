@@ -17,6 +17,6 @@ export function OrderStatusBadge({ status }) {
     case 'CANCELLED':
       return <Badge variant="outline" className="bg-red-50 text-red-700 border-red-200">Cancelled</Badge>;
     default:
-      return <Badge variant="outline">{status}</Badge>;
+      return <Badge variant="outline">{status || 'Unknown'}</Badge>;
   }
 }
