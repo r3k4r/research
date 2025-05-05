@@ -62,17 +62,24 @@ export function NotificationProvider({ children }) {
   // Mark all notifications as viewed
   const markAllAsViewed = async () => {
     try {
-      await fetch('/api/provider/notifications/view-all', { 
-        method: 'POST' 
-      })
+      const response = await fetch('/api/provider/notifications/view-all', { 
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to mark notifications as viewed');
+      }
       
       setNotifications(prev => 
         prev.map(notification => ({ ...notification, viewed: true }))
-      )
+      );
       
-      setUnreadCount(0)
+      setUnreadCount(0);
     } catch (error) {
-      console.error('Error marking all notifications as viewed:', error)
+      console.error('Error marking all notifications as viewed:', error);
     }
   }
 

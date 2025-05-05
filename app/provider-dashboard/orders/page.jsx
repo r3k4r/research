@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { 
   Card, 
   CardContent, 
@@ -29,11 +29,13 @@ export default function OrdersPage() {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const firstLoadRef = useRef(true);
   
-  // Function to fetch orders
+  // Function to fetch orders with improved error handling
   const fetchOrders = async (status = activeTab, search = searchTerm) => {
     try {
       setLoading(true);
+      setError(null);
       
       // Build query parameters
       const params = new URLSearchParams();
@@ -44,26 +46,32 @@ export default function OrdersPage() {
       const timestamp = Date.now();
       params.append('t', timestamp);
       
+      console.log(`Fetching orders at ${new Date().toISOString()} from ${window.location.origin}/api/provider/orders`);
+      
       // Get full URL with origin to ensure correct path in production
       const apiUrl = `${window.location.origin}/api/provider/orders?${params.toString()}`;
-      console.log(`Fetching orders from: ${apiUrl}`);
       
       const response = await fetch(apiUrl, {
         method: 'GET',
+        credentials: 'same-origin', // Include cookies for session authentication
         cache: 'no-store',
         headers: {
           'Cache-Control': 'no-cache, no-store, must-revalidate',
           'Pragma': 'no-cache',
-          'Expires': '0'
+          'Expires': '0',
+          'Accept': 'application/json'
         }
       });
       
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.error || `Request failed with status ${response.status}`);
+        const errorText = await response.text();
+        console.error('API error response:', errorText);
+        throw new Error(errorText || `Request failed with status ${response.status}`);
       }
       
       const data = await response.json();
+      console.log(`Received ${data?.length || 0} orders from API`);
+      
       setOrders(data);
       
       // If we had a selected order, update it with fresh data
@@ -76,20 +84,40 @@ export default function OrdersPage() {
       
     } catch (err) {
       console.error('Error fetching orders:', err);
-      setError(err.message);
+      setError(err.message || 'Failed to load orders');
       showToast(err.message || 'Failed to load orders', 'error');
     } finally {
       setLoading(false);
     }
   };
   
-  // Initial data load
+  // Initial data load with retry mechanism
   useEffect(() => {
-    fetchOrders();
+    let retryCount = 0;
+    const maxRetries = 3;
+    
+    const attemptFetch = async () => {
+      try {
+        await fetchOrders(activeTab, searchTerm);
+        firstLoadRef.current = false;
+      } catch (err) {
+        if (retryCount < maxRetries) {
+          retryCount++;
+          console.log(`Retrying fetch (${retryCount}/${maxRetries})...`);
+          setTimeout(attemptFetch, 1000 * retryCount);
+        } else {
+          console.error('Max retries reached:', err);
+        }
+      }
+    };
+    
+    if (firstLoadRef.current) {
+      attemptFetch();
+    }
     
     // Set up refresh interval for estimated delivery times
     const intervalId = setInterval(() => {
-      fetchOrders();
+      fetchOrders(activeTab, searchTerm);
     }, 60000); // Refresh every minute to update remaining time
     
     return () => clearInterval(intervalId);
@@ -132,7 +160,6 @@ export default function OrdersPage() {
       
       // Get full URL with origin to ensure correct path in production
       const apiUrl = `${window.location.origin}/api/provider/orders`;
-      console.log(`Sending update to: ${apiUrl}`);
       
       const response = await fetch(apiUrl, {
         method: 'POST',
@@ -156,7 +183,7 @@ export default function OrdersPage() {
       );
       
       // Refresh the orders list
-      fetchOrders();
+      fetchOrders(activeTab, searchTerm);
       
     } catch (err) {
       console.error('Error updating order status:', err);
@@ -171,7 +198,7 @@ export default function OrdersPage() {
         <Button 
           variant="outline" 
           size="sm" 
-          onClick={() => fetchOrders()} 
+          onClick={() => fetchOrders(activeTab, searchTerm)} 
           disabled={loading}
         >
           <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
@@ -256,7 +283,6 @@ export default function OrdersPage() {
         </div>
       </div>
       
-      {/* Toast component */}
       {ToastComponent}
     </div>
   );

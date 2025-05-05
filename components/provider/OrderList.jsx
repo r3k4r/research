@@ -1,6 +1,7 @@
 import { formatDistance } from 'date-fns';
 import { OrderStatusBadge } from './OrderStatusBadge';
-import { AlertTriangle } from 'lucide-react';
+import { AlertTriangle, Loader2 } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 export function OrderList({ orders, selectedOrderId, onOrderSelect, loading, error }) {
   const formatTimeAgo = (dateString) => {
@@ -14,8 +15,9 @@ export function OrderList({ orders, selectedOrderId, onOrderSelect, loading, err
   
   if (loading) {
     return (
-      <div className="py-4 text-center text-muted-foreground">
-        Loading orders...
+      <div className="py-8 text-center">
+        <Loader2 className="h-8 w-8 animate-spin text-primary mx-auto mb-2" />
+        <p className="text-muted-foreground">Loading orders...</p>
       </div>
     );
   }
@@ -25,8 +27,15 @@ export function OrderList({ orders, selectedOrderId, onOrderSelect, loading, err
       <div className="py-8 text-center">
         <div className="flex flex-col items-center justify-center">
           <AlertTriangle className="h-10 w-10 text-amber-500 mb-2" />
-          <p className="text-muted-foreground">Error loading orders</p>
-          <p className="text-xs text-red-500 mt-1">{error}</p>
+          <p className="text-muted-foreground mb-4">Error loading orders</p>
+          <p className="text-xs text-red-500 mt-1 mb-4">{error}</p>
+          <Button 
+            variant="outline" 
+            size="sm"
+            onClick={() => window.location.reload()}
+          >
+            Try Again
+          </Button>
         </div>
       </div>
     );
@@ -42,7 +51,7 @@ export function OrderList({ orders, selectedOrderId, onOrderSelect, loading, err
 
   return (
     <div className="divide-y max-h-[600px] overflow-y-auto">
-      {orders.map((order) => {
+      {Array.isArray(orders) && orders.map((order) => {
         const orderDate = new Date(order.date);
         const timeAgo = formatTimeAgo(order.date);
         
