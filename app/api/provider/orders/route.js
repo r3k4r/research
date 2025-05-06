@@ -106,6 +106,7 @@ export async function GET(req) {
         address: order.deliveryAddress,
         phone: order.userProfile.phoneNumber || 'Not provided',
         deliveryNotes: order.deliveryNotes,
+        specialRequests: order.specialRequests || '', // Add specialRequests field
         statusLogs: order.statusLogs.map(log => ({
           status: log.status,
           notes: log.notes,

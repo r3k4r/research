@@ -71,7 +71,10 @@ export default function NotificationsPage() {
                       )}
                     </div>
                     <span className="text-sm text-muted-foreground">
-                      {formatDistanceToNow(new Date(notification.createdAt), { addSuffix: true })}
+                      {formatDistanceToNow(new Date(notification.createdAt), { 
+                        addSuffix: true,
+                        includeSeconds: true
+                      })}
                     </span>
                   </div>
                   <p>{notification.message}</p>

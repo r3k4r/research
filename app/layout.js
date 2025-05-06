@@ -24,7 +24,8 @@ export default async function RootLayout({ children }) {
     '/reset-password',
     '/two-factor',
     '/welcome',
-    
+    '/admin-dashboard',
+    '/provider-dashboard',
   ];
 
   const showNavbar = noNavbarRoutes.some(route => 

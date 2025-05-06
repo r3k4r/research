@@ -13,7 +13,7 @@ import {
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { AlertCircle, Clock, MapPin, Phone, User, ArrowLeft } from 'lucide-react';
+import { AlertCircle, Clock, MapPin, Phone, User, ArrowLeft, MessageSquare } from 'lucide-react';
 
 export function OrderDetails({ order, onStatusUpdate }) {
   const [isUpdateDialogOpen, setIsUpdateDialogOpen] = useState(false);
@@ -146,6 +146,17 @@ export function OrderDetails({ order, onStatusUpdate }) {
                   <MapPin className="h-4 w-4 text-muted-foreground mt-0.5" />
                   <span>{order.address}</span>
                 </div>
+                
+                {/* Add special requests field */}
+                {order.specialRequests && (
+                  <div className="flex items-start gap-2">
+                    <MessageSquare className="h-4 w-4 text-muted-foreground mt-0.5" />
+                    <div>
+                      <span className="font-medium">Special Requests:</span>
+                      <p className="text-sm">{order.specialRequests}</p>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
             
@@ -266,7 +277,7 @@ export function OrderDetails({ order, onStatusUpdate }) {
                   : `Update Order to ${selectedStatus.replace('_', ' ')}`}
             </DialogTitle>
             <DialogDescription>
-              {actionType === 'go-back'
+              {actionType === 'go-back' 
                 ? 'This will revert the order to its previous status.'
                 : selectedStatus === 'CANCELLED'
                   ? 'Are you sure you want to cancel this order? This action cannot be undone.'
@@ -291,7 +302,7 @@ export function OrderDetails({ order, onStatusUpdate }) {
                 </p>
               </div>
             )}
-
+            
             <div className="space-y-2">
               <Label htmlFor="notes" className="text-sm font-medium">
                 Add notes (optional)

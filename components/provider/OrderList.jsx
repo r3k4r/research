@@ -7,7 +7,12 @@ import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 export function OrderList({ orders, selectedOrderId, onOrderSelect, loading, error }) {
   const formatTimeAgo = (dateString) => {
     try {
-      return formatDistance(new Date(dateString), new Date(), { addSuffix: true });
+      // Convert the UTC timestamp to local time for proper display
+      const serverDate = new Date(dateString);
+      return formatDistance(serverDate, new Date(), { 
+        addSuffix: true,
+        includeSeconds: true
+      });
     } catch (e) {
       console.error("Error formatting date:", e);
       return "Unknown time";
