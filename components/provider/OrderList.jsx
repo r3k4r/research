@@ -3,11 +3,23 @@ import { OrderStatusBadge } from './OrderStatusBadge';
 import { AlertTriangle, Loader2, RefreshCw, DatabaseIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
+import { useState, useEffect } from 'react';
 
 export function OrderList({ orders, selectedOrderId, onOrderSelect, loading, error }) {
+  const [currentTime, setCurrentTime] = useState(new Date());
+
+  useEffect(() => {
+    // Update current time every minute for dynamic timestamps
+    const timer = setInterval(() => {
+      setCurrentTime(new Date());
+    }, 60000);
+    
+    return () => clearInterval(timer);
+  }, []);
+
   const formatTimeAgo = (dateString) => {
     try {
-      return formatDistance(new Date(dateString), new Date(), { addSuffix: true });
+      return formatDistance(new Date(dateString), currentTime, { addSuffix: true });
     } catch (e) {
       console.error("Error formatting date:", e);
       return "Unknown time";

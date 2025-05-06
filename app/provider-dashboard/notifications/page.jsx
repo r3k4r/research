@@ -1,18 +1,28 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNotifications } from '@/components/NotificationContext';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Bell, RefreshCw, Check } from 'lucide-react';
-import { format, formatDistance, formatDistanceToNow } from 'date-fns';
+import { formatDistanceToNow } from 'date-fns';
 
 export default function NotificationsPage() {
   const { notifications, unreadCount, markAsViewed, markAllAsViewed, fetchNotifications } = useNotifications();
   const [loading, setLoading] = useState(false);
+  const [currentTime, setCurrentTime] = useState(new Date());
   const router = useRouter();
+
+  // Update the current time every minute for dynamic timestamps
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentTime(new Date());
+    }, 60000);
+    
+    return () => clearInterval(timer);
+  }, []);
 
   const handleRefresh = async () => {
     setLoading(true);
@@ -23,6 +33,27 @@ export default function NotificationsPage() {
   const handleNotificationClick = async (notification) => {
     await markAsViewed(notification.id);
     router.push('/provider-dashboard/orders');
+  };
+
+  const formatRelativeTime = (dateString) => {
+    try {
+      const date = new Date(dateString);
+      const now = currentTime;
+
+      // Calculate time difference in milliseconds
+      const diff = now.getTime() - date.getTime();
+
+      // Less than 1 minute
+      if (diff < 60 * 1000) {
+        return 'just now';
+      }
+
+      // Use formatDistanceToNow for natural language formatting
+      return formatDistanceToNow(date, { addSuffix: true });
+    } catch (err) {
+      console.error('Error formatting date:', err);
+      return 'unknown time';
+    }
   };
 
   return (
@@ -71,10 +102,7 @@ export default function NotificationsPage() {
                       )}
                     </div>
                     <span className="text-sm text-muted-foreground">
-                      {formatDistance(new Date(notification.createdAt), new Date(), { 
-                        addSuffix: true,
-                        includeSeconds: true
-                      })}
+                      {formatRelativeTime(notification.createdAt)}
                     </span>
                   </div>
                   <p>{notification.message}</p>

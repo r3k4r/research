@@ -3,6 +3,9 @@ import { getServerSession } from 'next-auth/next'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/db'
 
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 export async function GET(req) {
   try {
     const session = await getServerSession(authOptions)
@@ -53,7 +56,7 @@ export async function GET(req) {
       type: notification.type,
       viewed: notification.viewed,
       createdAt: notification.createdAt.toISOString(), // Ensure ISO string format
-      resourceId: notification.resourceId
+      data: notification.data
     }));
 
     return NextResponse.json({

@@ -9,36 +9,43 @@ export function NotificationProvider({ children }) {
   const { data: session } = useSession()
   const [notifications, setNotifications] = useState([])
   const [unreadCount, setUnreadCount] = useState(0)
+  const [lastUpdated, setLastUpdated] = useState(new Date())
 
-  // Fetch notifications (real order data)
   const fetchNotifications = async () => {
     if (!session?.user?.role === 'PROVIDER') return
     
     try {
-      const response = await fetch('/api/provider/notifications', {
-        cache: 'no-store'
+      const timestamp = Date.now();
+      const response = await fetch(`/api/provider/notifications?t=${timestamp}`, {
+        cache: 'no-store',
+        headers: {
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          'Pragma': 'no-cache',
+          'Expires': '0'
+        }
       })
       
       if (response.ok) {
         const data = await response.json()
         
-        // Filter out notifications older than 24 hours
-        const oneDayAgo = new Date()
-        oneDayAgo.setDate(oneDayAgo.getDate() - 1)
-        const recentNotifications = data.filter(
-          order => new Date(order.createdAt) > oneDayAgo
-        )
-        
-        setNotifications(recentNotifications)
-        // Count unread notifications
-        setUnreadCount(recentNotifications.filter(n => !n.viewed).length)
+        if (data.notifications) {
+          const oneDayAgo = new Date()
+          oneDayAgo.setDate(oneDayAgo.getDate() - 1)
+          
+          const recentNotifications = data.notifications.filter(
+            notification => new Date(notification.createdAt) > oneDayAgo
+          )
+          
+          setNotifications(recentNotifications)
+          setUnreadCount(recentNotifications.filter(n => !n.viewed).length)
+          setLastUpdated(new Date())
+        }
       }
     } catch (error) {
       console.error('Error fetching notifications:', error)
     }
   }
 
-  // Mark a notification as viewed (but don't delete it)
   const markAsViewed = async (id) => {
     try {
       await fetch(`/api/provider/notifications/${id}/view`, { 
@@ -59,7 +66,6 @@ export function NotificationProvider({ children }) {
     }
   }
 
-  // Mark all notifications as viewed
   const markAllAsViewed = async () => {
     try {
       const response = await fetch('/api/provider/notifications/view-all', { 
@@ -83,15 +89,13 @@ export function NotificationProvider({ children }) {
     }
   }
 
-  // Fetch notifications on initial load and set up polling
   useEffect(() => {
     if (session?.user?.role === 'PROVIDER') {
       fetchNotifications()
       
-      // Poll for new notifications every minute
       const interval = setInterval(() => {
         fetchNotifications()
-      }, 60000)
+      }, 10000)
       
       return () => clearInterval(interval)
     }
@@ -104,7 +108,8 @@ export function NotificationProvider({ children }) {
         unreadCount, 
         fetchNotifications, 
         markAsViewed,
-        markAllAsViewed
+        markAllAsViewed,
+        lastUpdated
       }}
     >
       {children}

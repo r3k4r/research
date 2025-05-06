@@ -19,6 +19,7 @@ export function RecentOrdersTable({ extended = false }) {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [currentTime, setCurrentTime] = useState(new Date());
   const router = useRouter();
   
   useEffect(() => {
@@ -47,13 +48,26 @@ export function RecentOrdersTable({ extended = false }) {
     }
     
     fetchOrders();
+    
+    // Set up timer to update current time every minute for dynamic time display
+    const timer = setInterval(() => {
+      setCurrentTime(new Date());
+    }, 60000); // Update every minute
+    
+    return () => clearInterval(timer);
   }, [extended]);
   
   // For non-extended view, only show first 5 orders
   const displayedOrders = extended ? orders : orders.slice(0, 5);
   
   const formatTimeAgo = (dateString) => {
-    return formatDistance(new Date(dateString), new Date(), { addSuffix: true });
+    try {
+      const date = new Date(dateString);
+      return formatDistance(date, currentTime, { addSuffix: true });
+    } catch (err) {
+      console.error('Error formatting time:', err);
+      return 'Unknown time';
+    }
   };
 
   const viewAllOrdersHandler = () => {
@@ -128,7 +142,6 @@ export function RecentOrdersTable({ extended = false }) {
             View All Orders
           </Button>
         </div>
-
     </div>
   );
 }
