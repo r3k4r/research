@@ -46,7 +46,19 @@ export async function GET(req) {
       }
     }))
     
-    return NextResponse.json(notifications)
+    const formattedNotifications = notifications.map(notification => ({
+      id: notification.id,
+      title: notification.title,
+      message: notification.message,
+      type: notification.type,
+      viewed: notification.viewed,
+      createdAt: notification.createdAt.toISOString(), // Ensure ISO string format
+      resourceId: notification.resourceId
+    }));
+
+    return NextResponse.json({
+      notifications: formattedNotifications
+    });
   } catch (error) {
     console.error('Error fetching notifications:', error)
     return NextResponse.json({ error: 'Error fetching notifications' }, { status: 500 })

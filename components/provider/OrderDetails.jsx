@@ -153,7 +153,7 @@ export function OrderDetails({ order, onStatusUpdate }) {
                     <MessageSquare className="h-4 w-4 text-muted-foreground mt-0.5" />
                     <div>
                       <span className="font-medium">Special Requests:</span>
-                      <p className="text-sm">{order.specialRequests}</p>
+                      <p className="text-sm">{order.deliveryNotes}</p>
                     </div>
                   </div>
                 )}

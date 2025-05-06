@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Bell, RefreshCw, Check } from 'lucide-react';
-import { format, formatDistanceToNow } from 'date-fns';
+import { format, formatDistance, formatDistanceToNow } from 'date-fns';
 
 export default function NotificationsPage() {
   const { notifications, unreadCount, markAsViewed, markAllAsViewed, fetchNotifications } = useNotifications();
@@ -71,7 +71,7 @@ export default function NotificationsPage() {
                       )}
                     </div>
                     <span className="text-sm text-muted-foreground">
-                      {formatDistanceToNow(new Date(notification.createdAt), { 
+                      {formatDistance(new Date(notification.createdAt), new Date(), { 
                         addSuffix: true,
                         includeSeconds: true
                       })}
