@@ -161,11 +161,11 @@ model PurchasedOrder {
   totalAmount        Float
   deliveryAddress    String
   deliveryNotes      String?
+  customerName       String?
+  customerPhone      String?
   paymentMethod      String      @default("cash")
-  deliveryPersonId   String?
   deliveryPersonName String?
   estimatedDelivery  DateTime?
-  actualDelivery     DateTime?
   viewedByProvider   Boolean     @default(false)
   createdAt          DateTime    @default(now())
   updatedAt          DateTime    @updatedAt

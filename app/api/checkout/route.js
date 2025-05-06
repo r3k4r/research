@@ -110,7 +110,8 @@ export async function POST(req) {
             deliveryNotes: deliveryInfo.deliveryNotes || null,
             paymentMethod: paymentMethod || 'cash',
             status: 'PENDING',
-            // Create order items
+            customerName: deliveryInfo.name,
+            customerPhone: deliveryInfo.phone,
             items: {
               create: providerItems.map(item => {
                 const dbItem = foodItemMap[item.id];

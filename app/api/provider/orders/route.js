@@ -88,7 +88,7 @@ export async function GET(req) {
       
       return {
         id: order.id,
-        customerName: order.userProfile.name,
+        customerName: order.customerName || order.userProfile.name, // Prioritize checkout-provided name
         date: order.createdAt.toISOString(),
         status: order.status,
         subtotal, 
@@ -104,12 +104,12 @@ export async function GET(req) {
           price: item.price
         })),
         address: order.deliveryAddress,
-        phone: order.userProfile.phoneNumber || 'Not provided',
-        deliveryNotes: order.deliveryNotes,
+        phone: order.customerPhone || order.userProfile.phoneNumber || 'Not provided', 
+        specialRequests: order.deliveryNotes || '',
         statusLogs: order.statusLogs.map(log => ({
           status: log.status,
           notes: log.notes,
-          date: log.createdAt.toISOString() 
+          date: log.createdAt.toISOString()
         }))
       };
     });
