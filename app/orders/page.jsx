@@ -285,7 +285,6 @@ export default function OrdersPage() {
   if (status === 'loading') {
     return (
       <div className="min-h-screen bg-gray-50">
-        <Navbar />
         <div className="container mx-auto px-4 py-8 flex justify-center items-center">
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
           <span className="ml-2">Loading...</span>

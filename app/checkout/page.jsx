@@ -146,7 +146,6 @@ export default function CheckoutPage() {
   if (isLoading || status === 'loading') {
     return (
       <div className="min-h-screen bg-gray-50">
-        <Navbar />
         <div className="container mx-auto px-4 py-8 flex justify-center items-center">
           <div className="flex flex-col items-center">
             <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
@@ -164,7 +163,6 @@ export default function CheckoutPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <Navbar />
       
       <main className="container mx-auto px-4 py-8">
         <h1 className="text-2xl font-bold mb-6">Checkout</h1>
