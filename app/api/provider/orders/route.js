@@ -16,10 +16,8 @@ export async function GET(req) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
     
-    // Add more detailed logging for debugging in production
     console.log('Provider orders API called by:', session.user.email);
     
-    // Get the current user and verify provider status
     const user = await prisma.user.findUnique({
       where: { email: session.user.email },
       include: { providerProfile: true }
@@ -33,12 +31,10 @@ export async function GET(req) {
     const providerId = user.providerProfile.id;
     console.log('Found provider ID:', providerId);
     
-    // Parse query parameters
     const url = new URL(req.url);
     const status = url.searchParams.get('status');
     const search = url.searchParams.get('search');
     
-    // Build the where clause
     let whereClause = { providerId };
     
     if (status && status !== 'all') {
@@ -52,7 +48,6 @@ export async function GET(req) {
       ];
     }
     
-    // Get orders with related data
     const orders = await prisma.purchasedOrder.findMany({
       where: whereClause,
       include: {
@@ -82,13 +77,12 @@ export async function GET(req) {
       
       const total = subtotal + deliveryFee + serviceFee;
 
-      // Get estimated delivery time if available
       const estimatedTime = order.estimatedDelivery ? 
         new Date(order.estimatedDelivery).getTime() : null;
       
       return {
         id: order.id,
-        customerName: order.customerName || order.userProfile.name, // Prioritize checkout-provided name
+        customerName: order.customerName || order.userProfile.name,
         date: order.createdAt.toISOString(),
         status: order.status,
         subtotal, 
@@ -117,17 +111,14 @@ export async function GET(req) {
     return NextResponse.json(formattedOrders);
     
   } catch (error) {
-    // Enhance error detection and response
     console.error('Error in provider orders API:', error);
     
     let errorMessage = 'Failed to fetch orders';
     let statusCode = 500;
     
-    // Handle Prisma-specific errors
     if (error instanceof Prisma.PrismaClientKnownRequestError) {
       console.error('Prisma error code:', error.code);
       
-      // Handle specific Prisma error codes
       if (error.code === 'P2009') {
         errorMessage = 'Invalid data provided: ' + error.message.split('\n').pop();
       } else if (error.code === 'P2003') {
@@ -135,7 +126,6 @@ export async function GET(req) {
       }
     }
     
-    // Check for enum validation errors
     if (error.message && error.message.includes("not found in enum")) {
       errorMessage = "Invalid status value provided. Please check your database schema.";
       statusCode = 400;
@@ -150,7 +140,6 @@ export async function GET(req) {
   }
 }
 
-// POST handler for updating order status
 export async function POST(req) {
   try {
     const session = await getServerSession(authOptions);
