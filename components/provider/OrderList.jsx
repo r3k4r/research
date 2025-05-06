@@ -1,31 +1,24 @@
-import { formatDistance } from 'date-fns';
 import { OrderStatusBadge } from './OrderStatusBadge';
 import { AlertTriangle, Loader2, RefreshCw, DatabaseIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import { useState, useEffect } from 'react';
+import { getValidDate, formatRelativeTime } from '@/utils/dateFormatters';
 
 export function OrderList({ orders, selectedOrderId, onOrderSelect, loading, error }) {
   const [currentTime, setCurrentTime] = useState(new Date());
+  const [timeUpdated, setTimeUpdated] = useState(0);
 
   useEffect(() => {
-    // Update current time every minute for dynamic timestamps
+    // Update more frequently (every 15 seconds) for accurate timestamps
     const timer = setInterval(() => {
       setCurrentTime(new Date());
-    }, 60000);
+      setTimeUpdated(prev => prev + 1); // Force component to re-render
+    }, 15000);
     
     return () => clearInterval(timer);
   }, []);
 
-  const formatTimeAgo = (dateString) => {
-    try {
-      return formatDistance(new Date(dateString), currentTime, { addSuffix: true });
-    } catch (e) {
-      console.error("Error formatting date:", e);
-      return "Unknown time";
-    }
-  };
-  
   if (loading) {
     return (
       <div className="py-8 text-center">
@@ -99,8 +92,14 @@ export function OrderList({ orders, selectedOrderId, onOrderSelect, loading, err
   return (
     <div className="divide-y max-h-[600px] overflow-y-auto">
       {Array.isArray(orders) && orders.map((order) => {
-        const orderDate = new Date(order.date);
-        const timeAgo = formatTimeAgo(order.date);
+        // Use the consistent date handler
+        const orderDate = getValidDate(order);
+        const timeAgo = formatRelativeTime(orderDate, currentTime);
+        
+        // Debug logging to help identify issues
+        if ( process.env.NODE_ENV === 'development') {
+          console.log(`Order ${order.id}: date=${order.date}, createdAt=${order.createdAt}, formatted=${timeAgo}`);
+        }
         
         return (
           <div
@@ -118,7 +117,12 @@ export function OrderList({ orders, selectedOrderId, onOrderSelect, loading, err
               <OrderStatusBadge status={order.status} />
             </div>
             <div className="flex justify-between items-center mt-2 text-sm">
-              <p className="text-muted-foreground">{timeAgo}</p>
+              <p 
+                className="text-muted-foreground" 
+                key={`time-${order.id}-${timeUpdated}`} // Key ensures re-render
+              >
+                {timeAgo}
+              </p>
               <p className="font-medium">{order.totalAmount.toFixed(2)} IQD</p>
             </div>
           </div>

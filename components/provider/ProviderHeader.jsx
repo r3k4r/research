@@ -14,16 +14,27 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { useNotifications } from '@/components/NotificationContext';
 import { useRouter } from 'next/navigation';
-import { formatDistanceToNow } from 'date-fns';
+import { useState, useEffect } from 'react';
+import { getValidDate, formatRelativeTime } from '@/utils/dateFormatters';
 
 export default function ProviderHeader({ setIsSidebarOpen }) {
   const { data: session } = useSession();
   const { notifications, unreadCount, markAsViewed, markAllAsViewed } = useNotifications();
   const router = useRouter();
+  const [currentTime, setCurrentTime] = useState(new Date());
+  const [timeUpdated, setTimeUpdated] = useState(0);
+  
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentTime(new Date());
+      setTimeUpdated(prev => prev + 1);
+    }, 15000);
+    
+    return () => clearInterval(timer);
+  }, []);
   
   const handleNotificationClick = (notification) => {
     markAsViewed(notification.id);
-    
     router.push('/provider-dashboard/orders');
   };
   
@@ -89,25 +100,33 @@ export default function ProviderHeader({ setIsSidebarOpen }) {
                   No notifications
                 </div>
               ) : (
-                notifications.map((notification) => (
-                  <DropdownMenuItem 
-                    key={notification.id}
-                    className={`flex flex-col items-start py-3 cursor-pointer ${!notification.viewed ? 'bg-accent/40' : ''}`}
-                    onClick={() => handleNotificationClick(notification)}
-                  >
-                    <div className="flex flex-col w-full">
-                      <span className="font-medium">
-                        {notification.title}
-                      </span>
-                      <span className="text-sm text-muted-foreground">
-                        {notification.message}
-                      </span>
-                      <span className="text-xs text-muted-foreground mt-1">
-                        {formatDistanceToNow(new Date(notification.createdAt), { addSuffix: true })}
-                      </span>
-                    </div>
-                  </DropdownMenuItem>
-                ))
+                notifications.map((notification) => {
+                  const notifDate = getValidDate(notification);
+                  const timeAgo = formatRelativeTime(notifDate, currentTime);
+                  
+                  return (
+                    <DropdownMenuItem 
+                      key={notification.id}
+                      className={`flex flex-col items-start py-3 cursor-pointer ${!notification.viewed ? 'bg-accent/40' : ''}`}
+                      onClick={() => handleNotificationClick(notification)}
+                    >
+                      <div className="flex flex-col w-full">
+                        <span className="font-medium">
+                          {notification.title}
+                        </span>
+                        <span className="text-sm text-muted-foreground">
+                          {notification.message}
+                        </span>
+                        <span 
+                          className="text-xs text-muted-foreground mt-1" 
+                          key={`time-${notification.id}-${timeUpdated}`}
+                        >
+                          {timeAgo}
+                        </span>
+                      </div>
+                    </DropdownMenuItem>
+                  );
+                })
               )}
             </div>
             
