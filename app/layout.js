@@ -19,7 +19,7 @@ export default async function RootLayout({ children }) {
   
   const noNavbarRoutes = [
     '/signin',
-    'signup',
+    '/signup',
     '/forgot-password',
     '/reset-password',
     '/two-factor',
@@ -37,7 +37,7 @@ export default async function RootLayout({ children }) {
       <body>
         <SessionProviderWrapper session={session}>
           <CartProvider>
-            {!showNavbar && <Navbar />}
+            {!showNavbar ?  <Navbar />: pathname === '/' ? <Navbar /> : null} 
             {children}
           </CartProvider>
         </SessionProviderWrapper>
