@@ -37,12 +37,11 @@ const ProvidersPage = () => {
 
       const currentPage = reset ? 1 : page;
       
-      // Build query parameters
       const params = new URLSearchParams();
       params.append('page', currentPage);
       params.append('limit', 20);
       if (searchTerm) params.append('search', searchTerm);
-      params.append('t', Date.now()); // Prevent caching
+      params.append('t', Date.now()); 
       
       const response = await fetch(`/api/providers?${params.toString()}`, {
         cache: 'no-store',
@@ -84,59 +83,58 @@ const ProvidersPage = () => {
     }
   }, [page, searchTerm, showToast]);
 
-  // Initial data load
   useEffect(() => {
     fetchProviders(true);
+   
   }, []);
 
-  // Handle search with debounce
   useEffect(() => {
     if (searchTimeoutRef.current) {
       clearTimeout(searchTimeoutRef.current);
     }
     
-    searchTimeoutRef.current = setTimeout(() => {
-      fetchProviders(true);
-    }, 300);
+    if (searchTerm !== '') {
+      searchTimeoutRef.current = setTimeout(() => {
+        fetchProviders(true);
+      }, 300);
+    }
     
     return () => {
       if (searchTimeoutRef.current) {
         clearTimeout(searchTimeoutRef.current);
       }
     };
-  }, [searchTerm, fetchProviders]);
+  }, [searchTerm]);
 
-  // Setup intersection observer for infinite scrolling
   useEffect(() => {
-    if (loading || !hasMore) return;
+    if (initialLoading || loading || !hasMore) return;
     
-    if (observerRef.current) {
-      observerRef.current.disconnect();
-    }
+    const observer = new IntersectionObserver(
+      entries => {
+      
+        if (entries[0]?.isIntersecting && hasMore && !loading) {
+          fetchProviders(false);
+        }
+      },
+      { threshold: 0.1, rootMargin: '100px' }
+    );
     
-    observerRef.current = new IntersectionObserver(entries => {
-      if (entries[0].isIntersecting && hasMore && !loading) {
-        fetchProviders();
-      }
-    }, { threshold: 0.1, rootMargin: '100px' });
-    
-    if (lastProviderRef.current) {
-      observerRef.current.observe(lastProviderRef.current);
+    const currentElement = lastProviderRef.current;
+    if (currentElement) {
+      observer.observe(currentElement);
     }
     
     return () => {
-      if (observerRef.current) {
-        observerRef.current.disconnect();
+      if (currentElement) {
+        observer.disconnect();
       }
     };
-  }, [loading, hasMore, fetchProviders]);
+  }, [providers, loading, hasMore, initialLoading, fetchProviders]);
 
-  // Handle search input change
   const handleSearchChange = (e) => {
     setSearchTerm(e.target.value);
   };
 
-  // Format address to show only city and country if available
   const formatAddress = (address) => {
     if (!address) return "Address not provided";
     
