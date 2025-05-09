@@ -47,7 +47,6 @@ export default function DashboardNumbers() {
       } catch (error) {
         console.error('Error fetching dashboard stats:', error);
         setError(error.message);
-        // Keep showing previously loaded data if any
       } finally {
         setLoading(false);
       }
