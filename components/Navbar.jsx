@@ -24,7 +24,6 @@ const Links = [
   { href: "/orders", label: "Orders", visible: ["ADMIN", "PROVIDER", "USER"] },
   { href: "/providers", label: "Providers", visible: ["ADMIN", "PROVIDER", "USER"] },
   { href: "/aboutus", label: "About Us", visible: ["ADMIN", "PROVIDER", "USER"] },
-  { href: "/how-it-works", label: "How it works", visible: ["ADMIN", "PROVIDER", "USER"] },
   { href: "/admin-dashboard", label: "Admin Dashboard", visible: ["ADMIN"] },
   { href: "/provider-dashboard", label: "Provider Dashboard", visible: ["PROVIDER"] },
 ]
