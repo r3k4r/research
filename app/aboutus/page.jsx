@@ -9,7 +9,6 @@ import CountUp from 'react-countup'
 
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
-import { Separator } from '@/components/ui/separator'
 
 import { 
   Users, ShoppingBag, Store, Globe, 
@@ -94,7 +93,7 @@ const HeroSection = () => {
             </div>
             <div className="flex flex-col gap-2 min-[400px]:flex-row">
               <Button className="px-6" size="lg" asChild>
-                <Link href="/explore">
+                <Link href="/">
                   Explore Foods <ArrowRight className="ml-2 h-4 w-4" />
                 </Link>
               </Button>
@@ -112,10 +111,11 @@ const HeroSection = () => {
             className="mx-auto lg:mx-0 relative aspect-video w-full max-w-[600px] overflow-hidden rounded-xl"
           >
             <Image 
-              src="/about-hero-image.jpg" 
+              src="https://images.unsplash.com/photo-1498837167922-ddd27525d352?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D" 
               alt="Food waste reduction" 
               width={600}
               height={400}
+              quality={100}
               className="object-cover w-full h-full"
               priority
             />
@@ -370,10 +370,11 @@ const ProvidersSection = () => {
             className="mx-auto lg:mx-0 order-2 lg:order-1 relative aspect-video w-full max-w-[600px] overflow-hidden rounded-xl"
           >
             <Image 
-              src="/provider-image.jpg" 
+              src="https://plus.unsplash.com/premium_photo-1687697860831-edaf70e279dd?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D" 
               alt="For food providers" 
               width={600}
               height={400}
+              quality={100}
               className="object-cover w-full h-full"
             />
           </motion.div>
@@ -433,25 +434,25 @@ const TeamSection = () => {
   })
 
   const team = [
+    // {
+    //   name: "Emma Thompson",
+    //   role: "Founder & CEO",
+    //   image: "/team/founder.jpg"
+    // },
+    // {
+    //   name: "Michael Chen",
+    //   role: "Chief Technology Officer",
+    //   image: "/team/cto.jpg"
+    // },
     {
-      name: "Emma Thompson",
+      name: "Rekar Jamal",
       role: "Founder & CEO",
-      image: "/team/founder.jpg"
+      image: "https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?q=80&w=1974&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"
     },
     {
-      name: "Michael Chen",
-      role: "Chief Technology Officer",
-      image: "/team/cto.jpg"
-    },
-    {
-      name: "Sarah Johnson",
-      role: "Head of Sustainability",
-      image: "/team/sustainability.jpg"
-    },
-    {
-      name: "David Rodriguez",
-      role: "Provider Relations",
-      image: "/team/relations.jpg"
+      name: "Delav Wria",
+      role: "Founder & CEO",
+      image: "https://images.unsplash.com/photo-1664575602554-2087b04935a5?q=80&w=1974&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"
     }
   ]
 
@@ -468,7 +469,7 @@ const TeamSection = () => {
           <p className="mt-4 text-xl text-muted-foreground">Passionate about reducing food waste</p>
         </motion.div>
 
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2  max-w-3xl mx-auto">
           {team.map((member, index) => (
             <motion.div
               key={index}
@@ -520,7 +521,7 @@ const ContactCTASection = () => {
           </div>
           <div className="flex flex-col sm:flex-row gap-4">
             <Button size="lg" asChild>
-              <Link href="/explore">
+              <Link href="/">
                 Find Food Near You
               </Link>
             </Button>
