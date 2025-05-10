@@ -17,6 +17,7 @@ import Image from "next/image"
 import { useCart } from "@/lib/cart-context"
 import { CartDrawer } from "./CartDrawer"
 import { signOut, useSession } from "next-auth/react"
+import Language from "./Language"
 
 const Links = [
   { href: "/", label: "Home", visible: ["ADMIN", "PROVIDER", "USER"] },
@@ -83,7 +84,9 @@ export default function Navbar() {
                 </div>
               </div>
             </div>
+            <Language />
             <div className="hidden md:flex items-center">
+
               {/* Cart Button */}
               <Button 
                 variant="ghost" 

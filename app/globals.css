@@ -65,6 +65,14 @@
   }
 }
 
+.rtl{
+  direction: rtl;
+  font-family: KurdishFont;
+}
+.ltr{
+  direction: ltr;
+}
+
 
 @layer utilities {
   .padding {
