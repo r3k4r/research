@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useRef, useEffect } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { Search, User, Settings, LogOut, Menu, X, ShoppingCart } from "lucide-react"
@@ -18,7 +18,6 @@ import { useCart } from "@/lib/cart-context"
 import { CartDrawer } from "./CartDrawer"
 import { signOut, useSession } from "next-auth/react"
 
-
 const Links = [
   { href: "/", label: "Home", visible: ["ADMIN", "PROVIDER", "USER"] },
   { href: "/orders", label: "Orders", visible: ["ADMIN", "PROVIDER", "USER"] },
@@ -33,10 +32,29 @@ export default function Navbar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const { openCart, totalItems } = useCart()
   const { data: session, status } = useSession()
-  
+  const menuRef = useRef(null)
 
+  // Close menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (menuRef.current && !menuRef.current.contains(event.target)) {
+        setIsMenuOpen(false)
+      }
+    }
 
+    if (isMenuOpen) {
+      document.addEventListener('mousedown', handleClickOutside)
+    }
 
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside)
+    }
+  }, [isMenuOpen])
+
+  // Handle link click to close menu
+  const handleLinkClick = () => {
+    setIsMenuOpen(false)
+  }
 
   const toggleMenu = () => {
     setIsMenuOpen(!isMenuOpen)
@@ -158,12 +176,13 @@ export default function Navbar() {
 
         {/* Mobile menu */}
         {isMenuOpen && (
-          <div className="md:hidden">
+          <div className="md:hidden" ref={menuRef}>
             <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3">
               {Links.filter(link => link.visible.includes(session?.user?.role)).map((link, index) => (
                 <Link
                   key={index}
                   href={link.href}
+                  onClick={handleLinkClick}
                   className="text-gray-700 hover:text-primary block px-3 py-2 rounded-md text-base font-medium"
                 >
                   {link.label}
@@ -197,12 +216,16 @@ export default function Navbar() {
                 <div className="mt-3 px-2 space-y-1">
                   <Link
                     href={session.user.role === 'PROVIDER' ? '/provider-dashboard/settings' : 'profile'}
+                    onClick={handleLinkClick}
                     className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-primary hover:bg-gray-100"
                   >
                     Profile
                   </Link>
                   <button
-                    onClick={signOut}
+                    onClick={() => {
+                      setIsMenuOpen(false);
+                      signOut();
+                    }}
                     className="block w-full text-left px-3 py-2 rounded-md text-base font-medium bg-red-600 text-white"
                   >
                     Log out
