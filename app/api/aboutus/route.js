@@ -15,16 +15,18 @@ export async function GET() {
         status: 'SOLD'
       }
     })
+    console.log('totalFoodItems', totalFoodItems);
+    
     
     // Calculate total waste reduction (assuming each food item saves about 0.5kg of waste on average)
     // This is a simplification - you might want to store actual weight data in your schema
     const wasteReduction = totalFoodItems * 0.5
     
     return NextResponse.json({
-      totalUsers: totalUsers || 450,
-      totalProviders: totalProviders || 85,
-      totalFoodItems: totalFoodItems || 12500,
-      wasteReduction: wasteReduction || 6250
+      totalUsers: totalUsers ,
+      totalProviders: totalProviders ,
+      totalFoodItems: totalFoodItems ,
+      wasteReduction: wasteReduction 
     })
   } catch (error) {
     console.error('Error fetching about us stats:', error)
