@@ -138,7 +138,11 @@ const ContactPage = () => {
                         <FormItem>
                           <FormLabel>Your Name</FormLabel>
                           <FormControl>
-                            <Input placeholder="John Doe" {...field} />
+                            <Input 
+                              placeholder="Your name" 
+                              {...field} 
+                              disabled={form.formState.isSubmitting}
+                            />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -156,7 +160,7 @@ const ContactPage = () => {
                               <Input 
                                 placeholder="you@example.com" 
                                 {...field} 
-                                disabled={!editEmail && session?.user?.email}
+                                disabled={((!editEmail && session?.user?.email) || form.formState.isSubmitting)}
                                 className={session?.user?.email ? "rounded-r-none" : ""}
                               />
                               {session?.user?.email && (
@@ -170,6 +174,7 @@ const ContactPage = () => {
                                       form.setValue("email", session.user.email);
                                     }
                                   }}
+                                  disabled={form.formState.isSubmitting}
                                 >
                                   {editEmail ? "Reset" : "Edit"}
                                 </Button>
@@ -204,7 +209,11 @@ const ContactPage = () => {
                         <FormItem>
                           <FormLabel>Subject</FormLabel>
                           <FormControl>
-                            <Input placeholder="How can we help?" {...field} />
+                            <Input 
+                              placeholder="How can we help?" 
+                              {...field} 
+                              disabled={form.formState.isSubmitting}
+                            />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -222,6 +231,7 @@ const ContactPage = () => {
                               placeholder="Please provide details about your inquiry..." 
                               className="min-h-[120px]"
                               {...field} 
+                              disabled={form.formState.isSubmitting}
                             />
                           </FormControl>
                           <FormMessage />
