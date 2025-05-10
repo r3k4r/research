@@ -108,15 +108,13 @@ export default function Navbar() {
                       <p className="text-sm">Signed in as</p>
                       <p className="text-sm font-medium truncate">{session?.user.name}</p>
                     </div>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem>
-                      <User className="mr-2 h-4 w-4" />
-                      <span>Profile</span>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem>
-                      <Settings className="mr-2 h-4 w-4" />
-                      <span>Settings</span>
-                    </DropdownMenuItem>
+                    <DropdownMenuSeparator/>
+                    <DropdownMenuItem className='mb-2'>
+                      <Link href={session.user.role === 'PROVIDER' ? '/provider-dashboard/settings' : 'profile'} className="flex items-center">
+                        <User className="mr-2 h-4 w-4" />
+                        <span>Profile</span>
+                      </Link>
+                    </DropdownMenuItem>  
                     <DropdownMenuItem className="bg-red-600 text-white" onClick={signOut}>
                       <LogOut className="mr-2 h-4 w-4" />
                       <button>Log out</button>
@@ -197,16 +195,10 @@ export default function Navbar() {
                 </div>
                 <div className="mt-3 px-2 space-y-1">
                   <Link
-                    href="/profile"
+                    href={session.user.role === 'PROVIDER' ? '/provider-dashboard/settings' : 'profile'}
                     className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-primary hover:bg-gray-100"
                   >
                     Profile
-                  </Link>
-                  <Link
-                    href="/settings"
-                    className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-primary hover:bg-gray-100"
-                  >
-                    Settings
                   </Link>
                   <button
                     onClick={signOut}
