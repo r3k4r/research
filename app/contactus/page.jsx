@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -314,6 +315,28 @@ const ContactPage = () => {
                   For urgent matters, please call our support hotline directly.
                 </AlertDescription>
               </Alert>
+              
+              {/* Provider application button */}
+              <Card className="bg-primary text-primary-foreground">
+                <CardContent className="pt-6">
+                  <div className="space-y-4">
+                    <div className="flex flex-col items-center text-center">
+                      <h3 className="font-bold text-lg">Want to reduce food waste?</h3>
+                      <p className="text-primary-foreground/90">
+                        Join Second Serve as a food provider and make a difference.
+                      </p>
+                    </div>
+                    <Link href="/providers/apply" className="block w-full">
+                      <Button 
+                        variant="secondary" 
+                        className="w-full font-semibold"
+                      >
+                        Become a Provider
+                      </Button>
+                    </Link>
+                  </div>
+                </CardContent>
+              </Card>
             </div>
           </div>
         </div>
