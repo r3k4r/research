@@ -84,7 +84,7 @@ export default function Navbar() {
                 ))}
               </div>
             </div>
-            <div className="flex items-center space-x-3">
+            <div className="flex items-center space-x-1">
               <Language />
               <div className="hidden md:flex items-center ml-4">
                 {/* Cart Button */}
@@ -145,35 +145,35 @@ export default function Navbar() {
                   </DropdownMenu>
                 )}
               </div>
-            </div>
-            <div className="flex items-center md:hidden">
-              {/* Mobile Cart Button */}
-              <Button 
-                variant="ghost" 
-                size="icon"
-                onClick={openCart} 
-                className="relative mr-2"
-              >
-                <ShoppingCart className="h-5 w-5" />
-                {totalItems > 0 && (
-                  <span className="absolute top-0 right-0 -translate-y-1/3 translate-x-1/3 flex items-center justify-center h-5 w-5 rounded-full bg-primary text-[10px] font-medium text-primary-foreground">
-                    {totalItems}
-                  </span>
-                )}
-              </Button>
-              
-              <Button
-                variant="ghost"
-                onClick={toggleMenu}
-                className="inline-flex items-center justify-center p-2 rounded-md text-gray-400 hover:text-primary hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-primary"
-              >
-                <span className="sr-only">Open main menu</span>
-                {isMenuOpen ? (
-                  <X className="block h-6 w-6" aria-hidden="true" />
-                ) : (
-                  <Menu className="block h-6 w-6" aria-hidden="true" />
-                )}
-              </Button>
+              <div className="flex items-center md:hidden">
+                {/* Mobile Cart Button */}
+                <Button 
+                  variant="ghost" 
+                  size="icon"
+                  onClick={openCart} 
+                  className="relative mr-2"
+                >
+                  <ShoppingCart className="h-5 w-5" />
+                  {totalItems > 0 && (
+                    <span className="absolute top-0 right-0 -translate-y-1/3 translate-x-1/3 flex items-center justify-center h-5 w-5 rounded-full bg-primary text-[10px] font-medium text-primary-foreground">
+                      {totalItems}
+                    </span>
+                  )}
+                </Button>
+                
+                <Button
+                  variant="ghost"
+                  onClick={toggleMenu}
+                  className="inline-flex items-center justify-center p-2 rounded-md text-gray-400 hover:text-primary hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-primary"
+                >
+                  <span className="sr-only">Open main menu</span>
+                  {isMenuOpen ? (
+                    <X className="block h-6 w-6" aria-hidden="true" />
+                  ) : (
+                    <Menu className="block h-6 w-6" aria-hidden="true" />
+                  )}
+                </Button>
+              </div>
             </div>
           </div>
         </div>
