@@ -5,7 +5,6 @@ import Image from 'next/image'
 import { useRouter } from 'next/navigation'
 
 const fadeInAnimation = 'animate-fadeIn';
-const fadeInClass = `opacity-0 ${fadeInAnimation}`;
 
 const slides = [
   {

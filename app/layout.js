@@ -5,6 +5,7 @@ import "./globals.css";
 import { CartProvider } from "@/lib/cart-context";
 import Navbar from "@/components/Navbar";
 import { headers } from 'next/headers';
+import ThemeProvider from "@/components/ThemeProvider";
 
 export const metadata = {
   title: "Second Serve",
@@ -32,14 +33,16 @@ export default async function RootLayout({ children }) {
   );
   
   return (
-    <html lang="en" class="dark">
+    <html lang="en" className="light" suppressHydrationWarning>
       <body>
-        <SessionProviderWrapper session={session}>
-          <CartProvider>
-            {!showNavbar ?  <Navbar />: pathname === '/' ? <Navbar /> : null} 
-            {children}
-          </CartProvider>
-        </SessionProviderWrapper>
+        <ThemeProvider>
+          <SessionProviderWrapper session={session}>
+            <CartProvider>
+              {!showNavbar ?  <Navbar />: pathname === '/' ? <Navbar /> : null} 
+              {children}
+            </CartProvider>
+          </SessionProviderWrapper>
+        </ThemeProvider>
       </body>
     </html>
   );

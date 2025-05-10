@@ -18,6 +18,7 @@ import { useCart } from "@/lib/cart-context"
 import { CartDrawer } from "./CartDrawer"
 import { signOut, useSession } from "next-auth/react"
 import Language from "./Language"
+import ThemeToggle from "./ThemeToggle"
 
 const Links = [
   { href: "/", label: "Home", visible: ["ADMIN", "PROVIDER", "USER"] },
@@ -63,7 +64,7 @@ export default function Navbar() {
 
   return (
     <>
-      <nav className="bg-white shadow-md">
+      <nav className="bg-white shadow-md dark:bg-gray-900 dark:shadow-gray-800">
         <div className="container mx-auto px-4">
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center">
@@ -84,7 +85,8 @@ export default function Navbar() {
                 ))}
               </div>
             </div>
-            <div className="flex items-center space-x-1">
+            <div className="flex items-center space-x-2">
+              <ThemeToggle />
               <Language />
               <div className="hidden md:flex items-center ml-4">
                 {/* Cart Button */}
