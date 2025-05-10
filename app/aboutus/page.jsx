@@ -343,7 +343,7 @@ const ServicesSection = () => {
           className="flex justify-center mt-12"
         >
           <Button size="lg" asChild>
-            <Link href="/explore">
+            <Link href="/">
               Start Exploring <ArrowRight className="ml-2 h-4 w-4" />
             </Link>
           </Button>
@@ -415,7 +415,7 @@ const ProvidersSection = () => {
             
             <div className="pt-4">
               <Button size="lg" asChild>
-                <Link href="/provider/apply">
+                <Link href="/providers/apply">
                   Become a Provider <ArrowRight className="ml-2 h-4 w-4" />
                 </Link>
               </Button>
@@ -526,7 +526,7 @@ const ContactCTASection = () => {
               </Link>
             </Button>
             <Button variant="outline" size="lg" asChild>
-              <Link href="/contact">
+              <Link href="/contactus">
                 Contact Us
               </Link>
             </Button>
