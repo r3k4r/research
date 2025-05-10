@@ -21,7 +21,6 @@ export default async function RootLayout({ children }) {
     '/signin',
     '/signup',
     '/forgot-password',
-    '/reset-password',
     '/two-factor',
     '/welcome',
     '/admin-dashboard',
