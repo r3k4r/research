@@ -12,7 +12,9 @@ export async function GET() {
     // Get total food items saved (assuming those with status SOLD)
     const totalFoodItems = await prisma.foodItem.count({
       where: {
-        status: 'SOLD'
+      status: {
+        in: ['SOLD', 'ACTIVE']
+      }
       }
     })
     

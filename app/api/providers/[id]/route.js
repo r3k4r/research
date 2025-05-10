@@ -21,6 +21,30 @@ export async function GET(request, { params }) {
     // Get current date for expiration checks
     const now = new Date();
     
+    // Update expired item status first - automatic cleanup
+    await prisma.foodItem.updateMany({
+      where: {
+        providerId: id,
+        expiresAt: { lt: now },
+        status: 'ACTIVE'
+      },
+      data: {
+        status: 'EXPIRED'
+      }
+    });
+    
+    // Update sold out items too
+    await prisma.foodItem.updateMany({
+      where: {
+        providerId: id,
+        quantity: 0,
+        status: 'ACTIVE'
+      },
+      data: {
+        status: 'SOLD'
+      }
+    });
+    
     // Find provider with basic details
     const provider = await prisma.providerProfile.findUnique({
       where: { id },

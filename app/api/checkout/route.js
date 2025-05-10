@@ -139,14 +139,16 @@ export async function POST(req) {
           }
         });
         
-        // Update inventory for each item
+        // Update inventory for each item and set status to SOLD if quantity reaches zero
         for (const item of order.items) {
+          const newQuantity = item.foodItem.quantity - item.quantity;
+          
           await prisma.foodItem.update({
             where: { id: item.foodItemId },
             data: {
-              quantity: {
-                decrement: item.quantity
-              }
+              quantity: newQuantity,
+              // If quantity reaches 0, mark as SOLD
+              ...(newQuantity <= 0 ? { status: 'SOLD' } : {})
             }
           });
         }

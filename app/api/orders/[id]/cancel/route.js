@@ -65,16 +65,26 @@ export async function POST(req, { params }) {
         }
       });
       
-      // Return the items to inventory
+      // Return the items to inventory and restore status if needed
       for (const item of order.items) {
-        await prisma.foodItem.update({
-          where: { id: item.foodItemId },
-          data: {
-            quantity: {
-              increment: item.quantity
-            }
-          }
+        const foodItem = await prisma.foodItem.findUnique({
+          where: { id: item.foodItemId }
         });
+        
+        if (foodItem) {
+          // Update quantity and reactivate if it was marked as SOLD
+          await prisma.foodItem.update({
+            where: { id: item.foodItemId },
+            data: {
+              quantity: {
+                increment: item.quantity
+              },
+              // If item was marked as SOLD and not expired, make it ACTIVE again
+              ...(foodItem.status === 'SOLD' && foodItem.expiresAt > new Date() ? 
+                { status: 'ACTIVE' } : {})
+            }
+          });
+        }
       }
     });
     

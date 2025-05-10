@@ -39,9 +39,34 @@ export async function GET(request) {
     
     const providerId = user.providerProfile.id;
     
-    // Build search filters
+    // Check and update expired items
     const now = new Date(); // Current time for expiration comparison
     
+    // Update expired item status
+    await prisma.foodItem.updateMany({
+      where: {
+        providerId,
+        expiresAt: { lt: now },
+        status: 'ACTIVE'
+      },
+      data: {
+        status: 'EXPIRED'
+      }
+    });
+    
+    // Update sold out item status
+    await prisma.foodItem.updateMany({
+      where: {
+        providerId,
+        quantity: 0,
+        status: 'ACTIVE'
+      },
+      data: {
+        status: 'SOLD'
+      }
+    });
+    
+    // Build search filters
     const where = {
       providerId,
       ...(searchTerm && {
@@ -53,13 +78,17 @@ export async function GET(request) {
       ...(categoryId && categoryId !== "all" && { categoryId }),
     };
     
-    // Apply expiration status filter - similar to admin implementation
+    // Apply status filter - updated logic
     if (status === "active") {
-      where.expiresAt = { gt: now }; // Items that haven't expired
+      where.status = 'ACTIVE'; // Only active items
+      where.expiresAt = { gt: now }; // Not expired
+      where.quantity = { gt: 0 }; // Have stock
     } else if (status === "expired") {
-      where.expiresAt = { lt: now }; // Items that have expired
+      where.status = 'EXPIRED'; // Show explicitly expired items
+    } else if (status === "sold") {
+      where.status = 'SOLD'; // Show sold out items
     }
-    // If status is "all", don't add any expiration filter
+    // If status is "all", don't add any filters
     
     // Get total count
     const totalItems = await prisma.foodItem.count({ where });
