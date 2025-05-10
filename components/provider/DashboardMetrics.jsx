@@ -9,6 +9,7 @@ import {
   Clock, 
   TrendingUp
 } from 'lucide-react';
+import CountUp from 'react-countup';
 
 // Format number to have exactly 4 decimal places
 const formatCurrency = (value) => {
@@ -64,7 +65,16 @@ export function DashboardMetrics() {
         </CardHeader>
         <CardContent>
           <div className="text-2xl font-bold">
-            {metrics.isLoading ? '...' : `${formatCurrency(metrics.totalRevenue)} ${metrics.currency}`}
+            {metrics.isLoading ? '...' : (
+              <>
+                <CountUp 
+                  end={Number(metrics.totalRevenue)}
+                  decimals={4}
+                  duration={2.5}
+                />
+                {' '}{metrics.currency}
+              </>
+            )}
           </div>
           <p className="text-xs text-muted-foreground">
             {metrics.revenueChangePercentage > 0 ? '+' : ''}{metrics.revenueChangePercentage}% from last month
@@ -78,11 +88,23 @@ export function DashboardMetrics() {
           <ShoppingBag className="h-4 w-4 text-muted-foreground" />
         </CardHeader>
         <CardContent>
-          <div className="text-2xl font-bold">{metrics.isLoading ? '...' : metrics.totalOrders}</div>
+          <div className="text-2xl font-bold">
+            {metrics.isLoading ? '...' : (
+              <CountUp 
+                end={metrics.totalOrders}
+                duration={2}
+              />
+            )}
+          </div>
           <div className="flex items-center space-x-2">
             <Clock className="h-4 w-4 text-amber-500" />
             <p className="text-xs text-muted-foreground">
-              {metrics.isLoading ? '...' : metrics.pendingOrders} orders pending
+              {metrics.isLoading ? '...' : (
+                <CountUp 
+                  end={metrics.pendingOrders}
+                  duration={1.5}
+                />
+              )} orders pending
             </p>
           </div>
         </CardContent>
@@ -94,7 +116,14 @@ export function DashboardMetrics() {
           <Users className="h-4 w-4 text-muted-foreground" />
         </CardHeader>
         <CardContent>
-          <div className="text-2xl font-bold">{metrics.isLoading ? '...' : metrics.activeCustomers}</div>
+          <div className="text-2xl font-bold">
+            {metrics.isLoading ? '...' : (
+              <CountUp 
+                end={metrics.activeCustomers}
+                duration={2}
+              />
+            )}
+          </div>
           <p className="text-xs text-muted-foreground">
             Active in the last 30 days
           </p>
@@ -108,7 +137,16 @@ export function DashboardMetrics() {
         </CardHeader>
         <CardContent>
           <div className="text-2xl font-bold">
-            {metrics.isLoading ? '...' : `${formatCurrency(metrics.averageOrder)} ${metrics.currency}`}
+            {metrics.isLoading ? '...' : (
+              <>
+                <CountUp 
+                  end={Number(metrics.averageOrder)}
+                  decimals={4}
+                  duration={2.5}
+                />
+                {' '}{metrics.currency}
+              </>
+            )}
           </div>
           <p className="text-xs text-muted-foreground">
             {metrics.averageOrderChangePercentage > 0 ? '+' : ''}{metrics.averageOrderChangePercentage}% from last month
