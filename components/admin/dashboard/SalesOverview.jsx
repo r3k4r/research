@@ -43,7 +43,6 @@ export default function SalesOverview() {
         const response = await fetch('/api/admin/dashboard/salesoverview')
         if (!response.ok) throw new Error('Failed to fetch sales data')
         const data = await response.json()
-      console.log('Sales data:', data);
       
         setSalesData(data)
       } catch (error) {

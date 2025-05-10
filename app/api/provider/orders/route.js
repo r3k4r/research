@@ -16,7 +16,6 @@ export async function GET(req) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
     
-    console.log('Provider orders API called by:', session.user.email);
     
     const user = await prisma.user.findUnique({
       where: { email: session.user.email },
@@ -29,7 +28,6 @@ export async function GET(req) {
     }
     
     const providerId = user.providerProfile.id;
-    console.log('Found provider ID:', providerId);
     
     const url = new URL(req.url);
     const status = url.searchParams.get('status');

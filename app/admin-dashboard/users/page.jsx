@@ -74,7 +74,7 @@ export default function UsersPage() {
       }
       
       const res = await fetch(url, {
-        cache: 'no-store' // Prevent caching
+        cache: 'no-store' 
       });
       const data = await res.json();
       
@@ -83,15 +83,12 @@ export default function UsersPage() {
         setTotalPages(data.pagination.pages);
       }
     } catch (err) {
-      console.log(err);
-      // Use your custom toast
       showToast("Failed to fetch users", "error");
     } finally {
       setLoading(false);
     }
   }
 
-  // Refresh data function to force updates
   const refreshData = () => {
     fetchUsers();
   };

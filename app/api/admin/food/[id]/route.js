@@ -67,12 +67,10 @@ export async function PUT(request, { params }) {
     
     // If category doesn't exist, create it
     if (!category) {
-      console.log(`Creating new category during update: ${categoryName}`);
       try {
         category = await prisma.category.create({
           data: { name: categoryName }
         });
-        console.log("New category created during update:", category);
       } catch (categoryError) {
         console.error("Error creating category during update:", categoryError);
         return NextResponse.json(

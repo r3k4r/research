@@ -85,7 +85,6 @@ export default function FoodItemsPage() {
       params.append("status", statusFilter)
       params.append("t", Date.now()) 
       
-      console.log(`Fetching food items with status: ${statusFilter}, page: ${currentPage}`)
       
       const response = await fetch(`/api/admin/food?${params.toString()}`, { 
         cache: 'no-store'
@@ -94,7 +93,6 @@ export default function FoodItemsPage() {
       if (!response.ok) throw new Error("Failed to fetch food items")
       
       const data = await response.json()
-      console.log(`Received ${data.foodItems.length} items, total: ${data.totalItems}, hasMore: ${data.hasMore}`)
       
       if (reset) {
         setFoodItems(data.foodItems)
@@ -103,7 +101,6 @@ export default function FoodItemsPage() {
         setFoodItems(prev => {
           const existingIds = new Set(prev.map(item => item.id))
           const newItems = data.foodItems.filter(item => !existingIds.has(item.id))
-          console.log(`Adding ${newItems.length} new items to existing ${prev.length} items`)
           return [...prev, ...newItems]
         })
        
@@ -114,7 +111,6 @@ export default function FoodItemsPage() {
       
       if (!reset && data.foodItems.length > 0) {
         setPage(prev => {
-          console.log(`Incrementing page from ${prev} to ${prev + 1}`)
           return prev + 1
         })
       }
@@ -171,7 +167,6 @@ export default function FoodItemsPage() {
     if (node) {
       observer.current = new IntersectionObserver(entries => {
         if (entries[0].isIntersecting && !loading) {
-          console.log("Last item is visible, loading more items...")
           fetchFoodItems(false)
         }
       }, {
@@ -524,7 +519,6 @@ export default function FoodItemsPage() {
                   <Button 
                     variant="outline" 
                     onClick={() => {
-                      console.log('Manual load more clicked, current page:', page)
                       fetchFoodItems(false)
                     }}
                     disabled={loading}

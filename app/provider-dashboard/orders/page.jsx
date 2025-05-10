@@ -26,7 +26,6 @@ export default function OrdersPage() {
   const [activeTab, setActiveTab] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedOrder, setSelectedOrder] = useState(null);
-  console.log('Selected Order:', selectedOrder);
   
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -39,23 +38,19 @@ export default function OrdersPage() {
       setLoading(true);
       setError(null);
       
-      // Build query parameters
       const params = new URLSearchParams();
       if (status && status !== 'all') params.append('status', status);
       if (search) params.append('search', search);
       
-      // Add timestamp to prevent caching
       const timestamp = Date.now();
       params.append('t', timestamp);
       
-      console.log(`Fetching orders at ${new Date().toISOString()} from ${window.location.origin}/api/provider/orders`);
       
-      // Get full URL with origin to ensure correct path in production
       const apiUrl = `${window.location.origin}/api/provider/orders?${params.toString()}`;
       
       const response = await fetch(apiUrl, {
         method: 'GET',
-        credentials: 'same-origin', // Include cookies for session authentication
+        credentials: 'same-origin',
         cache: 'no-store',
         headers: {
           'Cache-Control': 'no-cache, no-store, must-revalidate',
@@ -72,11 +67,9 @@ export default function OrdersPage() {
       }
       
       const data = await response.json();
-      console.log(`Received ${data?.length || 0} orders from API`);
       
       setOrders(data);
       
-      // If we had a selected order, update it with fresh data
       if (selectedOrder) {
         const updatedSelectedOrder = data.find(order => order.id === selectedOrder.id);
         if (updatedSelectedOrder) {
@@ -105,7 +98,6 @@ export default function OrdersPage() {
       } catch (err) {
         if (retryCount < maxRetries) {
           retryCount++;
-          console.log(`Retrying fetch (${retryCount}/${maxRetries})...`);
           setTimeout(attemptFetch, 1000 * retryCount);
         } else {
           console.error('Max retries reached:', err);

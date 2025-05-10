@@ -43,7 +43,6 @@ export default function UserGrowth() {
         const response = await fetch('/api/admin/dashboard/usergrowth')
         if (!response.ok) throw new Error('Failed to fetch user growth data')
         const data = await response.json()
-        console.log('User growth data:', data)
         setUserGrowthData(data)
       } catch (error) {
         console.error("Failed to fetch user growth data:", error)

@@ -168,7 +168,6 @@ const SingleProvider = () => {
     const handleObserver = (entries) => {
       const [entry] = entries;
       if (entry?.isIntersecting && hasMore && !loading && !loadingMore && !fetchInProgressRef.current) {
-        console.log("✅ Intersection detected! Loading more items...");
         fetchProviderData(false);
       }
     };
@@ -183,7 +182,6 @@ const SingleProvider = () => {
     const currentLoadMoreButton = loadMoreButtonRef.current;
     
     if (currentLastItem) {
-      console.log("📥 Setting up observer on last food item");
       observer.observe(currentLastItem);
     }
     

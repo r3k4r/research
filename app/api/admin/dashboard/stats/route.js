@@ -14,7 +14,6 @@ export async function GET() {
     try {
       totalUsers = await prisma.user.count();
     } catch (e) {
-      console.log('Error fetching user count:', e?.message || 'Unknown error');
     }
     
     // Fetch total food items
@@ -22,7 +21,6 @@ export async function GET() {
     try {
       totalFoodItems = await prisma.foodItem.count();
     } catch (e) {
-      console.log('Error fetching food items count:', e?.message || 'Unknown error');
     }
     
     // Calculate actual revenue from completed orders (taking 30% cut)
@@ -41,7 +39,6 @@ export async function GET() {
       // Calculate total revenue as 30% of all completed orders
       totalRevenue = orders.reduce((sum, order) => sum + (order.totalAmount * 0.2), 0);
         } catch (e) {
-      console.log('Error calculating revenue:', e?.message || 'Unknown error');
     }
     
     // Calculate growth based on user registrations (instead of orders)
@@ -101,7 +98,6 @@ export async function GET() {
                               newUsersThisMonth / newUsersPrevMonth > 1.1
       };
     } catch (e) {
-      console.log('Error calculating growth rate:', e?.message || 'Unknown error');
     }
     
     const result = {
@@ -112,12 +108,10 @@ export async function GET() {
       growthContext,
     };
     
-    console.log('API response data (real calculations):', result);
     
     return NextResponse.json(result);
   } catch (error) {
-    console.log('Error in dashboard stats API:', error?.message || 'Unknown error');
-    
+    console.error('Error fetching dashboard statistics:', error);    
     return NextResponse.json(
       { 
         error: 'Failed to fetch dashboard statistics', 

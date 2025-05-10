@@ -36,7 +36,6 @@ export default function UserDemographics() {
     // Fetch data with better error handling
     const fetchData = async () => {
       try {
-        console.log("Fetching gender demographics data...")
         const response = await fetch('/api/admin/dashboard/userdemographics')
         
         if (!response.ok) {
@@ -44,7 +43,6 @@ export default function UserDemographics() {
         }
         
         const data = await response.json()
-        console.log("Received gender data:", data)
         setGenderData(data)
       } catch (err) {
         console.error("Error fetching gender data:", err)

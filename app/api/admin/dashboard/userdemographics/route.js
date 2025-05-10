@@ -19,7 +19,6 @@ export async function GET() {
       if (profile.gender === "female") femaleCount++;
     });
     
-    console.log(`Found ${profiles.length} profiles: ${maleCount} males, ${femaleCount} females`);
     
     // Format data for Chart.js
     const chartData = {

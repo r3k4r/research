@@ -75,7 +75,6 @@ export default function ProductsPage() {
       params.append("status", statusFilter)
       params.append("t", Date.now())
       
-      console.log(`Fetching products with status: ${statusFilter}, page: ${currentPage}`)
       
       const response = await fetch(`/api/provider/products?${params.toString()}`, { 
         cache: 'no-store'
@@ -84,7 +83,6 @@ export default function ProductsPage() {
       if (!response.ok) throw new Error("Failed to fetch products")
       
       const data = await response.json()
-      console.log(`Received ${data.products.length} products, total: ${data.totalItems}, hasMore: ${data.hasMore}`)
       
       if (reset) {
         setProducts(data.products)
@@ -413,7 +411,6 @@ export default function ProductsPage() {
                   <Button 
                     variant="outline" 
                     onClick={() => {
-                      console.log('Manual load more clicked, current page:', page)
                       fetchProducts(false)
                     }}
                     disabled={loading}

@@ -20,7 +20,6 @@ export async function GET(req, { params }) {
         
         return NextResponse.json({ user }, { status: 200 });
     } catch (err) {
-        console.log(err);
         return NextResponse.json({ error: 'An error occurred' }, { status: 500 });
     }
 }
@@ -182,7 +181,6 @@ export async function DELETE(req, { params }) {
         
         return NextResponse.json({ message: 'User deleted successfully' }, { status: 200 });
     } catch (err) {
-        console.log(err);
         return NextResponse.json({ error: 'An error occurred during user deletion' }, { status: 500 });
     }
 }

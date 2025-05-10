@@ -67,7 +67,6 @@ export async function GET(req) {
       }
     });
     
-    console.log(`Found ${expiringItems.length} items for filter '${filterType}'`);
     
     // Format the items for the frontend
     const formattedItems = expiringItems.map(item => {

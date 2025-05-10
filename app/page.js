@@ -63,7 +63,6 @@ export default function Home() {
       
       params.append('t', Date.now());
       
-      console.log('Fetching items with params:', params.toString());
       
       const response = await fetch(`/api?${params.toString()}`, {
         cache: 'no-store',
@@ -77,11 +76,7 @@ export default function Home() {
       if (!response.ok) throw new Error('Failed to fetch food items');
       
       const data = await response.json();
-      console.log('Received data:', { 
-        itemsCount: data.foodItems?.length, 
-        totalItems: data.pagination?.totalItems,
-        hasMore: data.pagination?.hasMore
-      });
+      
       
       if (!isMountedRef.current) return;
       
@@ -119,7 +114,6 @@ export default function Home() {
     }
   }, [searchTerm, filters, showToast, isFilterApplied]); 
   useEffect(() => {
-    console.log('Initial load effect triggered');
     isMountedRef.current = true; 
     fetchFoods(true);
     

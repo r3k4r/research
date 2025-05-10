@@ -50,7 +50,6 @@ export async function PATCH(req, { params }) {
         
         return NextResponse.json({ providerProfile }, { status: 200 });
     } catch (err) {
-        console.log(err);
         return NextResponse.json({ error: 'An error occurred updating provider profile' }, { status: 500 });
     }
 }

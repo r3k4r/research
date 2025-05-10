@@ -33,7 +33,6 @@ export default function DashboardNumbers() {
         }
         
         const data = await response.json();
-        console.log('Dashboard stats:', data);
         
         if (data) {
           setStats({

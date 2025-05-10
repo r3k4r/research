@@ -96,10 +96,6 @@ export function OrderList({ orders, selectedOrderId, onOrderSelect, loading, err
         const orderDate = getValidDate(order);
         const timeAgo = formatRelativeTime(orderDate, currentTime);
         
-        // Debug logging to help identify issues
-        if ( process.env.NODE_ENV === 'development') {
-          console.log(`Order ${order.id}: date=${order.date}, createdAt=${order.createdAt}, formatted=${timeAgo}`);
-        }
         
         return (
           <div

@@ -80,7 +80,6 @@ export async function GET(req) {
             }
         }, { status: 200 });
     } catch (err) {
-        console.log(err);   
         return NextResponse.json({ error: 'An error occurred during fetching users' }, { status: 500 });
     }
 }
@@ -150,7 +149,6 @@ export async function POST(req) {
         
         return NextResponse.json({ user }, { status: 201 });
     } catch (err) {
-        console.log(err);
         return NextResponse.json({ error: 'An error occurred during user creation' }, { status: 500 });
     }
 }

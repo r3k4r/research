@@ -15,7 +15,6 @@ export async function GET() {
         status: 'SOLD'
       }
     })
-    console.log('totalFoodItems', totalFoodItems);
     
     
     // Calculate total waste reduction (assuming each food item saves about 0.5kg of waste on average)

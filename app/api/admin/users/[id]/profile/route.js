@@ -46,7 +46,6 @@ export async function PATCH(req, { params }) {
         
         return NextResponse.json({ profile }, { status: 200 });
     } catch (err) {
-        console.log(err);
         return NextResponse.json({ error: 'An error occurred updating user profile' }, { status: 500 });
     }
 }

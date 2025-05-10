@@ -11,7 +11,6 @@ export async function GET(request) {
   const limit = parseInt(searchParams.get('limit') || '12');
   const skip = (page - 1) * limit;
   
-  console.log(`Admin food request - Page: ${page}, Skip: ${skip}, Limit: ${limit}, Status: ${status}`);
   
   try {
     const where = {};
@@ -58,7 +57,6 @@ export async function GET(request) {
     
     const hasMore = skip + foodItems.length < totalItems;
     
-    console.log(`Admin food response - Retrieved: ${foodItems.length}, Total: ${totalItems}, HasMore: ${hasMore}`);
     
     return NextResponse.json({
       foodItems,
@@ -102,11 +100,9 @@ export async function POST(request) {
     
     if (!category) {
       try {
-        console.log(`Creating new category: ${categoryName}`);
         category = await prisma.category.create({
           data: { name: categoryName }
         });
-        console.log("New category created:", category);
       } catch (categoryError) {
         console.error("Error creating category:", categoryError);
         return NextResponse.json(

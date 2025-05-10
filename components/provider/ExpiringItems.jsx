@@ -104,7 +104,6 @@ export function ExpiringItems() {
       }
       
       const data = await response.json();
-      console.log(`Fetched ${data.length} items for filter '${filter}'`);
       setItems(data);
     } catch (err) {
       console.error('Error fetching expiring items:', err);

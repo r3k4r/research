@@ -44,10 +44,7 @@ export async function POST(request) {
     const body = await request.json();
     const { section, settings } = body;
     
-    // In a real app, this would update settings in database
-    // For now, just log and return success
-    console.log(`Updating ${section} settings:`, settings);
-    
+      
     return NextResponse.json({ 
       success: true, 
       message: `${section} settings updated successfully`

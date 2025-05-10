@@ -54,7 +54,6 @@ export default function OrdersPage() {
 
     const now = Date.now();
     if (now - lastFetchTimeRef.current < MIN_FETCH_INTERVAL && isInitialFetchDoneRef.current) {
-      console.log('Throttling fetch - too soon since last fetch');
       return;
     }
 
@@ -69,7 +68,6 @@ export default function OrdersPage() {
       }
       params.append('t', `${Date.now()}-${Math.random()}`);
 
-      console.log(`Fetching orders with tab: ${tabValue} at ${new Date().toISOString()}`);
 
       const response = await fetch(`/api/orders?${params.toString()}`, {
         method: 'GET',
