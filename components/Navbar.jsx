@@ -68,82 +68,83 @@ export default function Navbar() {
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center">
               <Link href="/" className="flex-shrink-0">
-                <span className="text-2xl font-bold text-primary">Second Serve</span>
+                <span className="md:hidden lg:block  text-xl xl:text-2xl font-bold text-primary">Second Serve</span>
               </Link>
-              <div className="hidden md:block md:ml-5 lg:ml-10">
-                <div className="flex items-baseline lg:space-x-4">
-                  {Links.filter(link => link.visible.includes(session?.user?.role)).map((link, index) => (
-                    <Link
-                      key={index}
-                      href={link.href}
-                      className="text-gray-700 hover:text-primary px-3 py-2 rounded-md text-sm font-medium"
-                    >
-                      {link.label}
-                    </Link>
-                  ))}
-                </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="hidden md:flex items-center lg:space-x-4">
+                {Links.filter(link => link.visible.includes(session?.user?.role)).map((link, index) => (
+                  <Link
+                    key={index}
+                    href={link.href}
+                    className="text-gray-700 hover:text-primary px-3 py-2 rounded-md text-sm font-medium whitespace-nowrap"
+                  >
+                    {link.label}
+                  </Link>
+                ))}
               </div>
             </div>
-            <Language />
-            <div className="hidden md:flex items-center">
-
-              {/* Cart Button */}
-              <Button 
-                variant="ghost" 
-                size="icon"
-                onClick={openCart} 
-                className="mr-2 relative"
-              >
-                <ShoppingCart className="h-5 w-5" />
-                {totalItems > 0 && (
-                  <span className="absolute top-0 right-0 -translate-y-1/3 translate-x-1/3 flex items-center justify-center h-5 w-5 rounded-full bg-primary text-[10px] font-medium text-primary-foreground">
-                    {totalItems}
-                  </span>
+            <div className="flex items-center space-x-3">
+              <Language />
+              <div className="hidden md:flex items-center ml-4">
+                {/* Cart Button */}
+                <Button 
+                  variant="ghost" 
+                  size="icon"
+                  onClick={openCart} 
+                  className="mr-2 relative"
+                >
+                  <ShoppingCart className="h-5 w-5" />
+                  {totalItems > 0 && (
+                    <span className="absolute top-0 right-0 -translate-y-1/3 translate-x-1/3 flex items-center justify-center h-5 w-5 rounded-full bg-primary text-[10px] font-medium text-primary-foreground">
+                      {totalItems}
+                    </span>
+                  )}
+                </Button>
+                
+                {/* User menu */}
+                {status === "authenticated" && session?.user && (
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        className="relative rounded-full bg-primary text-primary-foreground h-8 w-8 p-0 overflow-hidden"
+                      >
+                        <span className="sr-only">Open user menu</span>
+                        {session?.user?.image ? (
+                          <Image 
+                            src={session?.user?.image} 
+                            alt="Profile" 
+                            width={100}
+                            height={100}
+                            quality={100}
+                            className="h-full w-full object-cover"
+                          />
+                        ) : (
+                          <span>{session?.user?.name ? session?.user?.name[0].toUpperCase() : "U"}</span>
+                        )}
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="w-56">
+                      <div className="px-4 py-3">
+                        <p className="text-sm">Signed in as</p>
+                        <p className="text-sm font-medium truncate">{session?.user.name}</p>
+                      </div>
+                      <DropdownMenuSeparator/>
+                      <DropdownMenuItem className='mb-2'>
+                        <Link href={session.user.role === 'PROVIDER' ? '/provider-dashboard/settings' : 'profile'} className="flex items-center">
+                          <User className="mr-2 h-4 w-4" />
+                          <span>Profile</span>
+                        </Link>
+                      </DropdownMenuItem>  
+                      <DropdownMenuItem className="bg-red-600 text-white" onClick={signOut}>
+                        <LogOut className="mr-2 h-4 w-4" />
+                        <button>Log out</button>
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 )}
-              </Button>
-              
-              {/* User menu */}
-              {status === "authenticated" && session?.user && (
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button
-                      variant="ghost"
-                      className="relative rounded-full bg-primary text-primary-foreground h-8 w-8 p-0 overflow-hidden"
-                    >
-                      <span className="sr-only">Open user menu</span>
-                      {session?.user?.image ? (
-                        <Image 
-                          src={session?.user?.image} 
-                          alt="Profile" 
-                          width={100}
-                          height={100}
-                          quality={100}
-                          className="h-full w-full object-cover"
-                        />
-                      ) : (
-                        <span>{session?.user?.name ? session?.user?.name[0].toUpperCase() : "U"}</span>
-                      )}
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="w-56">
-                    <div className="px-4 py-3">
-                      <p className="text-sm">Signed in as</p>
-                      <p className="text-sm font-medium truncate">{session?.user.name}</p>
-                    </div>
-                    <DropdownMenuSeparator/>
-                    <DropdownMenuItem className='mb-2'>
-                      <Link href={session.user.role === 'PROVIDER' ? '/provider-dashboard/settings' : 'profile'} className="flex items-center">
-                        <User className="mr-2 h-4 w-4" />
-                        <span>Profile</span>
-                      </Link>
-                    </DropdownMenuItem>  
-                    <DropdownMenuItem className="bg-red-600 text-white" onClick={signOut}>
-                      <LogOut className="mr-2 h-4 w-4" />
-                      <button>Log out</button>
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              )}
+              </div>
             </div>
             <div className="flex items-center md:hidden">
               {/* Mobile Cart Button */}
