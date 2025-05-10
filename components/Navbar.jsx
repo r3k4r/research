@@ -33,7 +33,6 @@ export default function Navbar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const { openCart, totalItems } = useCart()
   const { data: session, status } = useSession()
-  console.log('Session:', session);
   
 
 
