@@ -63,6 +63,9 @@ const UserProfile = () => {
   
   const dataFetched = useRef(false);
 
+  // Add cities array for the dropdown
+  const cities = ['Sulaimaniyah', 'Hawler', 'Duhok', 'Kerkuk'];
+
   useEffect(() => {
     const fetchProfile = async () => {
       if (dataFetched.current || !session?.user) {
@@ -516,18 +519,34 @@ const UserProfile = () => {
               {/* Location */}
               <div className="space-y-2">
                 <Label htmlFor="location" className="flex items-center gap-2">
-                  <MapPin className="h-4 w-4" />Location
+                  <MapPin className="h-4 w-4" />City
                 </Label>
-                <Input
-                  id="location"
-                  name="location"
-                  type="text"
-                  value={formData.location || ''}
-                  onChange={handleChange}
-                  disabled={!editMode || saving}
-                  className={!editMode ? "bg-muted" : ""}
-                  placeholder="City, Country"
-                />
+                {editMode ? (
+                  <Select
+                    value={formData.location || ''}
+                    onValueChange={(value) => handleSelectChange('location', value)}
+                    disabled={saving}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select your city" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {cities.map((city) => (
+                        <SelectItem key={city} value={city}>
+                          {city}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                ) : (
+                  <Input
+                    id="location"
+                    type="text"
+                    value={formData.location || 'Not specified'}
+                    disabled={true}
+                    className="bg-muted"
+                  />
+                )}
               </div>
               
               {/* Gender */}
