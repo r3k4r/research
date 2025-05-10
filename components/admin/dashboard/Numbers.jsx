@@ -88,7 +88,7 @@ export default function DashboardNumbers() {
       icon: DollarSign, 
       label: "Revenue", 
       value: stats.totalRevenue,
-      prefix: "$",
+      prefix: "IQD ",
       suffix: "",
       color: "text-amber-500" 
     },

@@ -87,7 +87,6 @@ export function ExpiringItems() {
   async function fetchExpiringItems(filter = filterType) {
     try {
       setLoading(true);
-      //timestamp, so data is not gonna cache
       const timestamp = Date.now();
       const response = await fetch(`/api/provider/expiringitems?filter=${filter}&t=${timestamp}`, {
         method: 'GET',
@@ -246,7 +245,6 @@ export function ExpiringItems() {
       }
     });
     
-    // Handle ESC key and clicking outside
     dialog.addEventListener('cancel', (e) => {
       e.preventDefault(); 
       dialog.close();
@@ -510,9 +508,9 @@ export function ExpiringItems() {
                     </TableCell>
                     <TableCell className="text-right">
                       <div>
-                        <p className="font-medium">${item.currentPrice.toFixed(2)}</p>
+                        <p className="font-medium">{item.currentPrice.toFixed(2)} IQD</p>
                         <p className="text-xs text-muted-foreground line-through">
-                          ${item.originalPrice.toFixed(2)}
+                          {item.originalPrice.toFixed(2)} IQD
                         </p>
                       </div>
                     </TableCell>

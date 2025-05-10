@@ -158,12 +158,7 @@ export default function CustomersPage() {
     });
   };
 
-  const formatCurrency = (amount) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD'
-    }).format(amount);
-  };
+  
 
   const handleRowClick = (customerId) => {
     router.push(`/provider-dashboard/customers/${customerId}`);
@@ -310,7 +305,7 @@ export default function CustomersPage() {
                           <Badge variant="secondary">{customer.totalOrders}</Badge>
                         </TableCell>
                         <TableCell className="text-right font-medium">
-                          {formatCurrency(customer.totalSpent)}
+                          {customer.totalSpent.toFixed(4)} IQD
                         </TableCell>
                         <TableCell className="hidden sm:table-cell text-right text-muted-foreground">
                           {formatDate(customer.lastOrderDate)}

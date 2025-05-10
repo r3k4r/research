@@ -47,7 +47,6 @@ export default function SalesOverview() {
         setSalesData(data)
       } catch (error) {
         console.error("Failed to fetch sales data:", error)
-        // Provide fallback data if API fails
         setSalesData({
           labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
           datasets: [{
@@ -91,7 +90,7 @@ export default function SalesOverview() {
                 y: { 
                   beginAtZero: true,
                   ticks: {
-                    callback: (value) => `$${value}`
+                    callback: (value) => `${value} IQD`
                   }
                 },
                 x: { grid: { display: false } }

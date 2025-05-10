@@ -91,12 +91,9 @@ const SingleCustomer = ({ params }) => {
     });
   };
 
-  const formatCurrency = (amount) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD'
-    }).format(amount);
-  };
+  const formatCurrency = (value) => {
+  return Number(value).toFixed(4);
+};
 
   const goBack = () => {
     router.push('/provider-dashboard/customers');
@@ -216,7 +213,7 @@ const SingleCustomer = ({ params }) => {
                   <CardContent className="p-4">
                     <div className="text-sm font-medium text-muted-foreground">Total Spent</div>
                     <div className="text-2xl font-bold mt-1">
-                      {formatCurrency(customer.totalSpent || 0)}
+                      {formatCurrency(customer.totalSpent || 0)} IQD
                     </div>
                   </CardContent>
                 </Card>
@@ -224,7 +221,7 @@ const SingleCustomer = ({ params }) => {
                   <CardContent className="p-4">
                     <div className="text-sm font-medium text-muted-foreground">Average Order</div>
                     <div className="text-2xl font-bold mt-1">
-                      {formatCurrency(customer.totalOrders ? (customer.totalSpent / customer.totalOrders) : 0)}
+                      {formatCurrency(customer.totalOrders ? (customer.totalSpent / customer.totalOrders) : 0)} IQD
                     </div>
                   </CardContent>
                 </Card>
@@ -278,7 +275,7 @@ const SingleCustomer = ({ params }) => {
                           <TableCell className="font-medium">{order.id.substring(0, 8)}...</TableCell>
                           <TableCell>{formatDate(order.createdAt)}</TableCell>
                           <TableCell className="hidden sm:table-cell">{order.items.length}</TableCell>
-                          <TableCell className="text-right">{formatCurrency(order.totalAmount)}</TableCell>
+                          <TableCell className="text-right">{formatCurrency(order.totalAmount)} IQD</TableCell>
                           <TableCell>{order.deliveryPersonName}</TableCell>
                         </TableRow>
                       ))}
@@ -335,7 +332,7 @@ const SingleCustomer = ({ params }) => {
                               </div>
                             </TableCell>
                             <TableCell className="text-center">{item.quantity}</TableCell>
-                            <TableCell className="text-right">{formatCurrency(item.price)}</TableCell>
+                            <TableCell className="text-right">{formatCurrency(item.price)} IQD</TableCell>
                             <TableCell className="hidden sm:table-cell text-muted-foreground">
                               {order.id.substring(0, 8)}...
                             </TableCell>

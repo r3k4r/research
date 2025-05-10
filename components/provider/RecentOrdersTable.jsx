@@ -49,15 +49,13 @@ export function RecentOrdersTable({ extended = false }) {
     
     fetchOrders();
     
-    // Set up timer to update current time every minute for dynamic time display
     const timer = setInterval(() => {
       setCurrentTime(new Date());
-    }, 60000); // Update every minute
+    }, 60000); 
     
     return () => clearInterval(timer);
   }, [extended]);
   
-  // For non-extended view, only show first 5 orders
   const displayedOrders = extended ? orders : orders.slice(0, 5);
   
   const formatTimeAgo = (dateString) => {
@@ -116,7 +114,7 @@ export function RecentOrdersTable({ extended = false }) {
                   <TableCell>
                     <OrderStatusBadge status={order.status} />
                   </TableCell>
-                  <TableCell className="text-right">${order.amount.toFixed(2)}</TableCell>
+                  <TableCell className="text-right">{order.amount.toFixed(2)} IQD</TableCell>
                   {extended && (
                     <TableCell className="text-right">
                       <Button 

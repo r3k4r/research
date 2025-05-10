@@ -10,7 +10,10 @@ import {
   TrendingUp
 } from 'lucide-react';
 
-
+// Format number to have exactly 4 decimal places
+const formatCurrency = (value) => {
+  return Number(value).toFixed(4);
+};
 
 export function DashboardMetrics() {
   const [metrics, setMetrics] = useState({
@@ -60,8 +63,10 @@ export function DashboardMetrics() {
           <DollarSign className="h-4 w-4 text-muted-foreground" />
         </CardHeader>
         <CardContent>
-          <div className="text-2xl font-bold">{metrics.isLoading ? '...' : `${metrics.totalRevenue} IQD`}</div>
-          <p className="text-xs text-muted-foreground">W
+          <div className="text-2xl font-bold">
+            {metrics.isLoading ? '...' : `${formatCurrency(metrics.totalRevenue)} ${metrics.currency}`}
+          </div>
+          <p className="text-xs text-muted-foreground">
             {metrics.revenueChangePercentage > 0 ? '+' : ''}{metrics.revenueChangePercentage}% from last month
           </p>
         </CardContent>
@@ -102,7 +107,9 @@ export function DashboardMetrics() {
           <TrendingUp className="h-4 w-4 text-muted-foreground" />
         </CardHeader>
         <CardContent>
-          <div className="text-2xl font-bold">{metrics.isLoading ? '...' : `${metrics.averageOrder} IQD`}</div>
+          <div className="text-2xl font-bold">
+            {metrics.isLoading ? '...' : `${formatCurrency(metrics.averageOrder)} ${metrics.currency}`}
+          </div>
           <p className="text-xs text-muted-foreground">
             {metrics.averageOrderChangePercentage > 0 ? '+' : ''}{metrics.averageOrderChangePercentage}% from last month
           </p>

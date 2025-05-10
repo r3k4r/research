@@ -81,7 +81,7 @@ export default function TopRestaurantsSection() {
                 <tr key={restaurant.id} className="border-t">
                   <td className="p-2 pl-3 text-sm">{restaurant.name}</td>
                   <td className="p-2 text-right text-sm">{restaurant.customers}</td>
-                  <td className="p-2 pr-3 text-right text-sm font-medium">${restaurant.revenue.toLocaleString()}</td>
+                  <td className="p-2 pr-3 text-right text-sm font-medium">{restaurant.revenue.toLocaleString()} IQD</td>
                 </tr>
               ))}
             </tbody>
