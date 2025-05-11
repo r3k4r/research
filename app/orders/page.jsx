@@ -95,15 +95,13 @@ export default function OrdersPage() {
       if (isMountedRef.current) {
         setOrders(data);
         isInitialFetchDoneRef.current = true;
+        setLoading(false); // Make sure to set loading to false here
       }
     } catch (error) {
       console.error('Error fetching orders:', error);
       if (isMountedRef.current) {
         showToast('Failed to load orders', 'error');
-      }
-    } finally {
-      if (isMountedRef.current) {
-        setLoading(false);
+        setLoading(false); // Also set loading to false on error
       }
     }
   }, [showToast, activeTab]);
@@ -148,6 +146,16 @@ export default function OrdersPage() {
       console.log(`Tab: ${activeTab}, Filtered orders: ${filteredOrders.length}`, filteredOrders);
     }
   }, [filteredOrders, activeTab]);
+
+  useEffect(() => {
+    console.log("Current state:", {
+      loading,
+      orders: orders.length,
+      filteredOrders: filteredOrders.length,
+      activeTab,
+      initialFetchDone: isInitialFetchDoneRef.current
+    });
+  }, [loading, orders, filteredOrders, activeTab]);
 
   const formatDate = (dateString) => {
     const date = new Date(dateString);
