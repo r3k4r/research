@@ -23,6 +23,7 @@ export async function GET() {
       foodItemName: review.foodItem?.name || 'Unknown Food Item',
       rating: review.rating,
       comment: review.comment,
+      type: review.type,
       createdAt: review.createdAt,
       updatedAt: review.updatedAt
     }));
@@ -32,6 +33,34 @@ export async function GET() {
     console.error('Error fetching reviews:', error);
     return NextResponse.json(
       { error: 'Failed to fetch reviews' },
+      { status: 500 }
+    );
+  }
+}
+
+// Add DELETE function to handle review deletion
+export async function DELETE(request) {
+  try {
+    const url = new URL(request.url);
+    const reviewId = url.pathname.split('/').pop();
+    
+    if (!reviewId) {
+      return NextResponse.json(
+        { error: 'Review ID is required' },
+        { status: 400 }
+      );
+    }
+
+    // Delete the review
+    await prisma.review.delete({
+      where: { id: reviewId },
+    });
+    
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    console.error('Error deleting review:', error);
+    return NextResponse.json(
+      { error: 'Failed to delete review' },
       { status: 500 }
     );
   }
