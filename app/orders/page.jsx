@@ -27,7 +27,7 @@ export default function OrdersPage() {
   const { data: session, status } = useSession();
   const { showToast, ToastComponent } = useToast();
   const [orders, setOrders] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [activeTab, setActiveTab] = useState('all');
   const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
   const [orderToCancel, setOrderToCancel] = useState(null);
@@ -65,9 +65,15 @@ export default function OrdersPage() {
       const params = new URLSearchParams();
       if (tabValue !== 'all') {
         params.append('status', tabValue);
+        
+        // Add recent filter for delivered and cancelled orders
+        if (tabValue === 'DELIVERED' || tabValue === 'CANCELLED') {
+          params.append('recentOnly', 'true');
+        }
       }
       params.append('t', `${Date.now()}-${Math.random()}`);
 
+      console.log(`Fetching orders with tab: ${tabValue}, params: ${params.toString()}`);
 
       const response = await fetch(`/api/orders?${params.toString()}`, {
         method: 'GET',
@@ -84,6 +90,7 @@ export default function OrdersPage() {
       }
 
       const data = await response.json();
+      console.log(`Received ${data.length} orders from API`, data);
 
       if (isMountedRef.current) {
         setOrders(data);
@@ -121,7 +128,7 @@ export default function OrdersPage() {
     if (status === 'authenticated') {
       const timerInterval = setInterval(() => {
         setCurrentTime(Date.now());
-      }, 30000); // Update every 30 seconds
+      }, 30000); 
 
       return () => clearInterval(timerInterval);
     }
@@ -135,6 +142,12 @@ export default function OrdersPage() {
   const filteredOrders = activeTab === 'all'
     ? orders
     : orders.filter(order => order.status === activeTab);
+
+  useEffect(() => {
+    if (filteredOrders) {
+      console.log(`Tab: ${activeTab}, Filtered orders: ${filteredOrders.length}`, filteredOrders);
+    }
+  }, [filteredOrders, activeTab]);
 
   const formatDate = (dateString) => {
     const date = new Date(dateString);
@@ -303,6 +316,7 @@ export default function OrdersPage() {
             <TabsTrigger value="PREPARING">Preparing</TabsTrigger>
             <TabsTrigger value="IN_TRANSIT">In Transit</TabsTrigger>
             <TabsTrigger value="DELIVERED">Delivered</TabsTrigger>
+            <TabsTrigger value="CANCELLED">Cancelled</TabsTrigger>
           </TabsList>
 
           <TabsContent value={activeTab}>
@@ -313,7 +327,13 @@ export default function OrdersPage() {
               </div>
             ) : filteredOrders.length === 0 ? (
               <div className="text-center py-12">
-                <p className="text-muted-foreground">No orders found</p>
+                <p className="text-muted-foreground">
+                  {activeTab === 'DELIVERED' 
+                    ? "No orders delivered in the past 24 hours" 
+                    : activeTab === 'CANCELLED'
+                    ? "No orders cancelled in the past 24 hours"
+                    : "No orders found"}
+                </p>
               </div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">

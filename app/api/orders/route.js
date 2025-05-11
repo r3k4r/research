@@ -5,12 +5,17 @@ import { prisma } from '@/lib/db';
 
 export async function GET(req) {
   try {
+    console.log("API Orders route called");
+    
     const session = await getServerSession(authOptions);
     
     // Check if user is authenticated
     if (!session || !session.user) {
+      console.log("Unauthorized - no session or user");
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
+    
+    console.log(`Getting profile for user: ${session.user.email}`);
     
     // Get the current user's profile
     const user = await prisma.user.findUnique({
@@ -18,13 +23,22 @@ export async function GET(req) {
       include: { profile: true }
     });
     
-    if (!user || !user.profile) {
+    if (!user) {
+      console.log("User not found");
+      return NextResponse.json({ error: 'User not found' }, { status: 404 });
+    }
+    
+    if (!user.profile) {
+      console.log("User profile not found");
       return NextResponse.json({ error: 'User profile not found' }, { status: 404 });
     }
     
     // Parse query parameters
     const url = new URL(req.url);
     const status = url.searchParams.get('status');
+    const recentOnly = url.searchParams.get('recentOnly') === 'true';
+    
+    console.log(`Query params: status=${status}, recentOnly=${recentOnly}`);
     
     // Create the where clause
     const whereClause = {
@@ -34,7 +48,22 @@ export async function GET(req) {
     // Add status filter if provided
     if (status && status !== 'all') {
       whereClause.status = status.toUpperCase();
+      
+      // If we're filtering for DELIVERED or CANCELLED orders and recentOnly is true,
+      // only show orders from the last 24 hours
+      if ((status.toUpperCase() === 'DELIVERED' || status.toUpperCase() === 'CANCELLED') && recentOnly) {
+        const yesterday = new Date();
+        yesterday.setDate(yesterday.getDate() - 1);
+        
+        whereClause.createdAt = {
+          gte: yesterday
+        };
+        
+        console.log(`Filtering ${status.toUpperCase()} orders since: ${yesterday.toISOString()}`);
+      }
     }
+    
+    console.log('Fetching orders with filter:', JSON.stringify(whereClause, null, 2));
     
     // Get orders
     const orders = await prisma.purchasedOrder.findMany({
@@ -68,6 +97,15 @@ export async function GET(req) {
       }
     });
     
+    console.log(`Found ${orders.length} orders matching criteria`);
+    
+    // Check if orders were actually found
+    if (orders.length === 0) {
+      console.log('No orders found matching criteria');
+    } else {
+      console.log(`First order ID: ${orders[0].id}, status: ${orders[0].status}`);
+    }
+    
     // Format orders for the frontend
     const formattedOrders = orders.map(order => {
       // Calculate the fees
@@ -83,17 +121,17 @@ export async function GET(req) {
         status: order.status,
         items: order.items.map(item => ({
           id: item.id,
-          name: item.foodItem.name,
+          name: item.foodItem?.name || "Unknown Item",
           quantity: item.quantity,
           price: item.price,
-          image: item.foodItem.image
+          image: item.foodItem?.image
         })),
         subtotal,
         deliveryFee,
         serviceFee,
         total: order.totalAmount,
-        provider: order.provider.businessName,
-        providerLogo: order.provider.logo,
+        provider: order.provider?.businessName || "Unknown Provider",
+        providerLogo: order.provider?.logo,
         deliveryAddress: order.deliveryAddress,
         deliveryNotes: order.deliveryNotes,
         paymentMethod: order.paymentMethod,
@@ -110,6 +148,6 @@ export async function GET(req) {
     
   } catch (error) {
     console.error('Error fetching orders:', error);
-    return NextResponse.json({ error: 'Failed to fetch orders' }, { status: 500 });
+    return NextResponse.json({ error: 'Failed to fetch orders', details: error.message }, { status: 500 });
   }
 }
