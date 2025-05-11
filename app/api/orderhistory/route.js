@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
-import { authOptions } from '@/app/api/auth/[...nextauth]/route';
+import { authOptions } from '@/lib/auth'; // Use the correct path to your authOptions
 import { prisma } from '@/lib/db';
 
 export async function GET(req) {
@@ -54,6 +54,7 @@ export async function GET(req) {
           include: {
             foodItem: {
               select: {
+                id: true,
                 name: true,
                 image: true
               }
@@ -86,8 +87,10 @@ export async function GET(req) {
         id: order.id,
         date: order.createdAt.toISOString(),
         status: order.status,
+        isReviewed: order.isReviewed,
         items: order.items.map(item => ({
           id: item.id,
+          foodItemId: item.foodItemId,
           name: item.foodItem?.name || "Unknown Item",
           quantity: item.quantity,
           price: item.price,
@@ -123,7 +126,11 @@ export async function GET(req) {
     });
     
   } catch (error) {
-    console.error('Error fetching order history:', error);
-    return NextResponse.json({ error: 'Failed to fetch order history', details: error.message }, { status: 500 });
+    // Fixed error handling to avoid null payload issues
+    console.error('Error fetching order history:', error?.message || 'Unknown error');
+    return NextResponse.json({ 
+      error: 'Failed to fetch order history', 
+      details: error?.message || 'Unknown error' 
+    }, { status: 500 });
   }
 }

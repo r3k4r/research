@@ -8,7 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/toast';
-import { CheckCircle, Clock, Package, AlertTriangle, Loader2 } from 'lucide-react';
+import { CheckCircle, Clock, Package, AlertTriangle, Loader2, Star } from 'lucide-react';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -21,6 +21,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import { useSession } from 'next-auth/react';
 import Image from 'next/image';
+import ReviewDialog from '@/components/ReviewDialog';
 
 export default function OrdersPage() {
   const router = useRouter();
@@ -33,6 +34,10 @@ export default function OrdersPage() {
   const [orderToCancel, setOrderToCancel] = useState(null);
   const [isCancelling, setIsCancelling] = useState(false);
   const [currentTime, setCurrentTime] = useState(Date.now());
+  const [reviewModalOpen, setReviewModalOpen] = useState(false);
+  const [reviewingItem, setReviewingItem] = useState(null);
+  const [reviewingOrderId, setReviewingOrderId] = useState(null);
+  const [isSubmittingReview, setIsSubmittingReview] = useState(false);
 
   const isMountedRef = useRef(true);
   const isInitialFetchDoneRef = useRef(false);
@@ -93,15 +98,19 @@ export default function OrdersPage() {
       console.log(`Received ${data.length} orders from API`, data);
 
       if (isMountedRef.current) {
+        console.log('Setting orders state with data:', data);
         setOrders(data);
         isInitialFetchDoneRef.current = true;
-        setLoading(false); // Make sure to set loading to false here
       }
     } catch (error) {
       console.error('Error fetching orders:', error);
       if (isMountedRef.current) {
         showToast('Failed to load orders', 'error');
-        setLoading(false); // Also set loading to false on error
+      }
+    } finally {
+      if (isMountedRef.current) {
+        console.log('Finished loading, setting loading state to false');
+        setLoading(false);
       }
     }
   }, [showToast, activeTab]);
@@ -156,6 +165,26 @@ export default function OrdersPage() {
       initialFetchDone: isInitialFetchDoneRef.current
     });
   }, [loading, orders, filteredOrders, activeTab]);
+
+  useEffect(() => {
+    console.log('Orders state changed:', {
+      orderCount: orders.length,
+      orders: orders,
+      loading,
+      activeTab
+    });
+  }, [orders, loading, activeTab]);
+
+  useEffect(() => {
+    if (orders.length > 0) {
+      console.log("Order API response structure:", orders[0]);
+      console.log("Order items structure:", orders[0].items);
+      if (orders[0].items.length > 0) {
+        console.log("First item structure:", orders[0].items[0]);
+        console.log("foodItemId available:", orders[0].items[0].foodItemId);
+      }
+    }
+  }, [orders]);
 
   const formatDate = (dateString) => {
     const date = new Date(dateString);
@@ -301,6 +330,66 @@ export default function OrdersPage() {
     setCancelDialogOpen(true);
   };
 
+  const handleReviewSubmit = async (reviewData) => {
+    try {
+      setIsSubmittingReview(true);
+      
+      const response = await fetch('/api/reviews', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(reviewData)
+      });
+      
+      const data = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to submit review');
+      }
+      
+      showToast('Review submitted successfully', 'success');
+      
+      setOrders(prevOrders => prevOrders.map(order => {
+        if (order.id === reviewingOrderId) {
+          return {...order, isReviewed: true};
+        }
+        return order;
+      }));
+      
+      setReviewModalOpen(false);
+    } catch (error) {
+      console.error('Error submitting review:', error);
+      showToast(error.message || 'Failed to submit review', 'error');
+    } finally {
+      setIsSubmittingReview(false);
+    }
+  };
+
+  const handleOpenReviewModal = (order) => {
+    if (order.items && order.items.length > 0) {
+      const firstItem = order.items[0];
+      
+      // Debug more details of the item
+      console.log('ORDERS PAGE - Full item data:', firstItem);
+      
+      // Ensure we include all possible ID fields
+      const itemForReview = {
+        foodItemId: firstItem.foodItemId,
+        id: firstItem.id,
+        name: firstItem.name
+      };
+      
+      console.log('ORDERS PAGE - Review info being passed:', itemForReview);
+      
+      setReviewingItem(itemForReview);
+      setReviewingOrderId(order.id);
+      setReviewModalOpen(true);
+    } else {
+      showToast('Cannot review this order: no items found', 'error');
+    }
+  };
+
   if (status === 'loading') {
     return (
       <div className="min-h-screen bg-gray-50">
@@ -342,6 +431,13 @@ export default function OrdersPage() {
                     ? "No orders cancelled in the past 24 hours"
                     : "No orders found"}
                 </p>
+                <Button
+                  onClick={() => fetchOrders(activeTab)}
+                  variant="outline"
+                  className="mt-4"
+                >
+                  Refresh Orders
+                </Button>
               </div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -470,6 +566,26 @@ export default function OrdersPage() {
                             {order.timeline && order.timeline[0] && (
                               <p>Delivered at: {formatDate(order.timeline[0].date)}</p>
                             )}
+                            {!order.isReviewed && (
+                              <div className="mt-3 border-t pt-3">
+                                <Button 
+                                  onClick={() => handleOpenReviewModal(order)}
+                                  variant="outline" 
+                                  size="sm"
+                                  className="w-full text-primary border-primary hover:bg-primary/10"
+                                >
+                                  <Star className="h-4 w-4 mr-1" /> Leave a Review
+                                </Button>
+                              </div>
+                            )}
+                            {order.isReviewed && (
+                              <div className="mt-3 border-t pt-3">
+                                <div className="flex items-center justify-center bg-white rounded-md p-2 text-green-700 border border-green-200">
+                                  <CheckCircle className="h-4 w-4 mr-1" /> 
+                                  <span>Order Reviewed</span>
+                                </div>
+                              </div>
+                            )}
                           </div>
                         )}
 
@@ -529,6 +645,15 @@ export default function OrdersPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <ReviewDialog
+        isOpen={reviewModalOpen}
+        onClose={() => setReviewModalOpen(false)}
+        onSubmit={handleReviewSubmit}
+        foodItem={reviewingItem}
+        orderId={reviewingOrderId}
+        isSubmitting={isSubmittingReview}
+      />
 
       {ToastComponent}
     </div>

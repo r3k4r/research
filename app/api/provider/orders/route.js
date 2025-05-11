@@ -160,7 +160,8 @@ export async function POST(req) {
     
     // Parse request body
     const data = await req.json();
-    const { orderId, status, notes, action, estimatedMinutes } = data;
+    const { orderId, status, action, estimatedMinutes } = data;
+    let { notes } = data;  // Changed from const to let to allow modification
     
     if (!orderId) {
       return NextResponse.json({ error: 'Order ID is required' }, { status: 400 });

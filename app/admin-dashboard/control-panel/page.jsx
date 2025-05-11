@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect, useRef } from "react"
+import { useRouter } from "next/navigation" // Added missing router import
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Button } from "@/components/ui/button"
@@ -42,7 +43,8 @@ import {
   Plus, 
   Star,
   Settings,
-  AlertCircle
+  AlertCircle,
+  Eye as EyeIcon
 } from "lucide-react"
 import { Textarea } from "@/components/ui/textarea"
 import { z } from "zod" 
@@ -139,6 +141,7 @@ export default function ControlPanelPage() {
   const { showToast, ToastComponent } = useToast()
   const [activeTab, setActiveTab] = useState("providers")
   const [loading, setLoading] = useState(false)
+  const router = useRouter() // Initialize router
   
   // Providers state
   const [providers, setProviders] = useState([])
@@ -719,6 +722,36 @@ export default function ControlPanelPage() {
     review.foodItemName?.toLowerCase().includes(searchReviewTerm.toLowerCase())
   )
   
+  const renderRatingStars = (rating) => {
+    const stars = [];
+    const fullStars = Math.floor(rating);
+    const hasHalfStar = rating % 1 >= 0.5;
+    
+    for (let i = 0; i < 5; i++) {
+      if (i < fullStars) {
+        stars.push(<Star key={i} className="h-4 w-4 text-yellow-400 fill-yellow-400" />);
+      } else if (i === fullStars && hasHalfStar) {
+        stars.push(
+          <span key={i} className="relative">
+            <Star className="h-4 w-4 text-yellow-400" />
+            <span className="absolute inset-0 overflow-hidden w-[50%]">
+              <Star className="h-4 w-4 text-yellow-400 fill-yellow-400" />
+            </span>
+          </span>
+        );
+      } else {
+        stars.push(<Star key={i} className="h-4 w-4 text-yellow-400" />);
+      }
+    }
+    
+    return (
+      <div className="flex">
+        {stars}
+        <span className="ml-1 text-sm font-medium">{rating.toFixed(1)}</span>
+      </div>
+    );
+  };
+
   return (
     <div className="space-y-6" id="control-panel-root">
       {ToastComponent}
@@ -974,6 +1007,7 @@ export default function ControlPanelPage() {
                       <TableHead>User</TableHead>
                       <TableHead>Food Item</TableHead>
                       <TableHead>Rating</TableHead>
+                      <TableHead>Type</TableHead>
                       <TableHead className="hidden md:table-cell">Comment</TableHead>
                       <TableHead className="hidden md:table-cell">Date</TableHead>
                       <TableHead className="text-right pr-4">Actions</TableHead>
@@ -982,13 +1016,13 @@ export default function ControlPanelPage() {
                   <TableBody>
                     {loading ? (
                       <TableRow>
-                        <TableCell colSpan={6} className="text-center py-6 text-muted-foreground">
+                        <TableCell colSpan={7} className="text-center py-6 text-muted-foreground">
                           Loading...
                         </TableCell>
                       </TableRow>
                     ) : filteredReviews.length === 0 ? (
                       <TableRow>
-                        <TableCell colSpan={6} className="text-center py-6 text-muted-foreground">
+                        <TableCell colSpan={7} className="text-center py-6 text-muted-foreground">
                           No reviews found
                         </TableCell>
                       </TableRow>
@@ -1003,9 +1037,13 @@ export default function ControlPanelPage() {
                           </TableCell>
                           <TableCell>
                             <div className="flex items-center">
-                              {review.rating}
-                              <Star className="h-4 w-4 ml-1 text-yellow-400 fill-yellow-400" />
+                              {renderRatingStars(review.rating)}
                             </div>
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant="outline" className="capitalize">
+                              {review.type.toLowerCase().replace('_', ' ')}
+                            </Badge>
                           </TableCell>
                           <TableCell className="hidden md:table-cell max-w-[200px]">
                             <div className="truncate">{review.comment || "No comment"}</div>
@@ -1014,17 +1052,26 @@ export default function ControlPanelPage() {
                             {new Date(review.createdAt).toLocaleDateString()}
                           </TableCell>
                           <TableCell className="text-right">
-                            <Button 
-                              variant="ghost" 
-                              size="sm"
-                              className="h-8 text-red-600 hover:text-red-700 hover:bg-red-50"
-                              onClick={() => {
-                                setSelectedReview(review);
-                                setIsDeleteReviewDialogOpen(true);
-                              }}
-                            >
-                              <Trash2 className="h-4 w-4 mr-1" /> Delete
-                            </Button>
+                            <div className="flex items-center justify-end gap-2">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => router.push(`/admin-dashboard/reviews/${review.id}`)}
+                              >
+                                <EyeIcon className="h-4 w-4 mr-1" /> View
+                              </Button>
+                              <Button 
+                                variant="ghost" 
+                                size="sm"
+                                className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                                onClick={() => {
+                                  setSelectedReview(review);
+                                  setIsDeleteReviewDialogOpen(true);
+                                }}
+                              >
+                                <Trash2 className="h-4 w-4 mr-1" /> Delete
+                              </Button>
+                            </div>
                           </TableCell>
                         </TableRow>
                       ))

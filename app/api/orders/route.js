@@ -121,6 +121,7 @@ export async function GET(req) {
         status: order.status,
         items: order.items.map(item => ({
           id: item.id,
+          foodItemId: item.foodItemId,  // CRITICAL: Include the foodItemId here
           name: item.foodItem?.name || "Unknown Item",
           quantity: item.quantity,
           price: item.price,
