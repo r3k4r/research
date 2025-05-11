@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { Search, User, Settings, LogOut, Menu, X, ShoppingCart } from "lucide-react"
+import { Search, User, Settings, LogOut, Menu, X, ShoppingCart, History } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
   DropdownMenu,
@@ -134,9 +134,15 @@ export default function Navbar() {
                       </div>
                       <DropdownMenuSeparator/>
                       <DropdownMenuItem className='mb-2'>
-                        <Link href={session.user.role === 'PROVIDER' ? '/provider-dashboard/settings' : 'profile'} className="flex items-center">
+                        <Link href={session.user.role === 'PROVIDER' ? '/provider-dashboard/settings' : '/profile'} className="flex items-center">
                           <User className="mr-2 h-4 w-4" />
                           <span>Profile</span>
+                        </Link>
+                      </DropdownMenuItem>  
+                      <DropdownMenuItem className='mb-2'>
+                        <Link href={'/orderhistory'} className="flex items-center">
+                          <History className="mr-2 h-4 w-4" />
+                          <span>Order History</span>
                         </Link>
                       </DropdownMenuItem>  
                       <DropdownMenuItem className="bg-red-600 text-white" onClick={signOut}>
