@@ -33,53 +33,6 @@ export default function Header() {
                     Back to Main Page
                 </Button>
               </Link>
-
-          {status === "authenticated" && session?.user && (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="sm" className="h-8 gap-2 px-1">
-                  {session?.user?.image ? (
-                    <Image 
-                      src={session.user.image} 
-                      alt="Profile"
-                      width={24}
-                      height={24}
-                      className="rounded-full"
-                    />
-                  ) : (
-                    <div className="h-6 w-6 rounded-full bg-primary flex items-center justify-center">
-                      <span className="text-xs font-medium text-primary-foreground">
-                        {session?.user?.name?.[0].toUpperCase() || "U"}
-                      </span>
-                    </div>
-                  )}
-                  <span className="hidden md:inline text-sm">
-                    {session?.user?.name?.split(' ')[0] || "User"}
-                  </span>
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-56">
-                <div className="p-2 text-sm">
-                  <p className="font-medium">{session?.user.name}</p>
-                  <p className="text-xs text-muted-foreground truncate">{session?.user.email || ""}</p>
-                </div>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem>
-                  <User className="mr-2 h-4 w-4" />
-                  <span>Profile</span>
-                </DropdownMenuItem>
-                <DropdownMenuItem>
-                  <Settings className="mr-2 h-4 w-4" />
-                  <span>Settings</span>
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={handleLogout} className="text-red-600 focus:text-red-600">
-                  <LogOut className="mr-2 h-4 w-4" />
-                  <span>Log out</span>
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          )}
         </div>
       </div>
     </header>
