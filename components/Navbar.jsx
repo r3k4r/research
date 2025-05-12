@@ -35,31 +35,45 @@ export default function Navbar() {
   const { openCart, totalItems } = useCart()
   const { data: session, status } = useSession()
   const menuRef = useRef(null)
+  const menuButtonRef = useRef(null)
 
   // Close menu when clicking outside
   useEffect(() => {
     const handleClickOutside = (event) => {
+      // Don't close if clicking on the menu button itself
+      if (menuButtonRef.current && menuButtonRef.current.contains(event.target)) {
+        return;
+      }
+      
+      // Close if clicking outside the menu
       if (menuRef.current && !menuRef.current.contains(event.target)) {
-        setIsMenuOpen(false)
+        setIsMenuOpen(false);
       }
     }
 
     if (isMenuOpen) {
-      document.addEventListener('mousedown', handleClickOutside)
-    }
-
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside)
+      // Use a slight delay to avoid immediate execution
+      const timer = setTimeout(() => {
+        document.addEventListener('mousedown', handleClickOutside);
+      }, 10);
+      
+      return () => {
+        clearTimeout(timer);
+        document.removeEventListener('mousedown', handleClickOutside);
+      }
     }
   }, [isMenuOpen])
 
   // Handle link click to close menu
   const handleLinkClick = () => {
-    setIsMenuOpen(false)
+    setIsMenuOpen(false);
   }
 
- const toggleMenu = () => setIsMenuOpen(prev => !prev);
-
+  // Modified toggle function to prevent event bubbling issues
+  const toggleMenu = (e) => {
+    e.stopPropagation(); // Prevent event bubbling
+    setIsMenuOpen(prev => !prev);
+  };
 
   return (
     <>
@@ -171,6 +185,7 @@ export default function Navbar() {
                 <Button
                   variant="ghost"
                   onClick={toggleMenu}
+                  ref={menuButtonRef}
                   className="inline-flex items-center justify-center p-2 rounded-md text-gray-400 hover:text-primary hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-primary"
                 >
                   <span className="sr-only">Open main menu</span>
