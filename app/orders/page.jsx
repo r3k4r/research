@@ -1,14 +1,13 @@
 'use client';
 
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import Navbar from '@/components/Navbar';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/toast';
-import { CheckCircle, Clock, Package, AlertTriangle, Loader2, Star } from 'lucide-react';
+import { CheckCircle, Clock, Package, AlertTriangle, Loader2, Star, RefreshCcw } from 'lucide-react';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -24,167 +23,68 @@ import Image from 'next/image';
 import ReviewDialog from '@/components/ReviewDialog';
 
 export default function OrdersPage() {
+  const { data: session } = useSession();
   const router = useRouter();
   const { data: session, status } = useSession();
   const { showToast, ToastComponent } = useToast();
+  
   const [orders, setOrders] = useState([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('all');
+  const [currentTime, setCurrentTime] = useState(Date.now());
+  
   const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
   const [orderToCancel, setOrderToCancel] = useState(null);
   const [isCancelling, setIsCancelling] = useState(false);
-  const [currentTime, setCurrentTime] = useState(Date.now());
   const [reviewModalOpen, setReviewModalOpen] = useState(false);
   const [reviewingItem, setReviewingItem] = useState(null);
   const [reviewingOrderId, setReviewingOrderId] = useState(null);
   const [isSubmittingReview, setIsSubmittingReview] = useState(false);
 
-  const isMountedRef = useRef(true);
-  const isInitialFetchDoneRef = useRef(false);
-  const lastFetchTimeRef = useRef(0);
-  const MIN_FETCH_INTERVAL = 2000;
-
-  useEffect(() => {
-    if (status === 'unauthenticated') {
-      router.push('/api/auth/signin?callbackUrl=/orders');
-    }
-
-    return () => {
-      isMountedRef.current = false;
-    };
-  }, [status, router]);
-
-  const fetchOrders = useCallback(async (tabValue = activeTab) => {
-    if (!isMountedRef.current) return;
-
-    const now = Date.now();
-    if (now - lastFetchTimeRef.current < MIN_FETCH_INTERVAL && isInitialFetchDoneRef.current) {
-      return;
-    }
-
-    lastFetchTimeRef.current = now;
-
+  const fetchOrders = async (tabValue) => {
+    console.log(`Fetching orders for tab: ${tabValue}`);
+    setLoading(true);
+    
     try {
-      setLoading(true);
-
       const params = new URLSearchParams();
       if (tabValue !== 'all') {
         params.append('status', tabValue);
         
-        // Add recent filter for delivered and cancelled orders
         if (tabValue === 'DELIVERED' || tabValue === 'CANCELLED') {
           params.append('recentOnly', 'true');
         }
       }
-      params.append('t', `${Date.now()}-${Math.random()}`);
-
-      console.log(`Fetching orders with tab: ${tabValue}, params: ${params.toString()}`);
-
-      const response = await fetch(`/api/orders?${params.toString()}`, {
-        method: 'GET',
-        cache: 'no-store',
-        headers: {
-          'Cache-Control': 'no-cache, no-store, must-revalidate',
-          'Pragma': 'no-cache',
-          'Expires': '0',
-        },
-      });
-
+      
+      params.append('t', Date.now());
+      
+      const response = await fetch(`/api/orders?${params.toString()}`);
+      
       if (!response.ok) {
         throw new Error('Failed to fetch orders');
       }
-
+      
       const data = await response.json();
-      console.log(`Received ${data.length} orders from API`, data);
-
-      if (isMountedRef.current) {
-        console.log('Setting orders state with data:', data);
-        setOrders(data);
-        isInitialFetchDoneRef.current = true;
-      }
+      console.log(`Retrieved ${data.length} orders`);
+      setOrders(data);
     } catch (error) {
       console.error('Error fetching orders:', error);
-      if (isMountedRef.current) {
-        showToast('Failed to load orders', 'error');
-      }
+      showToast('Failed to load orders', 'error');
     } finally {
-      if (isMountedRef.current) {
-        console.log('Finished loading, setting loading state to false');
-        setLoading(false);
-      }
+      setLoading(false);
     }
-  }, [showToast, activeTab]);
+  };
 
   useEffect(() => {
-    if (status === 'authenticated' && !isInitialFetchDoneRef.current) {
-      fetchOrders(activeTab);
-    }
-  }, [status, fetchOrders, activeTab]);
+    fetchOrders(activeTab);
+    
+    const timer = setInterval(() => setCurrentTime(Date.now()), 60000);
+    return () => clearInterval(timer);
+  }, []);
 
-  useEffect(() => {
-    if (status === 'authenticated') {
-      const intervalId = setInterval(() => {
-        fetchOrders(activeTab);
-      }, 60000);
-
-      return () => clearInterval(intervalId);
-    }
-  }, [status, fetchOrders, activeTab]);
-
-  useEffect(() => {
-    if (status === 'authenticated') {
-      const timerInterval = setInterval(() => {
-        setCurrentTime(Date.now());
-      }, 30000); 
-
-      return () => clearInterval(timerInterval);
-    }
-  }, [status]);
-
-  const handleTabChange = useCallback((value) => {
+  const handleTabChange = (value) => {
     setActiveTab(value);
     fetchOrders(value);
-  }, [fetchOrders]);
-
-  const filteredOrders = activeTab === 'all'
-    ? orders
-    : orders.filter(order => order.status === activeTab);
-
-  useEffect(() => {
-    if (filteredOrders) {
-      console.log(`Tab: ${activeTab}, Filtered orders: ${filteredOrders.length}`, filteredOrders);
-    }
-  }, [filteredOrders, activeTab]);
-
-  useEffect(() => {
-    console.log("Current state:", {
-      loading,
-      orders: orders.length,
-      filteredOrders: filteredOrders.length,
-      activeTab,
-      initialFetchDone: isInitialFetchDoneRef.current
-    });
-  }, [loading, orders, filteredOrders, activeTab]);
-
-  useEffect(() => {
-    console.log('Orders state changed:', {
-      orderCount: orders.length,
-      orders: orders,
-      loading,
-      activeTab
-    });
-  }, [orders, loading, activeTab]);
-
-  useEffect(() => {
-    if (orders.length > 0) {
-      console.log("Order API response structure:", orders[0]);
-      console.log("Order items structure:", orders[0].items);
-      if (orders[0].items.length > 0) {
-        console.log("First item structure:", orders[0].items[0]);
-        console.log("foodItemId available:", orders[0].items[0].foodItemId);
-      }
-    }
-  }, [orders]);
+  };
 
   const formatDate = (dateString) => {
     const date = new Date(dateString);
@@ -212,7 +112,7 @@ export default function OrdersPage() {
     const estimatedTime = new Date(order.estimatedDelivery);
     const minTime = new Date(estimatedTime);
     const maxTime = new Date(estimatedTime);
-    maxTime.setMinutes(maxTime.getMinutes() + 5); // Add 5 minute buffer
+    maxTime.setMinutes(maxTime.getMinutes() + 5);
     
     return `${formatTime(minTime)}-${formatTime(maxTime)}`;
   };
@@ -342,10 +242,8 @@ export default function OrdersPage() {
         body: JSON.stringify(reviewData)
       });
       
-      const data = await response.json();
-      
       if (!response.ok) {
-        throw new Error(data.error || 'Failed to submit review');
+        throw new Error('Failed to submit review');
       }
       
       showToast('Review submitted successfully', 'success');
@@ -360,7 +258,7 @@ export default function OrdersPage() {
       setReviewModalOpen(false);
     } catch (error) {
       console.error('Error submitting review:', error);
-      showToast(error.message || 'Failed to submit review', 'error');
+      showToast('Failed to submit review', 'error');
     } finally {
       setIsSubmittingReview(false);
     }
@@ -369,20 +267,11 @@ export default function OrdersPage() {
   const handleOpenReviewModal = (order) => {
     if (order.items && order.items.length > 0) {
       const firstItem = order.items[0];
-      
-      // Debug more details of the item
-      console.log('ORDERS PAGE - Full item data:', firstItem);
-      
-      // Ensure we include all possible ID fields
-      const itemForReview = {
+      setReviewingItem({
         foodItemId: firstItem.foodItemId,
         id: firstItem.id,
         name: firstItem.name
-      };
-      
-      console.log('ORDERS PAGE - Review info being passed:', itemForReview);
-      
-      setReviewingItem(itemForReview);
+      });
       setReviewingOrderId(order.id);
       setReviewModalOpen(true);
     } else {
@@ -390,31 +279,34 @@ export default function OrdersPage() {
     }
   };
 
-  if (status === 'loading') {
-    return (
-      <div className="min-h-screen bg-gray-50">
-        <div className="container mx-auto px-4 py-8 flex justify-center items-center">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
-          <span className="ml-2">Loading...</span>
-        </div>
-      </div>
-    );
-  }
+  const filteredOrders = activeTab === 'all' ? orders : orders.filter(order => order.status === activeTab);
 
   return (
     <div className="min-h-screen bg-gray-50">
       <main className="container mx-auto px-4 py-8">
         <h1 className="text-2xl font-bold mb-6">My Orders</h1>
+        
+        <Tabs value={activeTab} onValueChange={handleTabChange}>
+          <div className='flex justify-start items-center gap-4'>
+              <TabsList className="mb-6">
+                <TabsTrigger value="all">All Orders</TabsTrigger>
+                <TabsTrigger value="PENDING">Pending</TabsTrigger>
+                <TabsTrigger value="PREPARING">Preparing</TabsTrigger>
+                <TabsTrigger value="IN_TRANSIT">In Transit</TabsTrigger>
+                <TabsTrigger value="DELIVERED">Delivered</TabsTrigger>
+                <TabsTrigger value="CANCELLED">Cancelled</TabsTrigger>
+              </TabsList>
 
-        <Tabs defaultValue="all" value={activeTab} onValueChange={handleTabChange}>
-          <TabsList className="mb-6">
-            <TabsTrigger value="all">All Orders</TabsTrigger>
-            <TabsTrigger value="PENDING">Pending</TabsTrigger>
-            <TabsTrigger value="PREPARING">Preparing</TabsTrigger>
-            <TabsTrigger value="IN_TRANSIT">In Transit</TabsTrigger>
-            <TabsTrigger value="DELIVERED">Delivered</TabsTrigger>
-            <TabsTrigger value="CANCELLED">Cancelled</TabsTrigger>
-          </TabsList>
+              <div className="mb-4">
+              <Button 
+                onClick={() => fetchOrders(activeTab)} 
+                variant="outline" 
+                size="sm">
+                Refresh Orders
+                <RefreshCcw className={`${loading ? 'animate-spin ' : ''}ml-2 h-4 w-4`} />
+              </Button>
+            </div>
+          </div>
 
           <TabsContent value={activeTab}>
             {loading ? (
@@ -505,7 +397,7 @@ export default function OrdersPage() {
                           </div>
                         </div>
 
-                        {(order.status === 'ACCEPTED') && (
+                        {order.status === 'ACCEPTED' && (
                           <div className="bg-blue-50 p-3 rounded-md text-sm">
                             <p className="font-medium text-blue-800">Your order has been accepted</p>
                             {order.estimatedDelivery && (
@@ -523,7 +415,7 @@ export default function OrdersPage() {
                           </div>
                         )}
 
-                        {(order.status === 'PREPARING') && (
+                        {order.status === 'PREPARING' && (
                           <div className="bg-blue-50 p-3 rounded-md text-sm">
                             <p className="font-medium text-blue-800">We're getting your order ready</p>
                             {order.estimatedDelivery && (
@@ -535,7 +427,7 @@ export default function OrdersPage() {
                           </div>
                         )}
 
-                        {(order.status === 'READY_FOR_PICKUP') && (
+                        {order.status === 'READY_FOR_PICKUP' && (
                           <div className="bg-blue-50 p-3 rounded-md text-sm">
                             <p className="font-medium text-blue-800">Your order is ready for pickup</p>
                             {order.estimatedDelivery && (
@@ -547,7 +439,7 @@ export default function OrdersPage() {
                           </div>
                         )}
 
-                        {(order.status === 'IN_TRANSIT') && (
+                        {order.status === 'IN_TRANSIT' && (
                           <div className="bg-blue-50 p-3 rounded-md text-sm">
                             <p className="font-medium text-blue-800">Your order is on the way</p>
                             {order.estimatedDelivery && (

@@ -119,10 +119,11 @@ export async function GET(req) {
         id: order.id,
         date: order.createdAt.toISOString(),
         status: order.status,
+        isReviewed: order.isReviewed,
         items: order.items.map(item => ({
           id: item.id,
-          foodItemId: item.foodItemId,  // CRITICAL: Include the foodItemId here
-          name: item.foodItem?.name || "Unknown Item",
+          foodItemId: item.foodItemId,  
+          name: item.foodItem?.name ,
           quantity: item.quantity,
           price: item.price,
           image: item.foodItem?.image
@@ -131,7 +132,7 @@ export async function GET(req) {
         deliveryFee,
         serviceFee,
         total: order.totalAmount,
-        provider: order.provider?.businessName || "Unknown Provider",
+        provider: order.provider?.businessName ,
         providerLogo: order.provider?.logo,
         deliveryAddress: order.deliveryAddress,
         deliveryNotes: order.deliveryNotes,

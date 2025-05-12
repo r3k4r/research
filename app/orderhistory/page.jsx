@@ -84,7 +84,6 @@ const OrderHistoryPage = () => {
     }
   };
 
-  // Add a useEffect to log the structure of order items when they load
   useEffect(() => {
     if (orders.length > 0) {
       console.log("First order structure:", orders[0]);
