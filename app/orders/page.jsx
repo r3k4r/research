@@ -23,8 +23,6 @@ import Image from 'next/image';
 import ReviewDialog from '@/components/ReviewDialog';
 
 export default function OrdersPage() {
-  const { data: session } = useSession();
-  const router = useRouter();
   const { showToast, ToastComponent } = useToast();
   
   const [orders, setOrders] = useState([]);
