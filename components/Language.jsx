@@ -5,8 +5,8 @@ import { useState, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 
 const languages = [
-  { code: 'en', label: 'English', url: "/images/en.png" },
-  { code: 'ku', label: 'کوردی', url: "/images/ku.png" },
+  { code: 'en', label: 'English', url: "https://upload.wikimedia.org/wikipedia/en/thumb/a/a4/Flag_of_the_United_States.svg/1200px-Flag_of_the_United_States.svg.png?20250221172329" },
+  { code: 'ku', label: 'کوردی', url: "https://upload.wikimedia.org/wikipedia/commons/thumb/3/35/Flag_of_Kurdistan.svg/1200px-Flag_of_Kurdistan.svg.png" },
 ];
 
 const Language = () => {
@@ -63,7 +63,7 @@ const Language = () => {
     <div className="relative inline-block text-left" ref={dropdownRef}>
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center text-sm font-medium text-gray-700 hover:text-primary rounded-md focus:outline-none"
+        className="flex items-center text-sm font-medium text-gray-700 hover:text-primary dark:text-white dark:hover:text-gray-200 rounded-md focus:outline-none"
         aria-expanded={isOpen}
         aria-haspopup="true"
       >
