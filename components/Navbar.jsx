@@ -58,13 +58,12 @@ export default function Navbar() {
     setIsMenuOpen(false)
   }
 
-  const toggleMenu = () => {
-    setIsMenuOpen(!isMenuOpen)
-  }
+ const toggleMenu = () => setIsMenuOpen(prev => !prev);
+
 
   return (
     <>
-      <nav className="bg-white shadow-md dark:bg-gray-900 dark:shadow-gray-800">
+      <nav className="bg-white shadow-md dark:bg-dark10 dark:border-[1px] dark:border-b-gray-500/40 dark:shadow-gray-600">
         <div className="container mx-auto px-4">
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center">
@@ -78,7 +77,7 @@ export default function Navbar() {
                   <Link
                     key={index}
                     href={link.href}
-                    className="text-gray-700 hover:text-primary px-3 py-2 rounded-md text-sm font-medium whitespace-nowrap"
+                    className="text-gray-700 hover:text-black dark:text-white dark:hover:text-gray-300 hover:text-primary px-3 py-2 rounded-md text-sm font-medium whitespace-nowrap"
                   >
                     {link.label}
                   </Link>
@@ -195,7 +194,7 @@ export default function Navbar() {
                   key={index}
                   href={link.href}
                   onClick={handleLinkClick}
-                  className="text-gray-700 hover:text-primary block px-3 py-2 rounded-md text-base font-medium"
+                  className="text-gray-700 bg-gray-100 hover:bg-gray-200 hover:text-primary dark:text-white dark:bg-dark20 dark:hover:bg-dark20/70 block px-3 py-2 rounded-md text-base font-medium"
                 >
                   {link.label}
                 </Link>
@@ -225,13 +224,20 @@ export default function Navbar() {
                     <div className="text-sm font-medium text-gray-500">{session?.user.email}</div>
                   </div>
                 </div>
-                <div className="mt-3 px-2 space-y-1">
+                <div className="mt-3 px-2 space-y-2">
                   <Link
-                    href={session.user.role === 'PROVIDER' ? '/provider-dashboard/settings' : 'profile'}
+                    href={session.user.role === 'PROVIDER' ? '/provider-dashboard/settings' : '/profile'}
                     onClick={handleLinkClick}
-                    className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-primary hover:bg-gray-100"
+                    className="block px-3 py-2 rounded-md text-base font-medium  text-gray-700 bg-gray-100 hover:bg-gray-200 hover:text-primary dark:text-white dark:bg-dark20 dark:hover:bg-dark20/70"
                   >
                     Profile
+                  </Link>
+
+                  <Link 
+                    href={'/orderhistory'} 
+                    className="block px-3 py-2 rounded-md text-base font-medium  text-gray-700 bg-gray-100 hover:bg-gray-200 hover:text-primary dark:text-white dark:bg-dark20 dark:hover:bg-dark20/70"
+                    >
+                      <span>Order History</span>
                   </Link>
                   <button
                     onClick={() => {

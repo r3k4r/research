@@ -232,7 +232,7 @@ export default function Home() {
 
               <button 
                   onClick={toggleFilter} 
-                  className="md:hidden flex items-center justify-center gap-2 bg-primary text-white rounded-md px-4 py-2"
+                  className="md:hidden flex items-center justify-center gap-2 bg-primary  text-white dark:text-black rounded-md px-4 py-2"
                 >
                   {isFilterOpen ? (
                     <>
