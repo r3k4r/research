@@ -48,6 +48,7 @@ import {
 } from "lucide-react"
 import { Textarea } from "@/components/ui/textarea"
 import { z } from "zod" 
+import Link from "next/link"
 
 const providerSchema = z.object({
   email: z.string().email({ message: "Invalid email address format" }),
@@ -1029,51 +1030,51 @@ export default function ControlPanelPage() {
                     ) : (
                       filteredReviews.map((review) => (
                         <TableRow key={review.id}>
-                          <TableCell>
-                            {review.userName}
-                          </TableCell>
-                          <TableCell>
-                            {review.foodItemName}
-                          </TableCell>
-                          <TableCell>
-                            <div className="flex items-center">
-                              {renderRatingStars(review.rating)}
-                            </div>
-                          </TableCell>
-                          <TableCell>
-                            <Badge variant="outline" className="capitalize">
-                              {review.type.toLowerCase().replace('_', ' ')}
-                            </Badge>
-                          </TableCell>
-                          <TableCell className="hidden md:table-cell max-w-[200px]">
-                            <div className="truncate">{review.comment || "No comment"}</div>
-                          </TableCell>
-                          <TableCell className="hidden md:table-cell">
-                            {new Date(review.createdAt).toLocaleDateString()}
-                          </TableCell>
-                          <TableCell className="text-right">
-                            <div className="flex items-center justify-end gap-2">
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => router.push(`/admin-dashboard/reviews/${review.id}`)}
-                              >
-                                <EyeIcon className="h-4 w-4 mr-1" /> View
-                              </Button>
-                              <Button 
-                                variant="ghost" 
-                                size="sm"
-                                className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                                onClick={() => {
-                                  setSelectedReview(review);
-                                  setIsDeleteReviewDialogOpen(true);
-                                }}
-                              >
-                                <Trash2 className="h-4 w-4 mr-1" /> Delete
-                              </Button>
-                            </div>
-                          </TableCell>
-                        </TableRow>
+                            <TableCell>
+                              {review.userName}
+                            </TableCell>
+                            <TableCell>
+                              {review.foodItemName}
+                            </TableCell>
+                            <TableCell>
+                              <div className="flex items-center">
+                                {renderRatingStars(review.rating)}
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              <Badge variant="outline" className="capitalize">
+                                {review.type.toLowerCase().replace('_', ' ')}
+                              </Badge>
+                            </TableCell>
+                            <TableCell className="hidden md:table-cell max-w-[200px]">
+                              <div className="truncate">{review.comment || "No comment"}</div>
+                            </TableCell>
+                            <TableCell className="hidden md:table-cell">
+                              {new Date(review.createdAt).toLocaleDateString()}
+                            </TableCell>
+                            <TableCell className="text-right">
+                              <div className="flex items-center justify-end gap-2">
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => router.push(`/admin-dashboard/control-panel/reviews/${review.id}`)}
+                                >
+                                  <EyeIcon className="h-4 w-4 mr-1" /> View
+                                </Button>
+                                <Button 
+                                  variant="ghost" 
+                                  size="sm"
+                                  className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                                  onClick={() => {
+                                    setSelectedReview(review);
+                                    setIsDeleteReviewDialogOpen(true);
+                                  }}
+                                >
+                                  <Trash2 className="h-4 w-4 mr-1" /> Delete
+                                </Button>
+                              </div>
+                            </TableCell>
+                          </TableRow>
                       ))
                     )}
                   </TableBody>

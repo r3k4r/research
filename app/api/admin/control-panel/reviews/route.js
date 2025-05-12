@@ -3,7 +3,6 @@ import { NextResponse } from 'next/server';
 
 export async function GET() {
   try {
-    // Get all reviews with related user and food item data
     const reviews = await prisma.review.findMany({
       include: {
         userProfile: true,
@@ -14,13 +13,12 @@ export async function GET() {
       }
     });
     
-    // Format the reviews for the frontend
     const formattedReviews = reviews.map(review => ({
       id: review.id,
       userId: review.userProfileId,
-      userName: review.userProfile?.name || 'Unknown User',
+      userName: review.userProfile?.name ,
       foodItemId: review.foodItemId,
-      foodItemName: review.foodItem?.name || 'Unknown Food Item',
+      foodItemName: review.foodItem?.name ,
       rating: review.rating,
       comment: review.comment,
       type: review.type,
@@ -38,7 +36,6 @@ export async function GET() {
   }
 }
 
-// Add DELETE function to handle review deletion
 export async function DELETE(request) {
   try {
     const url = new URL(request.url);
