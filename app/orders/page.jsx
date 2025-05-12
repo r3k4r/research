@@ -25,7 +25,6 @@ import ReviewDialog from '@/components/ReviewDialog';
 export default function OrdersPage() {
   const { data: session } = useSession();
   const router = useRouter();
-  const { data: session, status } = useSession();
   const { showToast, ToastComponent } = useToast();
   
   const [orders, setOrders] = useState([]);
