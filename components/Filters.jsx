@@ -93,7 +93,7 @@ export function Filters({
   }, [maxPriceLimit]);
 
   return (
-    <div className="flex flex-col space-y-6 p-4 bg-white rounded-lg shadow-sm">
+    <div className="flex flex-col space-y-6 p-4 bg-white dark:bg-dark20 rounded-lg shadow-sm">
       {/* Price Range Section */}
       <div>
         <h3 className="font-medium mb-4">Price Range</h3>
