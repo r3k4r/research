@@ -33,6 +33,7 @@ export default function Home() {
   const observerRef = useRef(null);
   const lastFoodElementRef = useRef(null);
   const isMountedRef = useRef(true);
+  const initialFetchDoneRef = useRef(false); // Add a ref to track initial fetch
   
   const { showToast, ToastComponent } = useToast();
 
@@ -113,25 +114,23 @@ export default function Home() {
       }
     }
   }, [searchTerm, filters, showToast, isFilterApplied]); 
-  useEffect(() => {
-    isMountedRef.current = true; 
-    fetchFoods(true);
-    
-    return () => {
-      isMountedRef.current = false;
-    };
-  }, []); 
+  
+    useEffect(() => {
+    let isFirst = !initialFetchDoneRef.current;
 
-  useEffect(() => {
-    
-    const timer = setTimeout(() => {
-      if (isMountedRef.current && document.readyState === 'complete') {
-        fetchFoods(true);
-      }
-    }, 500);
-    
-    return () => clearTimeout(timer);
-  }, [searchTerm, filters]); 
+    if (isFirst) {
+      initialFetchDoneRef.current = true;
+      fetchFoods(true);
+      return;
+    }
+
+    const debounce = setTimeout(() => {
+      fetchFoods(true);
+    }, 400);
+
+    return () => clearTimeout(debounce);
+  }, [searchTerm, filters]);
+
   
   useEffect(() => {
     if (observerRef.current) {
