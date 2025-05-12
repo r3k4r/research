@@ -16,6 +16,9 @@ export default {
   			'110': '1.1'
   		},
   		colors: {
+			dark10 : '#151515',
+			dark20 : '#0a0a0a',
+			dark30 : '373A40',
   			background: 'hsl(var(--background))',
   			foreground: 'hsl(var(--foreground))',
   			card: {

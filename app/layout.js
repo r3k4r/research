@@ -34,7 +34,7 @@ export default async function RootLayout({ children }) {
   
   return (
     <html lang="en" className="light" suppressHydrationWarning>
-      <body>
+      <body className="dark:bg-dark10">
         <ThemeProvider>
           <SessionProviderWrapper session={session}>
             <CartProvider>

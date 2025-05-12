@@ -186,14 +186,14 @@ export default function Home() {
   );
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 dark:bg-dark10">
       {ToastComponent}
       
-      <main className="container mx-auto px-4 py-8 h-full">
+      <main className="container mx-auto px-4 py-8 h-full dark:bg-dark10">
         {/* Mobile filter toggle */}
         <div className="flex flex-col md:flex-row gap-6 h-full relative">
           {/* Filters sidebar */}
-          <aside className={`${isFilterOpen ? 'fixed inset-0 z-50 bg-white p-4 overflow-y-auto' : 'hidden'} 
+          <aside className={`${isFilterOpen ? 'fixed inset-0 z-50 bg-white dark:bg-dark20 p-4 overflow-y-auto' : 'hidden'} 
             md:static md:block md:w-64 md:flex-shrink-0 md:overflow-y-auto md:top-0 md:max-h-[calc(100vh-128px)]
             transition-all duration-300 ease-in-out`}>
             {isFilterOpen && (
@@ -215,11 +215,11 @@ export default function Home() {
           <div className="flex-1 overflow-y-auto scroll-smooth scroll-hidden">
             {/* Search bar visible only on larger screens */}
             <div className="flex flex-row items-center md:mb-6 gap-2">
-              <div className="relative flex-1 flex items-center max-w-md">
+              <div className="relative bg-transparent border-black dark:border-white/40 border-2 rounded-md flex-1 flex items-center max-w-md">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
                   placeholder="Search food items, restaurants, or descriptions..."
-                  className="pl-9"
+                  className="pl-9 bg-transparent border-transparent"
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   onKeyDown={(e) => {
