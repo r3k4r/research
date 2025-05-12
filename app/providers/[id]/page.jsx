@@ -388,6 +388,7 @@ const SingleProvider = () => {
                   src={provider.logo} 
                   alt={provider.businessName}
                   fill
+                  quality={100}
                   className="object-cover"
                 />
               ) : (
