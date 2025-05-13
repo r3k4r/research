@@ -354,7 +354,7 @@ const OrderHistoryPage = () => {
                 <Button className="mt-4" onClick={fetchOrders}>Try again</Button>
               </div>
             ) : sortedOrders.length === 0 ? (
-              <div className="text-center py-16 border rounded-lg bg-gray-50">
+              <div className="text-center py-16 border rounded-lg bg-gray-50 dark:bg-dark10">
                 <Package className="h-12 w-12 mx-auto text-muted-foreground" />
                 <h3 className="mt-4 text-lg font-medium">No orders found</h3>
                 <p className="text-muted-foreground mt-1">
