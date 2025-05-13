@@ -279,7 +279,7 @@ export default function OrdersPage() {
   const filteredOrders = activeTab === 'all' ? orders : orders.filter(order => order.status === activeTab);
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 dark:bg-dark10">
       <main className="container mx-auto px-4 py-8">
         <h1 className="text-2xl font-bold mb-6">My Orders</h1>
         
@@ -449,9 +449,9 @@ export default function OrdersPage() {
                         )}
 
                         {order.status === 'DELIVERED' && (
-                          <div className="bg-green-50 p-3 rounded-md text-sm">
-                            <p className="font-medium text-green-800">Order Delivered</p>
-                            <p className="mt-1">Your order has been delivered successfully</p>
+                          <div className="bg-green-50 dark:bg-green-600 p-3 rounded-md text-sm">
+                            <p className="font-medium text-green-800 dark:text-green-950">Order Delivered</p>
+                            <p className="mt-1 text-black dark:text-gray-100">Your order has been delivered successfully</p>
                             {order.timeline && order.timeline[0] && (
                               <p>Delivered at: {formatDate(order.timeline[0].date)}</p>
                             )}

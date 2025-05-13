@@ -326,7 +326,7 @@ const ServicesSection = () => {
               className="relative"
             >
               <div className="border-t-4 border-primary pt-10 px-6">
-                <div className="absolute top-0 -translate-y-1/2 left-0 bg-primary text-white rounded-full w-10 h-10 flex items-center justify-center font-bold">
+                <div className="absolute top-0 -translate-y-1/2 left-0 bg-primary text-white dark:text-black rounded-full w-10 h-10 flex items-center justify-center font-bold">
                   {item.step}
                 </div>
                 <h3 className="text-xl font-bold mb-2">{item.title}</h3>
