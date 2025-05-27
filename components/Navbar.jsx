@@ -146,18 +146,18 @@ export default function Navbar() {
                         <p className="text-sm font-medium truncate">{session?.user.name}</p>
                       </div>
                       <DropdownMenuSeparator/>
-                      <DropdownMenuItem className='mb-2'>
-                        <Link href={session.user.role === 'PROVIDER' ? '/provider-dashboard/settings' : '/profile'} className="flex items-center">
+                      <Link href={session.user.role === 'PROVIDER' ? '/provider-dashboard/settings' : '/profile'} className="cursor-pointer">
+                        <DropdownMenuItem className='mb-2 w-full flex items-center cursor-pointer'>
                           <User className="mr-2 h-4 w-4" />
                           <span>Profile</span>
-                        </Link>
-                      </DropdownMenuItem>  
-                      <DropdownMenuItem className='mb-2'>
-                        <Link href={'/orderhistory'} className="flex items-center">
+                        </DropdownMenuItem>  
+                      </Link>
+                      <Link href={'/orderhistory'} className="cursor-pointer">
+                        <DropdownMenuItem className='mb-2 flex items-center cursor-pointer'>
                           <History className="mr-2 h-4 w-4" />
                           <span>Order History</span>
-                        </Link>
-                      </DropdownMenuItem>  
+                        </DropdownMenuItem>  
+                      </Link>
                       <DropdownMenuItem className="bg-red-600 text-white" onClick={signOut}>
                         <LogOut className="mr-2 h-4 w-4" />
                         <button>Log out</button>

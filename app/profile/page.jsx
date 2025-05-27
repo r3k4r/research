@@ -31,6 +31,7 @@ import {
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/components/ui/toast';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Badge } from '@/components/ui/badge';
 
 const UserProfile = () => {
   const router = useRouter();
@@ -55,7 +56,8 @@ const UserProfile = () => {
     gender: '',
     image: '',
     password: '',
-    confirmPassword: ''
+    confirmPassword: '',
+    role : '',
   });
 
   // Stores the original form data to detect changes
@@ -83,28 +85,33 @@ const UserProfile = () => {
         const data = await response.json();
         setCurrentUser(data);
         
+        // Add console.log to debug
+        console.log("Profile data received:", data);
+        
+        // Safely access nested properties with optional chaining
         setFormData({
-          name: data.name || '',
-          email: data.user.email || '',
-          location: data.location || '',
-          phoneNumber: data.phoneNumber || '',
-          gender: data.gender || '',
-          image: data.image || '',
+          name: data?.name || '',
+          email: data?.user?.email || '',
+          location: data?.location || '',
+          phoneNumber: data?.phoneNumber || '',
+          gender: data?.gender || '',
+          image: data?.image || '',
           password: '',
-          confirmPassword: ''
+          confirmPassword: '',
+          role: data?.user?.role || '',
         });
 
         // Store original data for comparison
         setOriginalData({
-          name: data.name || '',
-          email: data.user.email || '',
-          location: data.location || '',
-          phoneNumber: data.phoneNumber || '',
-          gender: data.gender || '',
-          image: data.image || '',
+          name: data?.name || '',
+          email: data?.user?.email || '',
+          location: data?.location || '',
+          phoneNumber: data?.phoneNumber || '',
+          gender: data?.gender || '',
+          image: data?.image || '',
         });
         
-        setEmailVerificationNeeded(!data.user.emailVerified);
+        setEmailVerificationNeeded(!data?.user?.emailVerified);
         
         dataFetched.current = true;
       } catch (error) {
@@ -213,12 +220,12 @@ const UserProfile = () => {
       // Update original data with the new values
       setOriginalData({
         ...originalData,
-        name: formData.name,
+        name: formData?.name || "not specified",
         email: emailChanged ? formData.email : originalData.email,
-        location: formData.location,
-        phoneNumber: formData.phoneNumber,
-        gender: formData.gender,
-        image: formData.image,
+        location: formData?.location || "not specified",
+        phoneNumber: formData?.phoneNumber || "not specified",
+        gender: formData?.gender || "not specified",
+        image: formData?.image || "not specified",
       });
       
       // Clear passwords
@@ -331,7 +338,10 @@ const UserProfile = () => {
       {ToastComponent}
       
       <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold">My Profile</h1>
+        <div className='flex items-center space-x-2'>
+          <h1 className="text-2xl font-bold">My Profile</h1>
+          {formData.role === 'ADMIN' && <Badge variant="outline" className={`text-xs py-1.5 bg-green-100 text-green-800 hover:bg-green-200`} >{formData.role}</Badge> }
+        </div>
         <Button 
           variant={editMode ? "outline" : "default"}
           onClick={toggleEditMode}

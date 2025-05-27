@@ -23,7 +23,8 @@ export async function GET() {
         user: {
           select: {
             email: true,
-            emailVerified: true
+            emailVerified: true,
+            role: true,
           }
         }
       }

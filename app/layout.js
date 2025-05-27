@@ -38,7 +38,8 @@ export default async function RootLayout({ children }) {
         <ThemeProvider>
           <SessionProviderWrapper session={session}>
             <CartProvider>
-              {!showNavbar ?  <Navbar />: pathname === '/' ? <Navbar /> : null} 
+              {/* {!showNavbar ?  <Navbar />: pathname === '/' ? <Navbar /> : null}  */}
+              <Navbar />
               {children}
             </CartProvider>
           </SessionProviderWrapper>
