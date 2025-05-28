@@ -131,8 +131,7 @@ const OrderHistoryPage = () => {
         throw new Error(data.error || 'Failed to submit review');
       }
       
-      showToast('Review submitted successfully', 'success');
-      
+      // First update UI state before showing toast
       setOrders(prevOrders => prevOrders.map(order => {
         if (order.id === reviewingOrderId) {
           return {...order, isReviewed: true};
@@ -141,6 +140,7 @@ const OrderHistoryPage = () => {
       }));
       
       setReviewModalOpen(false);
+      showToast('Review submitted successfully', 'success');
     } catch (error) {
       console.error('Error submitting review:', error);
       showToast(error.message || 'Failed to submit review', 'error');

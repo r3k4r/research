@@ -239,12 +239,13 @@ export default function OrdersPage() {
         body: JSON.stringify(reviewData)
       });
       
+      const data = await response.json();
+      
       if (!response.ok) {
-        throw new Error('Failed to submit review');
+        throw new Error(data.error || 'Failed to submit review');
       }
       
-      showToast('Review submitted successfully', 'success');
-      
+      // First update UI state before showing toast
       setOrders(prevOrders => prevOrders.map(order => {
         if (order.id === reviewingOrderId) {
           return {...order, isReviewed: true};
@@ -253,9 +254,10 @@ export default function OrdersPage() {
       }));
       
       setReviewModalOpen(false);
+      showToast('Review submitted successfully', 'success');
     } catch (error) {
       console.error('Error submitting review:', error);
-      showToast('Failed to submit review', 'error');
+      showToast(error.message || 'Failed to submit review', 'error');
     } finally {
       setIsSubmittingReview(false);
     }
@@ -284,14 +286,14 @@ export default function OrdersPage() {
         <h1 className="text-2xl font-bold mb-6">My Orders</h1>
         
         <Tabs value={activeTab} onValueChange={handleTabChange}>
-          <div className='flex justify-start items-center gap-4'>
+          <div className='flex flex-col md:flex-row justify-start md:items-center  md:gap-4'>
               <TabsList className="mb-6">
-                <TabsTrigger value="all">All Orders</TabsTrigger>
-                <TabsTrigger value="PENDING">Pending</TabsTrigger>
-                <TabsTrigger value="PREPARING">Preparing</TabsTrigger>
-                <TabsTrigger value="IN_TRANSIT">In Transit</TabsTrigger>
-                <TabsTrigger value="DELIVERED">Delivered</TabsTrigger>
-                <TabsTrigger value="CANCELLED">Cancelled</TabsTrigger>
+                <TabsTrigger className="sm:text-sm px-1.5 sm:px-3" value="all">All Orders</TabsTrigger>
+                <TabsTrigger className="sm:text-sm px-1.5 sm:px-3" value="PENDING">Pending</TabsTrigger>
+                <TabsTrigger className="sm:text-sm px-1.5 sm:px-3" value="PREPARING">Preparing</TabsTrigger>
+                <TabsTrigger className="sm:text-sm px-1.5 sm:px-3" value="IN_TRANSIT">In Transit</TabsTrigger>
+                <TabsTrigger className="sm:text-sm px-1.5 sm:px-3" value="DELIVERED">Delivered</TabsTrigger>
+                <TabsTrigger className="sm:text-sm px-1.5 sm:px-3" value="CANCELLED">Cancelled</TabsTrigger>
               </TabsList>
 
               <div className="mb-4">
