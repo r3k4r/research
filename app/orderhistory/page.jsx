@@ -118,19 +118,12 @@ const OrderHistoryPage = () => {
       // Log the review data being sent
       console.log('Submitting review with data:', reviewData);
 
-      // Update the UI optimistically to improve perceived performance
-      setOrders(prevOrders => prevOrders.map(order => {
-        if (order.id === reviewingOrderId) {
-          return {...order, isReviewed: true};
-        }
-        return order;
-      }));
-      
       // Close the modal immediately to improve UX
       setReviewModalOpen(false);
       
-      // Show an optimistic success message
-      showToast('Submitting review...', 'loading');
+      // Show a loading toast with unique ID
+      const loadingToastId = Date.now().toString();
+      showToast('Submitting review...', 'loading', loadingToastId);
       
       const response = await fetch('/api/reviews', {
         method: 'POST',
@@ -138,16 +131,13 @@ const OrderHistoryPage = () => {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify(reviewData),
-        // Add cache control to prevent caching issues
         cache: 'no-store'
       });
       
-      // Log the full response for debugging
       console.log('Review submission response status:', response.status);
       
       let data;
       try {
-        // Parse response body, but handle possible parsing errors
         const textData = await response.text();
         console.log('Raw response:', textData);
         data = textData ? JSON.parse(textData) : {};
@@ -156,20 +146,28 @@ const OrderHistoryPage = () => {
         data = {};
       }
       
-      // Even if there's an error, we've already updated the UI
-      // This prevents the error toast from showing in production when the review is actually submitted
-      if (!response.ok) {
-        console.error('Server returned error:', data.error || response.statusText);
-        // We don't throw an error here - just log it
+      // Only update UI after confirmed success from server
+      if (response.ok) {
+        // Update the UI state
+        setOrders(prevOrders => prevOrders.map(order => {
+          if (order.id === reviewingOrderId) {
+            return {...order, isReviewed: true};
+          }
+          return order;
+        }));
+        
+        // Dismiss loading toast and show success toast
+        setTimeout(() => {
+          showToast('Review submitted successfully', 'success');
+        }, 300);
       } else {
-        // If everything is good, show success message
-        showToast('Review submitted successfully', 'success');
+        console.error('Server returned error:', data.error || response.statusText);
+        showToast(data.error || 'Failed to submit review', 'error');
       }
       
     } catch (error) {
       console.error('Error submitting review:', error);
-      // Don't revert the UI change - the review might have been submitted despite the error
-      showToast('Error occurred, but your review may have been submitted. Please refresh to confirm.', 'warning');
+      showToast('Error submitting review', 'error');
     } finally {
       setIsSubmittingReview(false);
     }
