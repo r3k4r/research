@@ -20,6 +20,7 @@ import { Search, RefreshCw } from 'lucide-react';
 import { OrderList } from '@/components/provider/OrderList';
 import { OrderDetails } from '@/components/provider/OrderDetails';
 import { useToast } from '@/components/ui/toast';
+import Link from 'next/link';
 
 export default function OrdersPage() {
   const { showToast, ToastComponent } = useToast();
@@ -86,7 +87,6 @@ export default function OrdersPage() {
     }
   };
   
-  // Initial data load with retry mechanism
   useEffect(() => {
     let retryCount = 0;
     const maxRetries = 3;
@@ -109,10 +109,9 @@ export default function OrdersPage() {
       attemptFetch();
     }
     
-    // Set up refresh interval for estimated delivery times
     const intervalId = setInterval(() => {
       fetchOrders(activeTab, searchTerm);
-    }, 60000); // Refresh every minute to update remaining time
+    }, 60000); 
     
     return () => clearInterval(intervalId);
   }, []);
@@ -189,15 +188,27 @@ export default function OrdersPage() {
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold">Orders Management</h1>
-        <Button 
-          variant="outline" 
-          size="sm" 
-          onClick={() => fetchOrders(activeTab, searchTerm)} 
-          disabled={loading}
-        >
-          <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
-          Refresh
-        </Button>
+
+        <div className='flex items-center space-x-2'>
+          <Link href={"/provider-dashboard/orders/orderreview"} >
+            <Button 
+              variant="outline" 
+              size="sm"
+            >
+              Order Reviews
+            </Button>
+          </Link> 
+
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={() => fetchOrders(activeTab, searchTerm)} 
+            disabled={loading}
+          >
+            <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
+            Refresh
+          </Button>
+        </div>
       </div>
       
       <div className="flex items-center space-x-2 max-w-[400px]">
