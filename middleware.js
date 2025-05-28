@@ -14,7 +14,7 @@ export default withAuth(
     const hasVisited = req.cookies.get('hasVisited')
     
     // Routes that are always public (accessible to everyone)
-    const publicRoutes = ['/forgot-password', '/two-factor']
+    const publicRoutes = ['/forgot-password', '/verify-email', '/reset-password', '/two-factor']
     
     // Public routes when logged out, private when logged in
     const authRoutes = ['/signin', '/signup']
