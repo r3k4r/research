@@ -240,8 +240,8 @@ const StatsSection = ({ stats }) => {
           transition={{ duration: 0.6 }}
           className="text-center mb-10"
         >
-          <h2 className="text-3xl font-bold tracking-tighter sm:text-4xl md:text-5xl">Our Impact</h2>
-          <p className="mt-4 text-xl text-muted-foreground">Together we're making a difference</p>
+          <h2 className="text-3xl font-bold tracking-tighter sm:text-4xl md:text-5xl">{t("stats.title")}</h2>
+          <p className="mt-4 text-xl text-muted-foreground">{t("stats.subTitile")}</p>
         </motion.div>
 
         <div className="grid grid-cols-2 gap-4 sm:gap-6 lg:grid-cols-4">
@@ -522,7 +522,7 @@ const ContactCTASection = () => {
           <div className="flex flex-col sm:flex-row gap-4">
             <Button size="lg" asChild>
               <Link href="/">
-                {t('join.buttonOne')} 
+                {t('join.button')} 
               </Link>
             </Button>
             <Button variant="outline" size="lg" asChild>
