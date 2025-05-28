@@ -78,7 +78,7 @@ const HeroSection = () => {
   
   return (
     <section className="relative w-full overflow-hidden bg-gradient-to-b from-primary/10 to-background pt-16 pb-12">
-      <div className="container px-4 md:px-6">
+      <div className="container mx-auto px-4 md:px-6">
         <div className="grid gap-6 lg:grid-cols-2 lg:gap-12 items-center">
           <motion.div 
             initial={{ opacity: 0, y: 20 }}
@@ -138,7 +138,7 @@ const MissionSection = () => {
 
   return (
     <section ref={ref} className="py-12 md:py-20 bg-background w-full">
-      <div className="container px-4 md:px-6">
+      <div className="container mx-auto px-4 md:px-6">
         <motion.div 
           initial={{ opacity: 0, y: 20 }}
           animate={inView ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
@@ -233,7 +233,7 @@ const StatsSection = ({ stats }) => {
 
   return (
     <section ref={ref} className="py-12 md:py-20 bg-muted/50 w-full">
-      <div className="container px-4 md:px-6">
+      <div className="container mx-auto px-4 md:px-6">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={inView ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
@@ -295,7 +295,7 @@ const ServicesSection = () => {
 
   return (
     <section ref={ref} className="py-12 md:py-20 bg-background w-full">
-      <div className="container px-4 md:px-6">
+      <div className="container mx-auto px-4 md:px-6">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={inView ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
@@ -368,7 +368,7 @@ const ProvidersSection = () => {
 
   return (
     <section id="for-providers" ref={ref} className="py-12 md:py-20 bg-muted/50 w-full">
-      <div className="container px-4 md:px-6">
+      <div className="container mx-auto px-4 md:px-6">
         <div className="grid gap-6 lg:grid-cols-2 lg:gap-12 items-center">
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
@@ -457,7 +457,7 @@ const TeamSection = () => {
 
   return (
     <section ref={ref} className="py-12 md:py-20 bg-background w-full">
-      <div className="container px-4 md:px-6">
+      <div className="container mx-auto px-4 md:px-6">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={inView ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
@@ -506,7 +506,7 @@ const ContactCTASection = () => {
 
   return (
     <section ref={ref} className="py-12 md:py-20 bg-primary/10 w-full">
-      <div className="container px-4 md:px-6">
+      <div className="container mx-auto px-4 md:px-6">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={inView ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
