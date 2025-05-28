@@ -7,90 +7,53 @@ i18n
     resources: {
       en: {
         translation: {
-          nav:{
-            home: "Home",
-            about: "About",
-            courses: "Courses",
-            contact: "Contact",
-            contactUs: "Contact Us"
-          },
           hero:{
-            titlePartOne: "Connex",
-            titlePartTwo: "Academy",
-            quote:"Today is knowledge, tomorrow is success",
-            button: "Courses"
+            titlePartOne: "Reducing Food Waste, One Meal at a Time",
+            titlePartTwo: "We connect consumers with local businesses to save perfectly good food from going to waste, at a fraction of the original price.",
+            buttonOne:"Explore Foods",
+            buttonTwo: "For Providers"
           },
-          about: {
-            title:"About Connex Academy",
-            about_one: "Connex Academy is a premier educational institution dedicated to offering a comprehensive array of courses designed to meet the diverse needs of today's learners. Our offerings include technical, management, business, design, engineering, and language courses, all delivered through engaging, face-to-face instruction.",
-            about_two: "We pride ourselves on our qualified and passionate instructors, state-of-the-art facilities, and a supportive learning environment that encourages both personal and professional development. Whether you are looking to enhance your skills, pivot your career, or explore new interests, Connex Academy provides the resources and guidance to help you achieve your goals." ,
-            about_three: "At Connex Academy, we believe in the power of education to transform lives. Join us and be part of a learning community that values excellence, innovation, and lifelong growth.",
-            mission: "Our Mission",
-            missionP: "at Connex Academy, our mission is to empower individuals with the knowledge and skills necessary to excel in their chosen fields. We are committed to delivering high-quality, face-to-face education through a diverse range of courses that cater to the evolving needs of the modern workforce. By fostering a dynamic learning environment, we aim to inspire lifelong learning and professional growth in our students",
-            vision: "Our Vision",
-            visionP:"Our vision is to become a leading educational institution recognized for its excellence in teaching, innovative curriculum, and impactful community engagement. We aspire to bridge the gap between education and industry by providing practical, hands-on learning experiences that prepare our students for real-world challenges. Through our dedicated efforts, we envision creating a community of empowered learners who drive positive change in their professions and society.",
+          mission:{
+            title: "Tackling Food Waste Together",
+            paragraph : "We're on a mission to create a sustainable food ecosystem that reduces waste, helps businesses, and provides affordable meals to communities.",
+            cardOneTitle: "Last-Minute Savings",
+            cardOneContent: "We help businesses sell surplus food before it's too late, turning potential waste into affordable meals.",
+            cardTwoTitle: "Environmental Impact",
+            CardTwoContent: "Every meal saved means less waste in landfills and a significant reduction in greenhouse gas emissions.",
+            cardThreeTitle: "Community Support",
+            cardThreeContent: "We're building a community that values sustainability, affordability, and reducing food waste together.",
           },
-          course:{
-            title: "Connex Academy Courses",
-            viewAll: "View All",
-            SearchPlaceholder: "Search...",
-            viewMore:"View More",
-            back:"Back"
-        },
-        contact:{
-            title: "Contact Us",
-            content: "Our customer service team is waiting to assist you",
-            paragraph: " 'We're here to help with any questions or concerns you may have. Reach out to us via email, phone, or visit our location to speak directly with a member of our team. Your satisfaction is our top priority.' ",
-            email: "Email",
-            location: "Location",
-            locationP: "Sulaimani, Salim Street, Salim Mall, Office A13",
-            phone: "Phone",
-            phoneP: "07716904422",
+          stats : {
+            title: "Our Impact",
+            subTitile: "Together, we're making a difference",
+            totalUsers : "Happy Users",
+            ProviderPartners: "Provider Partners",
+            FoodItemsSaved: "Food Items Saved",
+            WasteReduction: "Waste Reduction",
           },
-          footer:{
-            name: "Connex Academy",
-            quote: "Connex Academy, Where today's knowledge leads to tomorrow's success.",
-            quicklinks:"Quick Links",
-            contactinfo:"Contact Info",
-
+          services: {
+            title: "How It Works",
+            subtitle : "Simple steps to reduce food waste",
+            discover: "Discover",
+            discoverP: "Browse surplus food from local businesses at discounted prices.",
+            reserve : "Reserve",
+            reserveP: "Select and pay for your items through our secure platform.",
+            pickup: "Pickup",
+            pickupP: "Collect your food from the business during the specified time window.",
+            button : "Start Exploring",
           },
-          login:{
-            head:"Sign in to your account",
-            username : "Username",
-            password : "Password",
-            login: "Login",
-            warning:"This username and password is belong to the admin...!"
+          providers : {
+            title: "",
           },
-          addcourse:{
-            courseInformation:"Course Information",
-            name:"Name",
-            description:"Description",
-            imageURL:"Image",
-            teacher:"Teacher",
-            add:"Add",
-            update:"Update",
-            delete:"Delete"
-          },
-          courseRoute:{
-            title:"Connex Academy Courses"
-          }
-          
         }
       },
       ku: {
         translation: {
-          nav:{
-            home: "سەرەکی",
-            about: "دەربارە",
-            courses: "کۆرسەکان",
-            contact: "پەیوەندی کردن",
-            contactUs: "پەیوەندیمان پێوە بکە"
-          },
           hero:{
-            titlePartOne: "کۆنێکس",
-            titlePartTwo: "ئەکادیمیای",
-            quote: "ئەمڕۆ مەعریفە، سبەی سەرکەوتن",
-            button: "دەرسەکان"
+            titlePartOne: "کەمکردنەوەی بەفیڕۆدانی خۆراک، یەک ژەم لە یەک کاتدا",
+            titlePartTwo: "ئێمە بەکارهێنەران بە بزنسە ناوخۆییەکانەوە دەبەستینەوە بۆ ئەوەی خۆراکی باش لە بەفیڕۆدان ڕزگار بکەین، بە نرخێکی داشکێنراو.",
+            buttonOne:"گەڕان بەدوای خۆراکەکاندا",
+            buttonTwo: "بۆ دابینکەرانی خۆراک"
           },
           about:{
             title: "دەربارەی کۆنێکس ئەکادیمی",
@@ -144,77 +107,6 @@ i18n
           },
           courseRoute:{
             title: "کۆرسەکانی ئەکادیمیای کۆنێکس",
-          }
-        }
-      },
-      ar: {
-        translation: {
-          nav:{
-            home: "رئيسي",
-            about: "حول",
-            courses: "الدورات",
-            contact: "اتصل",
-            contactUs: "اتصل بنا"
-          },
-          hero:{
-            titlePartOne: "كونيكس", 
-
-            titlePartTwo: "أكاديمية",
-            quote: "اليوم هو المعرفة، وغداً هو النجاح",
-            button: "الدروس"
-          },
-          about:{
-            title: "نبذة عن أكاديمية كونيكس",
-            about_one: "أكاديمية كونيكس أكاديمية كونيكس هي مؤسسة تعليمية رائدة مخصصة لتقديم مجموعة شاملة من الدورات التدريبية المصممة لتلبية الاحتياجات المتنوعة لمتعلمي اليوم. تشمل عروضنا الدورات الفنية والإدارية والأعمال والتصميم والهندسة واللغات، وكلها تُقدم من خلال التعليم المباشر.",
-            about_two: "نحن نفخر بمدربينا المؤهلين والعاطفيين والمرافق الحديثة وبيئة التعلم الداعمة التي تشجع على التطوير الشخصي والمهني. سواء كنت تتطلع إلى تعزيز مهاراتك أو تغيير مسار حياتك المهنية أو استكشاف اهتمامات جديدة، توفر أكاديمية كونيكس الموارد والتوجيه لمساعدتك على تحقيق أهدافك.",
-            about_three: "في أكاديمية كونيكس، نؤمن بقوة التعليم في تحويل الحياة. انضم إلينا وكن جزءًا من مجتمع التعلم الذي يقدر التميز والابتكار والنمو مدى الحياة.",
-            mission: "مهمتنا",
-            missionP: "في أكاديمية كونيكس، تتمثل مهمتنا في تمكين الأفراد من المعرفة والمهارات اللازمة للتفوق في المجالات التي اختاروها. نحن ملتزمون بتقديم تعليم عالي الجودة وجهاً لوجه من خلال مجموعة متنوعة من الدورات التي تلبي الاحتياجات المتطورة للقوى العاملة الحديثة. من خلال تعزيز بيئة تعليمية ديناميكية، نهدف إلى إلهام التعلم مدى الحياة والنمو المهني",
-            vision: "رؤيتنا",
-            visionP: "رؤيتنا هي أن نصبح مؤسسة تعليمية رائدة معترف بها لتميزها في التدريس والمناهج المبتكرة والمشاركة المجتمعية المؤثرة. نطمح إلى سد الفجوة بين التعليم والصناعة من خلال توفير تجارب تعليمية عملية وعملية تعمل على إعداد طلابنا للتحديات في العالم الحقيقي. من خلال جهودنا الدؤوبة، نتصور إنشاء مجتمع من المتعلمين المتمكنين الذين يقودون التغيير الإيجابي في مهنهم ومجتمعهم."
-          },
-          course:{
-              title: "دورات في أكاديمية كونيكس",
-              viewAll: "عرض الكل",
-              SearchPlaceholder: "ابحث...",
-              viewMore:"عرض المزيد",
-              back:"رجوع",
-          },
-          contact:{
-            title: "اتصل بنا", 
-            content:"فريق خدمة العملاء لدينا في انتظار مساعدتك",
-            paragraph:" 'نحن هنا للمساعدة في أي أسئلة أو مخاوف قد تكون لديكم. تواصل معنا عبر البريد الإلكتروني أو الهاتف أو قم بزيارة موقعنا للتحدث مباشرة مع أحد أعضاء فريقنا. رضاكم هو أولويتنا القصوى.' ",
-            email: "بريد إلكتروني",
-            location: "موقع",
-            locationP:"السليمانية، شارع سالم، سالم مول، مكتب A13 ",
-            phone:"هاتف",
-            phoneP:'٠٧٧١٦٩٠٤٤٢٢'
-          },
-          footer:{
-            name: "أكاديمية كونيكس",
-            quote: "أكاديمية كونيكس، حيث تؤدي معرفة اليوم إلى نجاح الغد. ",
-            quicklinks:"روابط سريعة",
-            contactinfo:"معلومات الاتصال",
-          },
-          login:{
-            head:"تسجيل الدخول إلى حسابك",
-            username: "اسم المستخدم",
-            password: "كلمة المرور",
-            login: "تسجيل الدخول",
-            warning:"هذا اسم المستخدم وكلمة المرور تابعة للمسؤول...!"
-          },
-          addcourse:{
-            courseInformation:"دورة معلومات",
-            name:"اسم",
-            description:"وصف",
-            imageURL:"رابط الصورة",
-            teacher:"مدرس",
-            add:"يضيف",
-            update:"تحديث",
-            delete:"يمسح"
-          },
-          courseRoute:{
-            title: "دورات في أكاديمية كونيكس",
           }
         }
       }

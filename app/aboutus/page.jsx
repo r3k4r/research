@@ -9,11 +9,12 @@ import CountUp from 'react-countup'
 
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
-
+import { useTranslation } from 'react-i18next'
 import { 
   Users, ShoppingBag, Store, Globe, 
   ArrowRight, Check, ChevronRight,
-  Clock, Leaf, Heart, Award
+  Clock, Leaf, Heart, Award,
+  ArrowLeft
 } from 'lucide-react'
 
 const AboutUs = () => {
@@ -73,6 +74,8 @@ const AboutUs = () => {
 }
 
 const HeroSection = () => {
+  const { t, i18n } = useTranslation();
+  
   return (
     <section className="relative overflow-hidden bg-gradient-to-b from-primary/10 to-background pt-16 pb-12">
       <div className="container px-4 md:px-6">
@@ -85,21 +88,21 @@ const HeroSection = () => {
           >
             <div className="space-y-2">
               <h1 className="text-3xl font-bold tracking-tighter sm:text-4xl md:text-5xl lg:text-6xl/none">
-                Reducing Food Waste, <span className="text-primary">One Meal at a Time</span>
+                {t('hero.titlePartOne')}
               </h1>
               <p className="max-w-[600px] text-muted-foreground md:text-xl">
-                We connect consumers with local businesses to save perfectly good food from going to waste, at a fraction of the original price.
+                {t('hero.titlePartTwo')}
               </p>
             </div>
             <div className="flex flex-col gap-2 min-[400px]:flex-row">
               <Button className="px-6" size="lg" asChild>
                 <Link href="/">
-                  Explore Foods <ArrowRight className="ml-2 h-4 w-4" />
+                  {t('hero.buttonOne')} { i18n.language === 'en' ? <ArrowRight className="ml-2 h-4 w-4" /> : <ArrowLeft className="ml-2 h-4 w-4" /> }
                 </Link>
               </Button>
               <Button variant="outline" size="lg" asChild>
                 <Link href="#for-providers">
-                  For Providers
+                  {t('hero.buttonTwo')}
                 </Link>
               </Button>
             </div>
@@ -127,6 +130,7 @@ const HeroSection = () => {
 }
 
 const MissionSection = () => {
+  const { t } = useTranslation();
   const { ref, inView } = useInView({
     threshold: 0.1,
     triggerOnce: true
@@ -141,9 +145,9 @@ const MissionSection = () => {
           transition={{ duration: 0.6 }}
           className="flex flex-col items-center justify-center space-y-4 text-center"
         >
-          <h2 className="text-3xl font-bold tracking-tighter sm:text-4xl md:text-5xl">Tackling Food Waste Together</h2>
+          <h2 className="text-3xl font-bold tracking-tighter sm:text-4xl md:text-5xl">{t('mission.title')}</h2>
           <p className="max-w-[900px] text-muted-foreground md:text-xl/relaxed lg:text-base/relaxed xl:text-xl/relaxed">
-            We're on a mission to create a sustainable food ecosystem that reduces waste, helps businesses, and provides affordable meals to communities.
+            {t('mission.paragraph')}
           </p>
         </motion.div>
         
@@ -151,18 +155,18 @@ const MissionSection = () => {
           {[
             {
               icon: Clock,
-              title: "Last-Minute Savings",
-              description: "We help businesses sell surplus food before it's too late, turning potential waste into affordable meals."
+              title: t('mission.cardOneTitle'),
+              description: t('mission.cardOneContent')
             },
             {
               icon: Leaf,
-              title: "Environmental Impact",
-              description: "Every meal saved means less waste in landfills and a significant reduction in greenhouse gas emissions."
+              title: t('mission.cardTwoTitle'),
+              description: t('mission.CardTwoContent')
             },
             {
               icon: Heart,
-              title: "Community Support",
-              description: "We're building a community that values sustainability, affordability, and reducing food waste together."
+              title: t('mission.cardThreeTitle'),
+              description: t('mission.cardThreeContent')
             }
           ].map((item, index) => (
             <motion.div
@@ -189,6 +193,7 @@ const MissionSection = () => {
 }
 
 const StatsSection = ({ stats }) => {
+  const { t } = useTranslation();
   const { ref, inView } = useInView({
     threshold: 0.1,
     triggerOnce: true
@@ -197,28 +202,28 @@ const StatsSection = ({ stats }) => {
   const statsItems = [
     { 
       icon: Users, 
-      label: "Happy Users", 
+      label: t('stats.totalUsers'), 
       value: stats.totalUsers,
       suffix: "+",
       color: "text-blue-500" 
     },
     { 
       icon: Store, 
-      label: "Provider Partners", 
+      label: t('stats.ProviderPartners'), 
       value: stats.totalProviders,
       suffix: "+",
       color: "text-emerald-500" 
     },
     { 
       icon: ShoppingBag, 
-      label: "Food Items Saved", 
+      label: t('stats.FoodItemsSaved'), 
       value: stats.totalFoodItems,
       suffix: "+",
       color: "text-amber-500" 
     },
     { 
       icon: Leaf, 
-      label: "Waste Reduction", 
+      label: t('stats.WasteReduction'), 
       value: stats.wasteReduction,
       suffix: "kg",
       decimals: 0,
@@ -282,6 +287,7 @@ const StatsSection = ({ stats }) => {
 }
 
 const ServicesSection = () => {
+  const { t, i18n } = useTranslation();
   const { ref, inView } = useInView({
     threshold: 0.1,
     triggerOnce: true
@@ -296,26 +302,26 @@ const ServicesSection = () => {
           transition={{ duration: 0.6 }}
           className="text-center mb-10"
         >
-          <h2 className="text-3xl font-bold tracking-tighter sm:text-4xl md:text-5xl">How It Works</h2>
-          <p className="mt-4 text-xl text-muted-foreground">Simple steps to reduce food waste</p>
+          <h2 className="text-3xl font-bold tracking-tighter sm:text-4xl md:text-5xl">{t("services.title")} </h2>
+          <p className="mt-4 text-xl text-muted-foreground"> {t("services.subtitle")} </p>
         </motion.div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mt-12">
           {[
             {
               step: "01",
-              title: "Discover",
-              description: "Browse surplus food from local businesses at discounted prices."
+              title: t("services.discover"),
+              description: t("services.discoverP")
             },
             {
               step: "02",
-              title: "Reserve",
-              description: "Select and pay for your items through our secure platform."
+              title: t("services.reserve"),
+              description: t("services.reserveP")
             },
             {
               step: "03",
-              title: "Pickup",
-              description: "Collect your food from the business during the specified time window."
+              title: t("services.pickup"),
+              description: t("services.pickupP")
             }
           ].map((item, index) => (
             <motion.div
@@ -344,7 +350,7 @@ const ServicesSection = () => {
         >
           <Button size="lg" asChild>
             <Link href="/">
-              Start Exploring <ArrowRight className="ml-2 h-4 w-4" />
+              {t("services.button")} { i18n.language === 'en' ? <ArrowRight className="ml-2 h-4 w-4" /> : <ArrowLeft className="ml-2 h-4 w-4" /> }
             </Link>
           </Button>
         </motion.div>
