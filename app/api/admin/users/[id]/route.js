@@ -30,7 +30,6 @@ export async function PATCH(req, { params }) {
         const data = await req.json();
         const { role, password, profileData, ...otherUpdateData } = data;
         
-        // First get the current user to check their role
         const currentUser = await prisma.user.findUnique({
             where: { id: userId },
             include: {

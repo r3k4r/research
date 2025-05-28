@@ -1,8 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { prisma } from '@/lib/db';
-// Fix the import path for authOptions - most likely it's in a separate file
-import { authOptions } from '@/lib/auth'; // Update this path to where your authOptions is actually defined
+import { authOptions } from '@/lib/auth'; 
 
 export async function POST(req) {
   try {
@@ -55,23 +54,16 @@ export async function POST(req) {
         return NextResponse.json({ error: 'Order not found' }, { status: 404 });
       }
       
-      // Check if order belongs to the user
       if (order.userProfileId !== user.profile.id) {
         return NextResponse.json({ error: 'You can only review your own orders' }, { status: 403 });
       }
       
-      // Check if order is delivered
       if (order.status !== 'DELIVERED') {
         return NextResponse.json({ 
           error: 'You can only review orders that have been delivered' 
         }, { status: 400 });
       }
       
-      // Log order items and food item ID for debugging
-      console.log('Order items:', order.items);
-      console.log('Food item ID to review:', foodItemId);
-      
-      // Check if the food item belongs to the order
       const orderHasItem = order.items.some(item => 
         item.foodItemId === foodItemId || item.id === foodItemId
       );
@@ -85,7 +77,6 @@ export async function POST(req) {
       }
     }
     
-    // Check if food item exists
     const foodItem = await prisma.foodItem.findUnique({
       where: { id: foodItemId }
     });
@@ -106,7 +97,7 @@ export async function POST(req) {
       }
     });
     
-    // Update order as reviewed if orderId is provided
+    // Update the order to mark it as reviewed
     if (orderId) {
       await prisma.purchasedOrder.update({
         where: { id: orderId },
@@ -114,37 +105,54 @@ export async function POST(req) {
       });
     }
     
-    // Update provider rating (calculate average of all ratings for this provider's items)
-    const providerItems = await prisma.foodItem.findMany({
-      where: {
-        providerId: foodItem.providerId
-      },
-      select: {
-        id: true
-      }
-    });
-    
-    const itemIds = providerItems.map(item => item.id);
-    
-    const avgRating = await prisma.review.aggregate({
-      where: {
-        foodItemId: {
-          in: itemIds
-        }
-      },
-      _avg: {
-        rating: true
-      }
-    });
-    
-    // Update provider rating if there are reviews
-    if (avgRating._avg.rating) {
-      await prisma.providerProfile.update({
-        where: { id: foodItem.providerId },
-        data: {
-          raiting: avgRating._avg.rating  // Use raiting as in the schema, not rating
+    // Calculate average rating for provider items - THIS IS OPTIONAL
+    try {
+      const providerItems = await prisma.foodItem.findMany({
+        where: {
+          providerId: foodItem.providerId
+        },
+        select: {
+          id: true
         }
       });
+      
+      const itemIds = providerItems.map(item => item.id);
+      
+      const avgRating = await prisma.review.aggregate({
+        where: {
+          foodItemId: {
+            in: itemIds
+          }
+        },
+        _avg: {
+          rating: true
+        }
+      });
+      
+      // Only try to update if rating field exists in schema
+      if (avgRating._avg.rating) {
+        // Check if the field exists in the schema before updating
+        const providerFields = await prisma.$queryRaw`
+          SELECT column_name 
+          FROM information_schema.columns 
+          WHERE table_name = 'ProviderProfile'
+        `;
+        
+        const fieldNames = providerFields.map(f => f.column_name.toLowerCase());
+        
+        // Only update if the field exists
+        if (fieldNames.includes('rating')) {
+          await prisma.providerProfile.update({
+            where: { id: foodItem.providerId },
+            data: {
+              rating: avgRating._avg.rating  // Fixed typo: "raiting" -> "rating"
+            }
+          });
+        }
+      }
+    } catch (avgError) {
+      // Log the error but don't fail the review submission
+      console.error('Error updating provider rating:', avgError);
     }
     
     return NextResponse.json({
@@ -160,7 +168,7 @@ export async function POST(req) {
   } catch (error) {
     console.error('Error submitting review:', error);
     return NextResponse.json(
-      { error: 'Failed to submit review' }, 
+      { error: 'Failed to submit review', details: error.message }, 
       { status: 500 }
     );
   }

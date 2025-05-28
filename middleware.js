@@ -26,7 +26,6 @@ export default withAuth(
       '/provider-dashboard': ['PROVIDER', 'ADMIN']
     }
 
-    // Handle welcome page logic
     if (pathname === '/welcome') {
       if (isAuth) {
         return NextResponse.redirect(new URL('/', req.url))
@@ -34,7 +33,6 @@ export default withAuth(
       if (hasVisited) {
         return NextResponse.redirect(new URL('/signin', req.url))
       }
-      // First time visitor, set cookie and show welcome page
       const response = NextResponse.next()
       response.cookies.set('hasVisited', 'true', {
         maxAge: 60 * 60 * 24 * 365, // 1 year

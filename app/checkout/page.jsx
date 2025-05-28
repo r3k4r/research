@@ -77,7 +77,6 @@ export default function CheckoutPage() {
       return;
     }
     
-    // Validate form
     if (!formData.name || !formData.phone || !formData.address) {
       setValidationError('Please fill in all required fields');
       return;
@@ -86,7 +85,6 @@ export default function CheckoutPage() {
     setIsSubmitting(true);
     
     try {
-      // First validate the cart to ensure items are still available
       const validateResponse = await fetch('/api/cart', {
         method: 'POST',
         headers: {

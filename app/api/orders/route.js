@@ -97,22 +97,15 @@ export async function GET(req) {
       }
     });
     
-    console.log(`Found ${orders.length} orders matching criteria`);
     
-    // Check if orders were actually found
     if (orders.length === 0) {
       console.log('No orders found matching criteria');
-    } else {
-      console.log(`First order ID: ${orders[0].id}, status: ${orders[0].status}`);
-    }
+    } 
     
-    // Format orders for the frontend
     const formattedOrders = orders.map(order => {
-      // Calculate the fees
       const deliveryFee = 2500;
       const serviceFee = 500;
       
-      // Calculate subtotal from actual items
       const subtotal = order.items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
       
       return {

@@ -85,10 +85,8 @@ const UserProfile = () => {
         const data = await response.json();
         setCurrentUser(data);
         
-        // Add console.log to debug
-        console.log("Profile data received:", data);
         
-        // Safely access nested properties with optional chaining
+        
         setFormData({
           name: data?.name || '',
           email: data?.user?.email || '',

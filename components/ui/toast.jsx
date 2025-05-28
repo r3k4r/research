@@ -50,10 +50,8 @@ export function useToast() {
   const [toast, setToast] = useState(null)
 
   const showToast = (message, type) => {
-    // First clear any existing toast to avoid conflicts
     setToast(null) 
     
-    // Small delay to ensure clean slate before showing new toast
     setTimeout(() => {
       setToast({ message, type })
     }, 10)

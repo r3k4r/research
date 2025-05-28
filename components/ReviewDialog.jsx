@@ -35,14 +35,8 @@ const ReviewDialog = ({
   const [comment, setComment] = useState('');
   const [error, setError] = useState('');
 
-  // Debug the foodItem to make sure we have the correct ID
-  useEffect(() => {
-    if (isOpen && foodItem) {
-      console.log("Review dialog opened with food item:", foodItem);
-    }
-  }, [isOpen, foodItem]);
 
-  // Reset form when dialog opens with new food item
+
   useEffect(() => {
     if (isOpen) {
       setRating(5);
@@ -71,17 +65,12 @@ const ReviewDialog = ({
       return;
     }
 
-    // Improved debugging to understand what we're receiving
-    console.log("SUBMITTING REVIEW - Full foodItem object:", foodItem);
     
-    // More flexible ID extraction - try multiple possible property paths
     let actualFoodItemId = null;
     
     if (foodItem) {
-      // Try all possible locations where the ID might be stored
       actualFoodItemId = foodItem.foodItemId || foodItem.id;
       
-      console.log("Extracted foodItemId:", actualFoodItemId);
     }
     
     if (!actualFoodItemId) {
@@ -91,7 +80,6 @@ const ReviewDialog = ({
     }
 
     onSubmit({
-      // Send the extracted food item ID
       foodItemId: actualFoodItemId,
       orderId,
       rating,

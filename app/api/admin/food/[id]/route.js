@@ -55,7 +55,6 @@ export async function PUT(request, { params }) {
       );
     }
     
-    // First try to find existing category case-insensitively
     let category = await prisma.category.findFirst({
       where: { 
         name: { 

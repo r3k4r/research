@@ -1,18 +1,16 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth'; // Use the correct path to your authOptions
+import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/db';
 
 export async function GET(req) {
   try {
     const session = await getServerSession(authOptions);
     
-    // Check if user is authenticated
     if (!session || !session.user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
     
-    // Get the current user's profile
     const user = await prisma.user.findUnique({
       where: { email: session.user.email },
       include: { profile: true }
@@ -22,13 +20,11 @@ export async function GET(req) {
       return NextResponse.json({ error: 'User profile not found' }, { status: 404 });
     }
     
-    // Parse query parameters for pagination
     const url = new URL(req.url);
     const page = parseInt(url.searchParams.get('page') || '1');
     const limit = parseInt(url.searchParams.get('limit') || '10');
     const skip = (page - 1) * limit;
     
-    // Create a filter for all completed or cancelled orders (historical orders)
     const whereClause = {
       userProfileId: user.profile.id,
       status: { in: ['DELIVERED', 'CANCELLED'] }
@@ -126,7 +122,6 @@ export async function GET(req) {
     });
     
   } catch (error) {
-    // Fixed error handling to avoid null payload issues
     console.error('Error fetching order history:', error?.message || 'Unknown error');
     return NextResponse.json({ 
       error: 'Failed to fetch order history', 
