@@ -13,8 +13,11 @@ export default withAuth(
     // Get hasVisited cookie
     const hasVisited = req.cookies.get('hasVisited')
     
+    // Routes that are always public (accessible to everyone)
+    const publicRoutes = ['/forgot-password', '/two-factor']
+    
     // Public routes when logged out, private when logged in
-    const authRoutes = ['/signin', '/signup', '/forgot-password', '/two-factor']
+    const authRoutes = ['/signin', '/signup']
 
     // Define route permissions
     const routePermissions = {
@@ -24,6 +27,15 @@ export default withAuth(
       '/how-it-works': ['ADMIN', 'PROVIDER', 'USER'],
       '/admin-dashboard': ['ADMIN'],
       '/provider-dashboard': ['PROVIDER', 'ADMIN']
+    }
+
+    // If the current path is a public route, allow access regardless of auth status
+    if (publicRoutes.includes(pathname)) {
+      return NextResponse.next({
+        request: {
+          headers: requestHeaders,
+        }
+      })
     }
 
     if (pathname === '/welcome') {
@@ -45,7 +57,7 @@ export default withAuth(
       return NextResponse.redirect(new URL('/', req.url))
     }
     
-    if (!isAuth && !authRoutes.includes(pathname) && pathname !== '/welcome') {
+    if (!isAuth && !authRoutes.includes(pathname) && pathname !== '/welcome' && !publicRoutes.includes(pathname)) {
       return NextResponse.redirect(new URL('/welcome', req.url))
     }
 
