@@ -48,7 +48,7 @@ const AboutUs = () => {
   }, []);
 
   return (
-    <div className="flex flex-col min-h-screen">
+    <div className="flex flex-col justify-center items-center min-h-screen">
       {/* Hero Section */}
       <HeroSection />
       
@@ -77,7 +77,7 @@ const HeroSection = () => {
   const { t, i18n } = useTranslation();
   
   return (
-    <section className="relative overflow-hidden bg-gradient-to-b from-primary/10 to-background pt-16 pb-12">
+    <section className="relative w-full overflow-hidden bg-gradient-to-b from-primary/10 to-background pt-16 pb-12">
       <div className="container px-4 md:px-6">
         <div className="grid gap-6 lg:grid-cols-2 lg:gap-12 items-center">
           <motion.div 
@@ -137,7 +137,7 @@ const MissionSection = () => {
   })
 
   return (
-    <section ref={ref} className="py-12 md:py-20 bg-background">
+    <section ref={ref} className="py-12 md:py-20 bg-background w-full">
       <div className="container px-4 md:px-6">
         <motion.div 
           initial={{ opacity: 0, y: 20 }}
@@ -232,7 +232,7 @@ const StatsSection = ({ stats }) => {
   ]
 
   return (
-    <section ref={ref} className="py-12 md:py-20 bg-muted/50">
+    <section ref={ref} className="py-12 md:py-20 bg-muted/50 w-full">
       <div className="container px-4 md:px-6">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -294,7 +294,7 @@ const ServicesSection = () => {
   })
 
   return (
-    <section ref={ref} className="py-12 md:py-20 bg-background">
+    <section ref={ref} className="py-12 md:py-20 bg-background w-full">
       <div className="container px-4 md:px-6">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -360,13 +360,14 @@ const ServicesSection = () => {
 }
 
 const ProvidersSection = () => {
+  const { t, i18n } = useTranslation();
   const { ref, inView } = useInView({
     threshold: 0.1,
     triggerOnce: true
   })
 
   return (
-    <section id="for-providers" ref={ref} className="py-12 md:py-20 bg-muted/50">
+    <section id="for-providers" ref={ref} className="py-12 md:py-20 bg-muted/50 w-full">
       <div className="container px-4 md:px-6">
         <div className="grid gap-6 lg:grid-cols-2 lg:gap-12 items-center">
           <motion.div
@@ -392,19 +393,19 @@ const ProvidersSection = () => {
             className="flex flex-col justify-center space-y-4 order-1 lg:order-2"
           >
             <div className="space-y-2">
-              <h2 className="text-3xl font-bold tracking-tighter sm:text-4xl md:text-5xl">For Food Providers</h2>
+              <h2 className="text-3xl font-bold tracking-tighter sm:text-4xl md:text-5xl">{t('providers.title')}</h2>
               <p className="max-w-[600px] text-muted-foreground md:text-xl">
-                Join our platform to reduce your food waste, reach new customers, and boost your revenue.
+                {t('providers.subtitle')}
               </p>
             </div>
             
             <ul className="space-y-2">
               {[
-                "Reduce food waste and associated costs",
-                "Generate additional revenue from surplus food",
-                "Attract eco-conscious customers",
-                "Easy-to-use dashboard to manage your listings",
-                "Be part of the sustainability movement"
+                t('providers.pointOne'),
+                t('providers.pointTwo'),
+                t('providers.pointThree'),
+                t('providers.pointFour'),
+                t('providers.pointFive')
               ].map((benefit, index) => (
                 <motion.li 
                   key={index}
@@ -422,7 +423,7 @@ const ProvidersSection = () => {
             <div className="pt-4">
               <Button size="lg" asChild>
                 <Link href="/providers/apply">
-                  Become a Provider <ArrowRight className="ml-2 h-4 w-4" />
+                  {t('providers.button')} { i18n.language === 'en' ? <ArrowRight className="ml-2 h-4 w-4" /> : <ArrowLeft className="ml-2 h-4 w-4" /> }
                 </Link>
               </Button>
             </div>
@@ -434,36 +435,28 @@ const ProvidersSection = () => {
 }
 
 const TeamSection = () => {
+  const { t } = useTranslation();
   const { ref, inView } = useInView({
     threshold: 0.1,
     triggerOnce: true
   })
 
   const team = [
-    // {
-    //   name: "Emma Thompson",
-    //   role: "Founder & CEO",
-    //   image: "/team/founder.jpg"
-    // },
-    // {
-    //   name: "Michael Chen",
-    //   role: "Chief Technology Officer",
-    //   image: "/team/cto.jpg"
-    // },
+   
     {
-      name: "Rekar Jamal",
-      role: "Founder & CEO",
+      name: t("team.nameOne"),
+      role: t("team.positionOne"),
       image: "https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?q=80&w=1974&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"
     },
     {
-      name: "Delav Wria",
-      role: "Founder & CEO",
+      name: t("team.nameTwo"),
+      role: t("team.positionTwo"),
       image: "https://images.unsplash.com/photo-1664575602554-2087b04935a5?q=80&w=1974&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"
     }
   ]
 
   return (
-    <section ref={ref} className="py-12 md:py-20 bg-background">
+    <section ref={ref} className="py-12 md:py-20 bg-background w-full">
       <div className="container px-4 md:px-6">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -471,8 +464,8 @@ const TeamSection = () => {
           transition={{ duration: 0.6 }}
           className="text-center mb-10"
         >
-          <h2 className="text-3xl font-bold tracking-tighter sm:text-4xl md:text-5xl">Our Team</h2>
-          <p className="mt-4 text-xl text-muted-foreground">Passionate about reducing food waste</p>
+          <h2 className="text-3xl font-bold tracking-tighter sm:text-4xl md:text-5xl">{ t('team.title')}</h2>
+          <p className="mt-4 text-xl text-muted-foreground">{t("team.subtitle")}</p>
         </motion.div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2  max-w-3xl mx-auto">
@@ -505,13 +498,14 @@ const TeamSection = () => {
 }
 
 const ContactCTASection = () => {
+  const { t } = useTranslation();
   const { ref, inView } = useInView({
     threshold: 0.1,
     triggerOnce: true
   })
 
   return (
-    <section ref={ref} className="py-12 md:py-20 bg-primary/10">
+    <section ref={ref} className="py-12 md:py-20 bg-primary/10 w-full">
       <div className="container px-4 md:px-6">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -520,20 +514,20 @@ const ContactCTASection = () => {
           className="flex flex-col items-center justify-center space-y-4 text-center"
         >
           <div className="space-y-2">
-            <h2 className="text-3xl font-bold tracking-tighter sm:text-4xl md:text-5xl">Ready to Join the Movement?</h2>
+            <h2 className="text-3xl font-bold tracking-tighter sm:text-4xl md:text-5xl"> { t('join.title')}</h2>
             <p className="max-w-[900px] text-muted-foreground md:text-xl/relaxed lg:text-base/relaxed xl:text-xl/relaxed">
-              Whether you're a food provider or a conscious consumer, we'd love to have you on board.
+              {t('join.subtitle')}
             </p>
           </div>
           <div className="flex flex-col sm:flex-row gap-4">
             <Button size="lg" asChild>
               <Link href="/">
-                Find Food Near You
+                {t('join.buttonOne')} 
               </Link>
             </Button>
             <Button variant="outline" size="lg" asChild>
               <Link href="/contactus">
-                Contact Us
+                {t('join.buttonTwo')}
               </Link>
             </Button>
           </div>

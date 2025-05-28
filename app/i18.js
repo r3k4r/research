@@ -43,8 +43,29 @@ i18n
             button : "Start Exploring",
           },
           providers : {
-            title: "",
+            title: "For Food Providers",
+            subtitle: "Join our platform to reduce your food waste, reach new customers, and boost your revenue.",
+            pointOne: "Reduce food waste and associated costs",
+            pointTwo: "Generate additional revenue from surplus food",
+            pointThree : "Attract eco-conscious customers",
+            pointFour : "Easy-to-use dashboard to manage your listings",
+            pointFive : "Be part of the sustainability movement",
+            button : "Become a Provider",
           },
+          team : {
+            title: "Our Team",
+            subtitle: "Passionate about reducing food waste",
+            nameOne: "Rekar Jamal",
+            positionOne: "Founder & CEO",
+            nameTwo: "Delav Wria",
+            positionTwo: "Founder & CEO",
+          }, 
+          join: {
+            title: "Ready to Join the Movement?",
+            subtitle : "Whether you're a food provider or a conscious consumer, we'd love to have you on board.",
+            button: "Find Food Near You",
+            buttonTwo: "Contact Us",
+          }
         }
       },
       ku: {
