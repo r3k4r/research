@@ -157,22 +157,21 @@ model ProviderMonthlySummary {
 }
 
 model PurchasedOrder {
-  id                 String      @id @default(uuid())
-  userProfileId      String
-  providerId         String
-  status             OrderStatus @default(PENDING)
-  totalAmount        Float
-  deliveryAddress    String
-  deliveryNotes      String?
-  customerName       String?
-  customerPhone      String?
-  paymentMethod      String      @default("cash")
-  deliveryPersonName String?
-  estimatedDelivery  DateTime?
-  viewedByProvider   Boolean     @default(false)
-  createdAt          DateTime    @default(now())
-  updatedAt          DateTime    @updatedAt
-  isReviewed         Boolean     @default(false)
+  id                String      @id @default(uuid())
+  userProfileId     String
+  providerId        String
+  status            OrderStatus @default(PENDING)
+  totalAmount       Float
+  deliveryAddress   String
+  deliveryNotes     String?
+  customerName      String?
+  customerPhone     String?
+  paymentMethod     String      @default("cash")
+  estimatedDelivery DateTime?
+  viewedByProvider  Boolean     @default(false)
+  createdAt         DateTime    @default(now())
+  updatedAt         DateTime    @updatedAt
+  isReviewed        Boolean     @default(false)
 
   userProfile UserProfile      @relation(fields: [userProfileId], references: [id])
   provider    ProviderProfile  @relation(fields: [providerId], references: [id])

@@ -367,12 +367,7 @@ const SingleReview = () => {
                   </div>
                 )}
 
-                {review.order.deliveryPersonName && (
-                  <div>
-                    <span className="text-sm text-gray-500">Delivery Person:</span>
-                    <p className="font-medium">{review.order.deliveryPersonName}</p>
-                  </div>
-                )}
+               
 
                 <div>
                   <span className="text-sm text-gray-500">Payment Method:</span>

@@ -276,7 +276,6 @@ const SingleCustomer = ({ params }) => {
                           <TableCell>{formatDate(order.createdAt)}</TableCell>
                           <TableCell className="hidden sm:table-cell">{order.items.length}</TableCell>
                           <TableCell className="text-right">{formatCurrency(order.totalAmount)} IQD</TableCell>
-                          <TableCell>{order.deliveryPersonName}</TableCell>
                         </TableRow>
                       ))}
                     </TableBody>

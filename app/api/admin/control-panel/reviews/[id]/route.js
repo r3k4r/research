@@ -92,7 +92,6 @@ export async function GET(request, { params }) {
         customerName: review.order.customerName,
         customerPhone: review.order.customerPhone,
         paymentMethod: review.order.paymentMethod,
-        deliveryPersonName: review.order.deliveryPersonName,
         estimatedDelivery: review.order.estimatedDelivery,
         createdAt: review.order.createdAt,
         statusLogs: review.order.statusLogs

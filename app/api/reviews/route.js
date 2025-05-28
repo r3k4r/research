@@ -105,55 +105,7 @@ export async function POST(req) {
       });
     }
     
-    // Calculate average rating for provider items - THIS IS OPTIONAL
-    try {
-      const providerItems = await prisma.foodItem.findMany({
-        where: {
-          providerId: foodItem.providerId
-        },
-        select: {
-          id: true
-        }
-      });
-      
-      const itemIds = providerItems.map(item => item.id);
-      
-      const avgRating = await prisma.review.aggregate({
-        where: {
-          foodItemId: {
-            in: itemIds
-          }
-        },
-        _avg: {
-          rating: true
-        }
-      });
-      
-      // Only try to update if rating field exists in schema
-      if (avgRating._avg.rating) {
-        // Check if the field exists in the schema before updating
-        const providerFields = await prisma.$queryRaw`
-          SELECT column_name 
-          FROM information_schema.columns 
-          WHERE table_name = 'ProviderProfile'
-        `;
-        
-        const fieldNames = providerFields.map(f => f.column_name.toLowerCase());
-        
-        // Only update if the field exists
-        if (fieldNames.includes('rating')) {
-          await prisma.providerProfile.update({
-            where: { id: foodItem.providerId },
-            data: {
-              rating: avgRating._avg.rating  // Fixed typo: "raiting" -> "rating"
-            }
-          });
-        }
-      }
-    } catch (avgError) {
-      // Log the error but don't fail the review submission
-      console.error('Error updating provider rating:', avgError);
-    }
+   
     
     return NextResponse.json({
       success: true,

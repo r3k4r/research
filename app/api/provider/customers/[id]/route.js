@@ -68,7 +68,6 @@ export async function GET(req, { params }) {
         updatedAt: true,
         deliveryAddress: true,
         deliveryNotes: true,
-        deliveryPersonName: true,
         items: {
           select: {
             id: true,
