@@ -115,7 +115,7 @@ model Review {
   rating        Int
   comment       String?
   type          ReviewType @default(ITEM)
-  orderId       String? // Optional reference to the order
+  orderId       String?
   createdAt     DateTime   @default(now())
   updatedAt     DateTime   @updatedAt
 
