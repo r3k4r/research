@@ -63,7 +63,7 @@ export default function UsersPage() {
   const fetchUsers = async () => {
     try {
       setLoading(true)
-      let url = `/api/admin/users?page=${currentPage}&limit=10`
+      let url = `/api/admin-dashboard/users?page=${currentPage}&limit=10`
       
       if (selectedRole !== "all") {
         url += `&role=${selectedRole}`
