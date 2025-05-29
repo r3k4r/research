@@ -63,7 +63,7 @@ export default function UsersPage() {
   const fetchUsers = async () => {
     try {
       setLoading(true)
-      let url = `/api/admin-dashboard/users?page=${currentPage}&limit=10`
+      let url = `/api/admin/users?page=${currentPage}&limit=10`
       
       if (selectedRole !== "all") {
         url += `&role=${selectedRole}`
@@ -198,7 +198,7 @@ export default function UsersPage() {
   }
 
   const handleViewUser = (userId) => {
-    router.push(`/admin/users/${userId}`);
+    router.push(`/admin-dashboard/users/${userId}`);
   }
 
   const handleEditUser = async (userId) => {
