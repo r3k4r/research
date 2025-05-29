@@ -7,6 +7,14 @@ const nextConfig = {
     remotePatterns: [
       {
         protocol: 'http',
+        hostname: '**',
+      },
+      {
+        protocol: 'https',
+        hostname: '**',
+      },
+      {
+        protocol: 'http',
         hostname: 'localhost',
       },
       {
@@ -48,6 +56,10 @@ const nextConfig = {
       {
         protocol: 'https',
         hostname: 'www.lokmada.com',
+      },
+      {
+        protocol: 'https',
+        hostname: 'lokmada.com',
       }
     ],
   },
